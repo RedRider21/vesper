@@ -287,6 +287,22 @@ calendar.vesper-calendar:indeterminate { color: #5a8a9a; }
 /* Etichette di stato nei popup (es. rete connessa, servizio attivo) */
 label.vesper-ok { color: #4be38a; font-size: 9pt; }
 label.vesper-attn { color: #e5b34b; font-size: 9pt; }
+
+/* ---- Viste a elenco/icone (file manager, liste del Centro di Controllo) ----
+   Senza queste regole GTK usa il colore "base" del tema (BIANCO) e le viste
+   appaiono candide dentro una finestra scura: e' lo stesso motivo per cui
+   sopra si azzera lo sfondo dei viewport. */
+iconview, .view, treeview.view, list, list row {
+  background-color: #050a14; color: #c8f5ff;
+}
+iconview:selected, iconview .cell:selected, .view:selected,
+treeview.view:selected, list row:selected {
+  background-color: #00334a; color: #00e5ff;
+}
+iconview .cell { padding: 4px; border-radius: 6px; }
+scrolledwindow, scrolledwindow > viewport { background-color: #050a14; }
+/* Barra dei luoghi: leggermente staccata dal contenuto */
+list.vesper-places, list.vesper-places row { background-color: #070f1a; }
 """
 
 _css_done = False

@@ -1,0 +1,124 @@
+#!/usr/bin/env python3
+# SPDX-License-Identifier: AGPL-3.0-or-later
+# Copyright (C) 2026 Daniele Deplano (RedRider21). Parte di Vesper.
+# vesper-keys - gestione delle scorciatoie da tastiera di Openbox (rc.xml).
+#
+# Modifica SOLO le scorciatoie "Esegui comando" (keybind -> action Execute) del
+# file ~/.config/openbox/rc.xml, con manipolazione TESTUALE mirata: preserva
+# commenti, formattazione e le altre keybind (cambio desktop, ecc.) che una
+# riserializzazione XML distruggerebbe. Dopo ogni modifica fa
+# `openbox --reconfigure` (applica al volo, senza riavviare la sessione).
+#
+# NB (live): su una live in RAM le modifiche a ~/.config valgono per la sessione;
+# persistono al riavvio solo con la persistenza dati (NXSDATA) su ~/.config.
+#
+# Uso:
+#   vesper-keys list                     elenca: TASTO<TAB>COMANDO
+#   vesper-keys add   <tasto> <comando…> aggiunge una scorciatoia
+#   vesper-keys set   <vecchio> <nuovo> <comando…>  modifica tasto e/o comando
+#   vesper-keys remove <tasto>           rimuove
+#   vesper-keys reconfigure              riapplica la config di Openbox
+import os
+import re
+import subprocess
+import sys
+
+RC = os.path.expanduser("~/.config/openbox/rc.xml")
+BIND_RE = re.compile(
+    r'<keybind key="([^"]+)">\s*<action name="Execute">\s*'
+    r'<command>(.*?)</command>\s*</action>\s*</keybind>', re.S)
+
+
+def _read():
+    with open(RC, encoding="utf-8") as f:
+        return f.read()
+
+
+def _write(s):
+    with open(RC, "w", encoding="utf-8") as f:
+        f.write(s)
+
+
+def _esc(x):
+    return (x.replace("&", "&amp;").replace("<", "&lt;")
+             .replace(">", "&gt;").replace('"', "&quot;"))
+
+
+def _unesc(x):
+    return (x.replace("&quot;", '"').replace("&lt;", "<")
+             .replace("&gt;", ">").replace("&amp;", "&"))
+
+
+def _find(txt, key):
+    for m in BIND_RE.finditer(txt):
+        if _unesc(m.group(1)) == key:
+            return m
+    return None
+
+
+def _reconfigure():
+    subprocess.run(["openbox", "--reconfigure"],
+                   stdout=subprocess.DEVNULL, stderr=subprocess.DEVNULL)
+
+
+def cmd_list():
+    for m in BIND_RE.finditer(_read()):
+        print(_unesc(m.group(1)) + "\t" + _unesc(m.group(2)))
+
+
+def cmd_add(key, command):
+    txt = _read()
+    if _find(txt, key):
+        sys.exit(f"vesper-keys: la scorciatoia '{key}' esiste gia'.")
+    line = (f'  <keybind key="{_esc(key)}"><action name="Execute">'
+            f'<command>{_esc(command)}</command></action></keybind>\n')
+    if "</keyboard>" not in txt:
+        sys.exit("vesper-keys: sezione <keyboard> non trovata in rc.xml.")
+    _write(txt.replace("</keyboard>", line + "</keyboard>", 1))
+    _reconfigure()
+
+
+def cmd_set(oldkey, newkey, command):
+    txt = _read()
+    m = _find(txt, oldkey)
+    if not m:
+        sys.exit(f"vesper-keys: scorciatoia '{oldkey}' non trovata.")
+    new = (f'<keybind key="{_esc(newkey)}"><action name="Execute">'
+           f'<command>{_esc(command)}</command></action></keybind>')
+    _write(txt[:m.start()] + new + txt[m.end():])
+    _reconfigure()
+
+
+def cmd_remove(key):
+    txt = _read()
+    m = _find(txt, key)
+    if not m:
+        sys.exit(f"vesper-keys: scorciatoia '{key}' non trovata.")
+    ls = txt.rfind("\n", 0, m.start()) + 1        # inizio riga
+    le = txt.find("\n", m.end())
+    le = le + 1 if le != -1 else len(txt)          # includi il newline
+    _write(txt[:ls] + txt[le:])
+    _reconfigure()
+
+
+def main():
+    a = sys.argv[1:]
+    if not a or a[0] == "list":
+        cmd_list()
+    elif a[0] == "add" and len(a) >= 3:
+        cmd_add(a[1], " ".join(a[2:]))
+    elif a[0] == "set" and len(a) >= 4:
+        cmd_set(a[1], a[2], " ".join(a[3:]))
+    elif a[0] == "remove" and len(a) == 2:
+        cmd_remove(a[1])
+    elif a[0] == "reconfigure":
+        _reconfigure()
+    else:
+        sys.stderr.write(
+            "uso: vesper-keys list | add <tasto> <comando> | "
+            "set <vecchio> <nuovo> <comando> | remove <tasto> | reconfigure\n")
+        sys.exit(2)
+
+
+if __name__ == "__main__":
+    main()

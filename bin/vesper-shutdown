@@ -1,0 +1,28 @@
+#!/bin/sh
+# SPDX-License-Identifier: AGPL-3.0-or-later
+# Copyright (C) 2026 Daniele Deplano (RedRider21). Parte di Vesper.
+# vesper-shutdown - riavvio/spegnimento, con il meccanismo disponibile sulla
+# macchina: logind (systemd/elogind), poi ConsoleKit, poi il comando classico
+# con elevazione (doas/sudo/pkexec). Nessuna assunzione sulla distro.
+#   vesper-shutdown reboot | poweroff
+case "${1:-}" in
+  reboot|poweroff) ACT="$1" ;;
+  *) echo "uso: vesper-shutdown {reboot|poweroff}" >&2; exit 2 ;;
+esac
+
+# 1) logind: non richiede privilegi extra per l'utente della sessione grafica
+if command -v loginctl >/dev/null 2>&1; then
+  [ "$ACT" = reboot ] && exec loginctl reboot
+  exec loginctl poweroff
+fi
+if command -v systemctl >/dev/null 2>&1; then
+  exec systemctl "$ACT"
+fi
+# 2) elevazione classica
+for p in doas sudo pkexec; do
+  if command -v "$p" >/dev/null 2>&1; then
+    exec "$p" "$ACT"
+  fi
+done
+# 3) ultimo tentativo diretto (se l'utente ha i permessi)
+exec "$ACT"

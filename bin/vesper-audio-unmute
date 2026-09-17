@@ -1,0 +1,48 @@
+#!/bin/sh
+# SPDX-License-Identifier: AGPL-3.0-or-later
+# Copyright (C) 2026 Daniele Deplano (RedRider21). Parte di Vesper.
+# Vesper - sblocca e alza l'audio su TUTTI i livelli, con ritentativi.
+#
+# Perche' serve: su HARDWARE reale (avvio da chiavetta) la scheda c'e' e il
+# sink "Analog Stereo" esiste, ma NON esce audio perche':
+#   - i controlli ALSA hardware partono MUTI (Master/Speaker/Headphone/PCM) o
+#     con "Auto-Mute Mode" attivo (jack-detect che spegne gli altoparlanti);
+#   - a volte l'UCM/WirePlumber li rimette muti POCO DOPO l'avvio;
+#   - il sink PipeWire puo' partire muto o a volume 0.
+# In VM non capita (HDA emulata, mixer gia' aperto) -> li' l'audio va.
+#
+# Agisce su ENTRAMBI i livelli (ALSA + PipeWire) e RIPETE qualche passata per
+# coprire l'inizializzazione tardiva del codec. Best-effort: nessun errore.
+#
+# Uso: vesper-audio-unmute [passate]   (default 4 passate, ~6s)
+
+_wp_unmute() {
+  command -v wpctl >/dev/null 2>&1 || return 0
+  wpctl set-mute   @DEFAULT_AUDIO_SINK@ 0    2>/dev/null
+  wpctl set-volume @DEFAULT_AUDIO_SINK@ 0.9  2>/dev/null
+}
+
+_alsa_unmute() {
+  command -v amixer >/dev/null 2>&1 || return 0
+  # Itera indici di scheda fissi (0..4): non dipende dal parsing di
+  # /proc/asound/cards; salta quelli inesistenti. Sblocca i controlli comuni +
+  # disattiva l'auto-mute (che su molti portatili tiene muti gli altoparlanti).
+  for c in 0 1 2 3 4; do
+    [ -d "/proc/asound/card$c" ] || continue
+    for ctl in Master Speaker Headphone PCM Front "Front Speaker" \
+               "Speaker+LO" Line "Line Out" Playback Digital; do
+      amixer -c "$c" sset "$ctl" 90% unmute 2>/dev/null
+    done
+    amixer -c "$c" sset "Auto-Mute Mode" Disabled 2>/dev/null
+  done
+}
+
+passate="${1:-4}"
+i=0
+while [ "$i" -lt "$passate" ]; do
+  _alsa_unmute
+  _wp_unmute
+  i=$((i + 1))
+  [ "$i" -lt "$passate" ] && sleep 1.5
+done
+exit 0

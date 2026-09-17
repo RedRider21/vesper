@@ -1,0 +1,11 @@
+#!/bin/sh
+# SPDX-License-Identifier: AGPL-3.0-or-later
+# Copyright (C) 2026 Daniele Deplano (RedRider21). Parte di Vesper.
+# vesper-panel-restart - riavvia la barra.
+# NB (gotcha storico): il pattern del pkill NON deve comparire nell'argv di chi
+# lo esegue, altrimenti il comando uccide se stesso. Qui si usa 'vesper[.]panel':
+# la cmdline di questo script contiene le parentesi quadre, che il '.' del
+# regex non matcha.
+pkill -f 'vesper[.]panel' 2>/dev/null
+sleep 0.4
+exec vesper-panel

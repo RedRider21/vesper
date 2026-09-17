@@ -1,0 +1,53 @@
+#!/bin/sh
+# SPDX-License-Identifier: AGPL-3.0-or-later
+# Copyright (C) 2026 Daniele Deplano (RedRider21). Parte di Vesper.
+# Vesper - cattura schermate (scrot). Notifica via xmessage.
+#
+# Uso:
+#   vesper-screenshot [full|area|window] [ritardo_sec]
+#     full    (default) schermo intero
+#     area    selezione col mouse (scrot -s)
+#     window  finestra attiva (scrot -u)
+#   ritardo_sec: attesa prima dello scatto (utile per far chiudere menu/popup;
+#                per 'area' e' 0 di default cosi' selezioni subito).
+#
+# Le immagini sono salvate in ~/Immagini/Vesper (create se mancanti), utili
+# come prova per report OSINT/forensi. Print (tastiera) resta = full.
+set -eu
+
+MODE="${1:-full}"
+DELAY="${2:-}"
+
+DIR="$HOME/Immagini/Vesper"
+mkdir -p "$DIR" 2>/dev/null || DIR="/tmp"
+F="$DIR/vesper-shot-$(date +%Y%m%d-%H%M%S).png"
+
+if ! command -v scrot >/dev/null 2>&1; then
+  command -v lxterminal >/dev/null 2>&1 && exec lxterminal --title="scrot mancante" -e vesper-missing scrot scrot
+  command -v xmessage >/dev/null 2>&1 && xmessage -center -timeout 4 "scrot non installato."
+  exit 1
+fi
+
+case "$MODE" in
+  area)
+    [ -n "$DELAY" ] || DELAY=0
+    # -s selezione; -f evidenzia l'area; senza scatto -> uscita pulita
+    scrot -s -f ${DELAY:+-d "$DELAY"} "$F" 2>/dev/null || { exit 0; }
+    ;;
+  window)
+    [ -n "$DELAY" ] || DELAY=1
+    scrot -u -d "$DELAY" "$F"
+    ;;
+  full|*)
+    [ -n "$DELAY" ] || DELAY=0
+    scrot ${DELAY:+-d "$DELAY"} "$F"
+    ;;
+esac
+
+if [ -f "$F" ]; then
+  MSG="Schermata salvata:
+$F"
+else
+  MSG="Nessuna schermata acquisita."
+fi
+command -v xmessage >/dev/null 2>&1 && xmessage -center -timeout 3 "$MSG" || true

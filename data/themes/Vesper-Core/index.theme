@@ -1,0 +1,9 @@
+[Desktop Entry]
+Type=X-GNOME-Metatheme
+Name=Vesper-Core
+Comment=Tema scuro di Vesper con accento cyan
+Encoding=UTF-8
+
+[X-GNOME-Metatheme]
+GtkTheme=Vesper-Core
+IconTheme=Adwaita

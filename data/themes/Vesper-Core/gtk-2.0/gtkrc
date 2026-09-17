@@ -1,0 +1,10 @@
+# Vesper-Core - GTK2: scuro con accenti cyan (per le poche app GTK2).
+gtk-color-scheme = "bg_color:#050a14\nfg_color:#c8f5ff\nbase_color:#050a14\ntext_color:#c8f5ff\nselected_bg_color:#00334a\nselected_fg_color:#00e5ff\ntooltip_bg_color:#0a1a26\ntooltip_fg_color:#c8f5ff"
+style "vesper" {
+  bg[NORMAL]   = "#050a14"
+  bg[SELECTED] = "#00334a"
+  fg[NORMAL]   = "#c8f5ff"
+  text[NORMAL] = "#c8f5ff"
+  base[NORMAL] = "#050a14"
+}
+class "*" style "vesper"

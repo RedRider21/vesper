@@ -1,0 +1,44 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!-- Menu root di Openbox: compare col TASTO DESTRO sul DESKTOP (il desktop di
+     Vesper inoltra il clic al window manager). Raccoglie le azioni più
+     frequenti, così non serve aprire il menu dal pannello. -->
+<openbox_menu xmlns="http://openbox.org/3.4/menu">
+
+  <menu id="vesper-tools" label="Strumenti">
+    <item label="Terminale"><action name="Execute"><command>vesper-terminal</command></action></item>
+    <item label="File manager"><action name="Execute"><command>vesper-files</command></action></item>
+    <item label="Appunti (cronologia)"><action name="Execute"><command>vesper-clipboard menu</command></action></item>
+    <item label="Filtro luce blu (on/off)"><action name="Execute"><command>vesper-nightlight toggle</command></action></item>
+    <item label="Scorciatoie da tastiera"><action name="Execute"><command>vesper-control-center hotkey</command></action></item>
+    <item label="Centro di Controllo"><action name="Execute"><command>vesper-control-center</command></action></item>
+  </menu>
+
+  <menu id="vesper-screen" label="Schermo">
+    <item label="Blocca schermo"><action name="Execute"><command>vesper-screensaver</command></action></item>
+    <item label="Cattura schermata (intero)"><action name="Execute"><command>vesper-screenshot full 1</command></action></item>
+    <item label="Cattura schermata (area)"><action name="Execute"><command>vesper-screenshot area 0</command></action></item>
+    <separator/>
+    <item label="Disposizione schermi"><action name="Execute"><command>vesper-control-center schermi</command></action></item>
+  </menu>
+
+  <menu id="vesper-look" label="Aspetto">
+    <item label="Preset (colore, sfondo, icone)"><action name="Execute"><command>vesper-profile</command></action></item>
+    <item label="Sfondo del desktop"><action name="Execute"><command>vesper-control-center sfondo</command></action></item>
+    <item label="Skin del pannello"><action name="Execute"><command>vesper-control-center aspetto</command></action></item>
+  </menu>
+
+  <menu id="root-menu" label="Vesper">
+    <item label="Terminale"><action name="Execute"><command>vesper-terminal</command></action></item>
+    <item label="File manager"><action name="Execute"><command>vesper-files</command></action></item>
+    <separator/>
+    <menu id="vesper-tools"/>
+    <menu id="vesper-screen"/>
+    <menu id="vesper-look"/>
+    <separator/>
+    <item label="Ricarica il gestore finestre"><action name="Reconfigure"/></item>
+    <item label="Riavvia il pannello"><action name="Execute"><command>vesper-panel-restart</command></action></item>
+    <separator/>
+    <item label="Esci / Spegni…"><action name="Execute"><command>vesper-logout</command></action></item>
+  </menu>
+
+</openbox_menu>

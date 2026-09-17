@@ -1,0 +1,15 @@
+#!/bin/sh
+# SPDX-License-Identifier: AGPL-3.0-or-later
+# Copyright (C) 2026 Daniele Deplano (RedRider21). Parte di Vesper.
+# vesper-control-center - Centro di Controllo (aspetto, schermi, audio, rete...).
+# Tutto l'output, errori inclusi, va nel log per la diagnostica.
+# --- ambiente comune (pacchetto Python, dati, interprete) ---
+_self=$(readlink -f "$0" 2>/dev/null || echo "$0"); _d=$(dirname "$_self")
+for _e in "$_d/env.sh" "$(dirname "$_d")/lib/vesper/env.sh" \
+          /usr/local/lib/vesper/env.sh /usr/lib/vesper/env.sh; do
+  [ -r "$_e" ] && { . "$_e"; break; }
+done
+[ -n "${VESPER_PY:-}" ] || { echo "vesper-control-center: python3 non disponibile" >&2; exit 1; }
+LOG="${XDG_CACHE_HOME:-$HOME/.cache}/vesper"
+mkdir -p "$LOG" 2>/dev/null
+exec "$VESPER_PY" -m vesper.control_center "$@" >>"$LOG/control-center.log" 2>&1

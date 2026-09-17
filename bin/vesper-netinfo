@@ -1,0 +1,17 @@
+#!/bin/sh
+# SPDX-License-Identifier: AGPL-3.0-or-later
+# Copyright (C) 2026 Daniele Deplano (RedRider21). Parte di Vesper.
+# Vesper - stato rete (per menu Openbox / Centro di Controllo).
+echo "=== Interfacce ==="
+ip a 2>/dev/null || ifconfig
+echo
+echo "=== Routing ==="
+ip r 2>/dev/null || route -n
+echo
+echo "=== DNS ==="
+cat /etc/resolv.conf 2>/dev/null
+echo
+echo "=== Ping 1.1.1.1 ==="
+ping -c2 -W2 1.1.1.1 2>&1 | tail -3
+echo
+printf "Premi invio per chiudere "; read junk

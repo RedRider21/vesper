@@ -1,0 +1,173 @@
+#!/usr/bin/env python3
+# SPDX-License-Identifier: AGPL-3.0-or-later
+# Copyright (C) 2026 Daniele Deplano (RedRider21). Parte di Vesper.
+# vesper-clipboard - gestore appunti con cronologia (Python/GTK3, zero dipendenze
+# extra oltre a quelle del desktop). Due modi:
+#   vesper-clipboard daemon   sorveglia la clipboard e memorizza la cronologia
+#   vesper-clipboard menu      mostra un popup con la cronologia (seleziona = ricopia)
+#   vesper-clipboard clear     svuota la cronologia
+# La cronologia sta in ~/.cache/vesper/clipboard.json (solo testo; niente immagini).
+import json
+import os
+import sys
+
+import gi
+gi.require_version("Gtk", "3.0")
+from gi.repository import Gtk, Gdk, GLib  # noqa: E402
+
+HIST = os.path.join(os.environ.get("XDG_CACHE_HOME",
+                    os.path.expanduser("~/.cache")), "vesper", "clipboard.json")
+MAX_ITEMS = 30
+MAX_LEN = 20000          # non memorizzare testi enormi
+POLL_MS = 1200
+
+
+def _load():
+    try:
+        with open(HIST, encoding="utf-8") as f:
+            d = json.load(f)
+            return d if isinstance(d, list) else []
+    except Exception:
+        return []
+
+
+def _save(items):
+    try:
+        os.makedirs(os.path.dirname(HIST), exist_ok=True)
+        with open(HIST, "w", encoding="utf-8") as f:
+            json.dump(items[:MAX_ITEMS], f, ensure_ascii=False)
+    except Exception:
+        pass
+
+
+def _preview(text):
+    line = text.strip().splitlines()[0] if text.strip() else "(vuoto)"
+    return (line[:60] + "…") if len(line) > 60 else line
+
+
+def run_daemon():
+    cb = Gtk.Clipboard.get(Gdk.SELECTION_CLIPBOARD)
+    state = {"last": None}
+
+    def tick():
+        try:
+            text = cb.wait_for_text()
+        except Exception:
+            text = None
+        if text and text != state["last"] and len(text) <= MAX_LEN:
+            state["last"] = text
+            items = _load()
+            items = [x for x in items if x != text]
+            items.insert(0, text)
+            _save(items)
+        return True
+
+    GLib.timeout_add(POLL_MS, tick)
+    Gtk.main()
+
+
+def run_menu():
+    # Finestra popup (NON Gtk.Menu.popup_at_pointer: senza un evento GDK corrente
+    # quello solleva GTK-CRITICAL e non si apre). Una piccola Gtk.Window con lista
+    # scrollabile e' affidabile lanciata da terminale, scorciatoia o menu.
+    items = _load()
+    cb = Gtk.Clipboard.get(Gdk.SELECTION_CLIPBOARD)
+
+    win = Gtk.Window(type=Gtk.WindowType.TOPLEVEL)
+    win.set_title("Appunti")
+    win.set_decorated(True)
+    win.set_skip_taskbar_hint(True)
+    win.set_keep_above(True)
+    win.set_default_size(380, 340)
+    win.set_position(Gtk.WindowPosition.MOUSE)
+    win.connect("destroy", Gtk.main_quit)
+    win.connect("key-press-event",
+                lambda _w, ev: win.destroy() if ev.keyval == Gdk.KEY_Escape else None)
+
+    box = Gtk.Box(orientation=Gtk.Orientation.VERTICAL, spacing=6)
+    box.set_border_width(8)
+    win.add(box)
+    head = Gtk.Label()
+    head.set_markup("<b>Appunti</b>  <small>(clic per ricopiare · Esc per chiudere)</small>")
+    head.set_xalign(0)
+    box.pack_start(head, False, False, 0)
+
+    scroll = Gtk.ScrolledWindow()
+    scroll.set_policy(Gtk.PolicyType.NEVER, Gtk.PolicyType.AUTOMATIC)
+    box.pack_start(scroll, True, True, 0)
+    lst = Gtk.ListBox()
+    scroll.add(lst)
+
+    def _activated(_lst, row):
+        t = getattr(row, "_text", None)
+        if t is None:
+            return                                     # riga "vuota": ignora
+        cb.set_text(t, -1)
+        cb.store()
+        win.destroy()
+    lst.connect("row-activated", _activated)
+
+    def populate(entries):
+        for c in lst.get_children():
+            lst.remove(c)
+        if not entries:
+            row = Gtk.ListBoxRow(); row.set_selectable(False)
+            lab = Gtk.Label(label="(cronologia vuota)"); lab.set_xalign(0)
+            lab.set_margin_top(8); lab.set_margin_bottom(8)
+            row.add(lab)
+            lst.add(row)
+        else:
+            for text in entries:
+                row = Gtk.ListBoxRow()
+                lab = Gtk.Label(label=_preview(text)); lab.set_xalign(0)
+                lab.set_ellipsize(3)                   # PANGO_ELLIPSIZE_END
+                lab.set_margin_top(4); lab.set_margin_bottom(4)
+                lab.set_margin_start(6); lab.set_margin_end(6)
+                row.add(lab)
+                row._text = text
+                lst.add(row)
+        lst.show_all()
+
+    # refresh LIVE: se copi altrove mentre la finestra e' aperta, l'elenco si
+    # aggiorna da solo (prima serviva chiudere e riaprire).
+    state = {"items": items}
+    populate(items)
+
+    def _refresh():
+        cur = _load()
+        if cur != state["items"]:
+            state["items"] = cur
+            populate(cur)
+        return True
+    _tid = GLib.timeout_add(1200, _refresh)
+    win.connect("destroy", lambda *_: GLib.source_remove(_tid))
+
+    footer = Gtk.Box(orientation=Gtk.Orientation.HORIZONTAL, spacing=6)
+    clr = Gtk.Button(label="Svuota cronologia")
+    clr.connect("clicked", lambda _b: (_save([]), win.destroy()))
+    close = Gtk.Button(label="Chiudi")
+    close.connect("clicked", lambda _b: win.destroy())
+    footer.pack_start(clr, False, False, 0)
+    footer.pack_end(close, False, False, 0)
+    box.pack_start(footer, False, False, 0)
+
+    win.show_all()
+    win.present()
+    Gtk.main()
+
+
+def main():
+    cmd = sys.argv[1] if len(sys.argv) > 1 else "menu"
+    if cmd == "daemon":
+        run_daemon()
+    elif cmd == "menu":
+        run_menu()
+    elif cmd == "clear":
+        _save([])
+    else:
+        sys.stderr.write("uso: vesper-clipboard {daemon|menu|clear}\n")
+        sys.exit(2)
+
+
+if __name__ == "__main__":
+    main()

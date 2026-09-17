@@ -1,0 +1,92 @@
+# Vesper-Core - tema finestre Openbox (STATICO, curato).
+# Definisce SOLO la decorazione gestita dal window manager: barra del titolo,
+# bordo, pulsanti, maniglia. La grafica INTERNA delle finestre la gestisce GTK
+# (vesper/common.py + ~/.config/vesper/window-style.css).
+# Palette Vesper: #050a14 sfondo, #0a1a26 pannello, #00e5ff accent, #c8f5ff
+# testo, #5a8a9a tenue, #1a3a52/#17475f bordi. Font del titolo impostato in
+# rc.xml. NON generato a runtime: e' un file fisso e affidabile (la generazione
+# dinamica si e' rivelata fragile).
+
+# --- Geometria ---------------------------------------------------------------
+padding.width: 9
+padding.height: 6
+border.width: 1
+window.client.padding.width: 0
+window.client.padding.height: 0
+window.handle.width: 3
+
+# --- Bordo finestra: sottile e discreto (ciano-scuro), non sparato -----------
+window.active.border.color: #17475f
+window.inactive.border.color: #14222e
+
+# --- Maniglia di resize (bassa) + grip d'angolo ------------------------------
+window.active.handle.bg: flat solid
+window.active.handle.bg.color: #0a1a26
+window.inactive.handle.bg: flat solid
+window.inactive.handle.bg.color: #0a141c
+window.active.grip.bg: flat solid
+window.active.grip.bg.color: #17475f
+window.inactive.grip.bg: flat solid
+window.inactive.grip.bg.color: #14222e
+
+# --- Barra del titolo --------------------------------------------------------
+# Attiva: gradiente verticale dalla velatura d'accento in cima al pannello,
+# cosi' la barra "appartiene" allo stile HUD senza essere squillante.
+window.active.title.bg: gradient vertical
+window.active.title.bg.color: #123f57
+window.active.title.bg.colorTo: #0a1a26
+window.inactive.title.bg: flat solid
+window.inactive.title.bg.color: #0a141c
+
+# Separatore sotto la barra del titolo (filetto d'accento tenue)
+window.active.title.separator.color: #17475f
+window.inactive.title.separator.color: #14222e
+
+# --- Testo del titolo (font Chakra Petch da rc.xml) --------------------------
+window.active.label.text.color: #00e5ff
+window.inactive.label.text.color: #5a8a9a
+window.active.label.bg: parentrelative
+window.inactive.label.bg: parentrelative
+window.label.text.justify: center
+
+# --- Pulsanti (minimizza / massimizza / chiudi) ------------------------------
+# Solo colore dell'icona (le forme sono i simboli di default di Openbox):
+# accent su attiva, tenue su inattiva, chiaro all'hover.
+window.active.button.unpressed.image.color: #00e5ff
+window.inactive.button.unpressed.image.color: #5a8a9a
+window.active.button.hover.image.color: #c8f5ff
+window.inactive.button.hover.image.color: #9fc4d2
+window.active.button.pressed.image.color: #ffffff
+window.active.button.disabled.image.color: #2a4452
+window.inactive.button.disabled.image.color: #223440
+# Box morbido dietro il pulsante sotto il cursore (accenno di evidenza)
+window.active.button.hover.bg: flat solid
+window.active.button.hover.bg.color: #17475f
+window.active.button.pressed.bg: flat solid
+window.active.button.pressed.bg.color: #00334a
+
+# --- Menu --------------------------------------------------------------------
+menu.border.color: #17475f
+menu.title.bg: flat solid
+menu.title.bg.color: #0a1a26
+menu.title.text.color: #00e5ff
+menu.title.text.justify: center
+menu.items.bg: flat solid
+menu.items.bg.color: #0a1a26
+menu.items.text.color: #c8f5ff
+menu.items.disabled.text.color: #5a8a9a
+menu.items.active.bg: flat solid
+menu.items.active.bg.color: #00334a
+menu.items.active.text.color: #00e5ff
+menu.separator.color: #17475f
+
+# --- OSD (indicatori a schermo) ----------------------------------------------
+osd.border.width: 1
+osd.border.color: #17475f
+osd.bg: flat solid
+osd.bg.color: #0a1a26
+osd.label.text.color: #00e5ff
+osd.hilight.bg: flat solid
+osd.hilight.bg.color: #00e5ff
+osd.unhilight.bg: flat solid
+osd.unhilight.bg.color: #1a3a52

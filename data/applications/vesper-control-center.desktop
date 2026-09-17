@@ -1,0 +1,16 @@
+[Desktop Entry]
+Type=Application
+Name=Centro di Controllo
+Name[en]=Control Center
+Name[fr]=Centre de contrôle
+Name[es]=Centro de control
+Name[de]=Kontrollzentrum
+Comment=Impostazioni di Vesper: aspetto, schermi, audio, rete
+Comment[en]=Vesper settings: appearance, displays, audio, network
+Exec=vesper-control-center
+TryExec=vesper-control-center
+Icon=preferences-system
+Terminal=false
+Categories=Settings;DesktopSettings;GTK;
+Keywords=vesper;impostazioni;settings;aspetto;
+StartupNotify=true

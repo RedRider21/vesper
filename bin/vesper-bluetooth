@@ -1,0 +1,270 @@
+#!/bin/sh
+# SPDX-License-Identifier: AGPL-3.0-or-later
+# Copyright (C) 2026 Daniele Deplano (RedRider21). Parte di Vesper.
+# vesper-bluetooth - controllo Bluetooth via bluetoothctl (BlueZ). Usato dal widget
+# del pannello e dalla finestra "Gestione Bluetooth" del Centro di Controllo.
+# Best-effort: senza adattatore stampa "noadapter" senza errori.
+_have() { command -v bluetoothctl >/dev/null 2>&1; }
+OBEXLOG=/tmp/vesper-bt-obex.log   # diagnostica invio/ricezione file (OBEX)
+
+# obexd e' il daemon OBEX di BlueZ che gestisce invio/ricezione file. Su OpenRC
+# la D-Bus activation NON funziona (org.bluez.obex.service punta a systemd, che
+# non c'e') -> bt-obex non troverebbe mai org.bluez.obex. Lo avviamo noi, sul
+# session bus della sessione corrente (DBUS_SESSION_BUS_ADDRESS di dbus-run-
+# session), cosi' il nome e' gia' occupato e bt-obex lo usa direttamente.
+OBEXD="${NXS_OBEXD:-}"
+if [ -z "$OBEXD" ]; then
+  for _c in /usr/libexec/bluetooth/obexd /usr/lib/bluetooth/obexd; do
+    [ -x "$_c" ] && { OBEXD="$_c"; break; }
+  done
+  if [ -z "$OBEXD" ] && command -v obexd >/dev/null 2>&1; then
+    OBEXD="$(command -v obexd)"
+  fi
+fi
+
+# Avvia obexd (no-op se gira gia'). $1 = root dove salvare i file in arrivo.
+_ensure_obexd() {
+  [ -n "$OBEXD" ] || return 1
+  [ -n "${DBUS_SESSION_BUS_ADDRESS:-}" ] || return 1
+  pgrep -x obexd >/dev/null 2>&1 && return 0
+  setsid "$OBEXD" -n -r "$1" >> "$OBEXLOG" 2>&1 < /dev/null &
+  sleep 0.6
+  pgrep -x obexd >/dev/null 2>&1
+}
+
+# Agent BlueZ: serve ATTIVO durante pairing e inquiry. NoInputNoOutput = "Just
+# Works" (nessun codice da confermare sul PC, che non ha tastierino BT): e la
+# capability che fa completare il pairing dei telefoni senza dialoghi lato PC.
+_agent_on() {
+  bluetoothctl power on >/dev/null 2>&1
+  bluetoothctl agent NoInputNoOutput >/dev/null 2>&1
+  bluetoothctl default-agent >/dev/null 2>&1
+  bluetoothctl pairable on >/dev/null 2>&1
+}
+
+# Vero se la stringa e ancora un MAC "travestito" da nome (nome NON risolto).
+_is_unresolved() {
+  case "$1" in
+    "") return 0 ;;
+    [0-9A-Fa-f][0-9A-Fa-f]-[0-9A-Fa-f][0-9A-Fa-f]-[0-9A-Fa-f][0-9A-Fa-f]-*) return 0 ;;
+    [0-9A-Fa-f][0-9A-Fa-f]:[0-9A-Fa-f][0-9A-Fa-f]:*) return 0 ;;
+  esac
+  return 1
+}
+
+# Quanti device hanno ancora il nome NON risolto (usato per decidere se serve
+# un secondo giro di inquiry).
+_unresolved_count() {
+  n=0
+  for m in $(bluetoothctl devices 2>/dev/null | awk '{print $2}'); do
+    [ -n "$m" ] || continue
+    nm=$(bluetoothctl info "$m" 2>/dev/null \
+         | sed -n 's/^[[:space:]]*Name:[[:space:]]*//p' | head -1)
+    _is_unresolved "$nm" && n=$((n + 1))
+  done
+  echo "$n"
+}
+
+# Deduce un nome-icona simbolica dal campo "Icon" di bluetoothctl info.
+_devicon() {
+  case "$1" in
+    *audio*|*headset*|*headphone*|*speaker*) echo "audio-headphones-symbolic" ;;
+    *input-keyboard*|*keyboard*)             echo "input-keyboard-symbolic" ;;
+    *input-mouse*|*mouse*)                   echo "input-mouse-symbolic" ;;
+    *input-gaming*|*joypad*|*gamepad*)       echo "input-gaming-symbolic" ;;
+    *phone*)                                 echo "phone-symbolic" ;;
+    *computer*)                              echo "computer-symbolic" ;;
+    *printer*)                               echo "printer-symbolic" ;;
+    *) echo "bluetooth-symbolic" ;;
+  esac
+}
+
+# elenca i device: "mac<TAB>nome<TAB>stato(conn|paired|"")<TAB>trusted(1|0)<TAB>icona"
+# Il NOME va preso da `info` (Alias/Name), non dalla riga `devices`: quest'ultima
+# resta il MAC (es. "XX-XX-XX-XX-XX-XX") finche' il device non ha comunicato il
+# suo nome. Alias e' il nome mostrato all'utente (Name se non rinominato).
+_list_devices() {
+  bluetoothctl devices 2>/dev/null | while read -r _dev mac name; do
+    [ -n "$mac" ] || continue
+    info=$(bluetoothctl info "$mac" 2>/dev/null)
+    st=""
+    echo "$info" | grep -q "Connected: yes" && st="conn"
+    [ -z "$st" ] && echo "$info" | grep -q "Paired: yes" && st="paired"
+    tr=0; echo "$info" | grep -q "Trusted: yes" && tr=1
+    ic=$(_devicon "$(echo "$info" | sed -n 's/^[[:space:]]*Icon:[[:space:]]*//p')")
+    alias=$(echo "$info" | sed -n 's/^[[:space:]]*Alias:[[:space:]]*//p' | head -1)
+    rname=$(echo "$info" | sed -n 's/^[[:space:]]*Name:[[:space:]]*//p' | head -1)
+    # nome mostrato: Alias -> Name -> nome della riga devices -> MAC.
+    disp="$alias"; [ -n "$disp" ] || disp="$rname"
+    [ -n "$disp" ] || disp="$name"
+    # se e' ancora un MAC "travestito" (XX-XX-... o == mac), usa il MAC pulito
+    case "$disp" in
+      "" | "$mac") disp="$mac" ;;
+      [0-9A-Fa-f][0-9A-Fa-f]-[0-9A-Fa-f][0-9A-Fa-f]-*) disp="$mac" ;;
+    esac
+    printf '%s\t%s\t%s\t%s\t%s\n' "$mac" "$disp" "$st" "$tr" "$ic"
+  done
+}
+
+case "${1:-status}" in
+  status)
+    # "noadapter" | "off" | "on" | "conn" (acceso E con un device connesso).
+    _have || { echo noadapter; exit 0; }
+    show=$(bluetoothctl show 2>/dev/null)
+    [ -z "$show" ] && { echo noadapter; exit 0; }
+    echo "$show" | grep -q "Powered: yes" || { echo off; exit 0; }
+    connected=$(bluetoothctl devices 2>/dev/null | while read -r _dev mac _name; do
+      [ -n "$mac" ] || continue
+      bluetoothctl info "$mac" 2>/dev/null | grep -q "Connected: yes" && { echo yes; break; }
+    done)
+    [ -n "$connected" ] && echo conn || echo on
+    ;;
+  adapter)
+    # info adattatore: "nome<TAB>alias<TAB>indirizzo<TAB>powered<TAB>discoverable<TAB>pairable"
+    _have || { echo -e "\t\t\t\t\t"; exit 0; }
+    show=$(bluetoothctl show 2>/dev/null)
+    addr=$(echo "$show" | sed -n 's/^Controller[[:space:]]*\([0-9A-Fa-f:]*\).*/\1/p' | head -1)
+    name=$(echo "$show" | sed -n 's/^[[:space:]]*Name:[[:space:]]*//p' | head -1)
+    alias=$(echo "$show" | sed -n 's/^[[:space:]]*Alias:[[:space:]]*//p' | head -1)
+    pw=0;  echo "$show" | grep -q "Powered: yes" && pw=1
+    disc=0; echo "$show" | grep -q "Discoverable: yes" && disc=1
+    pair=0; echo "$show" | grep -q "Pairable: yes" && pair=1
+    printf '%s\t%s\t%s\t%s\t%s\t%s\n' "$name" "$alias" "$addr" "$pw" "$disc" "$pair"
+    ;;
+  on)
+    command -v rfkill >/dev/null 2>&1 && rfkill unblock bluetooth 2>/dev/null
+    _have || exit 0
+    _agent_on
+    ;;
+  off) _have && bluetoothctl power off >/dev/null 2>&1 ;;
+  discoverable)
+    # discoverable on|off (rende l'adattatore visibile ad altri device)
+    _have && bluetoothctl discoverable "${2:-on}" >/dev/null 2>&1
+    ;;
+  alias)
+    # rinomina l'adattatore (nome visibile agli altri device)
+    shift
+    [ -n "${1:-}" ] && _have && bluetoothctl system-alias "$*" >/dev/null 2>&1
+    ;;
+  scan)
+    # Scansione + elenco device (formato esteso a 5 colonne).
+    # CAUSA A MONTE del "mostra solo il MAC": il nome di un device BR/EDR
+    # arriva nell EIR o via remote-name-request DURANTE l inquiry, e l inquiry
+    # standard dura ~10.24s. Con i 6s di prima la scansione trovava il device
+    # (MAC) ma si CHIUDEVA prima che il nome fosse risolto -> restava il MAC per
+    # sempre. Ora: inquiry di 12s e, se restano nomi non risolti, un secondo
+    # giro breve. Serve anche discoverable: molti telefoni rispondono alla
+    # richiesta di nome solo se il PC e a sua volta visibile.
+    _have || exit 0
+    command -v rfkill >/dev/null 2>&1 && rfkill unblock bluetooth 2>/dev/null
+    secs="${2:-12}"
+    _agent_on
+    bluetoothctl discoverable on >/dev/null 2>&1
+    bluetoothctl --timeout "$secs" scan on >/dev/null 2>&1
+    # Secondo giro SOLO se serve davvero (non rallenta il caso gia risolto).
+    if [ "$(_unresolved_count)" -gt 0 ]; then
+      bluetoothctl --timeout 8 scan on >/dev/null 2>&1
+    fi
+    _list_devices
+    ;;
+  devices) _have || exit 0; _list_devices ;;
+  info)
+    # dettaglio di un device: righe key=value grezze da bluetoothctl info
+    [ -n "${2:-}" ] && _have && bluetoothctl info "$2" 2>/dev/null
+    ;;
+  connect)
+    # Connessione robusta: se il device NON e' ancora accoppiato, lo accoppiamo
+    # al volo (serve un AGENT attivo durante il pairing, altrimenti i device
+    # audio "Just Works" non completano e la connessione non avviene). Poi
+    # trust (riconnessione automatica) e infine connect.
+    [ -n "${2:-}" ] && _have || exit 0
+    mac="$2"
+    _agent_on
+    if ! bluetoothctl info "$mac" 2>/dev/null | grep -q "Paired: yes"; then
+      # 15s NON bastavano: con un telefono il pairing si completa solo dopo che
+      # l utente ha toccato "Abbina" sul dispositivo, e raggiungerlo richiede
+      # piu tempo del timeout -> il pairing veniva abortito a meta. 60s.
+      bluetoothctl discoverable on >/dev/null 2>&1
+      printf 'agent NoInputNoOutput\ndefault-agent\npair %s\n' "$mac" \
+        | bluetoothctl --timeout 60 >/dev/null 2>&1
+      bluetoothctl trust "$mac" >/dev/null 2>&1
+    fi
+    bluetoothctl connect "$mac" 2>&1
+    ;;
+  disconnect) [ -n "${2:-}" ] && _have && bluetoothctl disconnect "$2" 2>&1 ;;
+  pair)
+    # Pairing con agent auto-accept mantenuto vivo dalla sessione (--timeout):
+    # senza agent i device audio non completano il pairing. Poi trust + connect.
+    [ -n "${2:-}" ] && _have || exit 0
+    mac="$2"
+    _agent_on
+    # Visibile durante il pairing: senza, il telefono non trova il PC e
+    # l abbinamento avviato dal telefono non parte proprio.
+    bluetoothctl discoverable on >/dev/null 2>&1
+    # 60s: il tempo materiale di confermare sul telefono (vedi "connect").
+    printf 'agent NoInputNoOutput\ndefault-agent\npair %s\n' "$mac" \
+      | bluetoothctl --timeout 60 2>&1
+    bluetoothctl trust "$mac" >/dev/null 2>&1
+    bluetoothctl connect "$mac" >/dev/null 2>&1
+    ;;
+  trust)      [ -n "${2:-}" ] && _have && bluetoothctl trust "$2" 2>&1 ;;
+  untrust)    [ -n "${2:-}" ] && _have && bluetoothctl untrust "$2" 2>&1 ;;
+  remove)     [ -n "${2:-}" ] && _have && bluetoothctl remove "$2" 2>&1 ;;
+
+  send)
+    # Invia un file a un device via OBEX Object Push (bt-obex -> obexd).
+    # Il device dev'essere abbinato/raggiungibile. Uso: send MAC FILE
+    mac="$2"; file="$3"
+    [ -n "$mac" ] && [ -n "$file" ] || { echo "err-args"; exit 1; }
+    [ -f "$file" ] || { echo "err-nofile"; exit 1; }
+    echo "=== send \"$file\" -> $mac $(date) ===" >> "$OBEXLOG"
+    command -v bt-obex >/dev/null 2>&1 || { echo "err-noobex"; exit 1; }
+    [ -n "$OBEXD" ] || { echo "err-noobex"; echo "obexd assente" >> "$OBEXLOG"; exit 1; }
+    # stato del device nel log, per la diagnosi (abbinato/connesso/fidato).
+    echo "$(bluetoothctl info "$mac" 2>/dev/null \
+              | sed -n -e 's/^[[:space:]]*Name:/  Name:/p' \
+                       -e 's/^[[:space:]]*Alias:/  Alias:/p' \
+                       -e 's/^[[:space:]]*Paired:/  Paired:/p' \
+                       -e 's/^[[:space:]]*Connected:/  Connected:/p' \
+                       -e 's/^[[:space:]]*Trusted:/  Trusted:/p')" >> "$OBEXLOG"
+    # obexd attivo = prerequisito (activation D-Bus rotta su OpenRC).
+    _ensure_obexd "${XDG_DOWNLOAD_DIR:-$HOME/Scaricati}" \
+      || { echo "err-obexd"; echo "avvio obexd fallito" >> "$OBEXLOG"; exit 1; }
+    # bt-obex -p invia e attende il completamento. L'esito e' nel codice di uscita.
+    if bt-obex -p "$mac" "$file" >> "$OBEXLOG" 2>&1; then echo "ok"; else
+      echo "err-transfer"; exit 1; fi
+    ;;
+
+  receive)
+    # Server di RICEZIONE file: obexd (nativo) salva nella cartella indicata
+    # (default ~/Scaricati). Niente bt-obex -s (fragile e ridondante).
+    # Uso: receive on [DIR] | off | status
+    dir="${3:-${XDG_DOWNLOAD_DIR:-$HOME/Scaricati}}"
+    case "${2:-status}" in
+      on)
+        command -v bt-obex >/dev/null 2>&1 && [ -n "$OBEXD" ] || { echo "err-noobex"; exit 1; }
+        mkdir -p "$dir" 2>/dev/null
+        # root certa: riavvia obexd con la dir scelta (se gira gia' con un'altra).
+        pkill -x obexd 2>/dev/null; sleep 0.3
+        # accendi e rendi l'adattatore accettante E visibile (per ricevere il
+        # telefono deve vederti; discoverable serve anche ai device non abbinati).
+        bluetoothctl power on >/dev/null 2>&1
+        bluetoothctl agent NoInputNoOutput >/dev/null 2>&1
+        bluetoothctl default-agent >/dev/null 2>&1
+        bluetoothctl pairable on >/dev/null 2>&1
+        bluetoothctl discoverable on >/dev/null 2>&1
+        _ensure_obexd "$dir" && { echo "on $dir"; exit 0; }
+        echo "err-obexd"; echo "avvio obexd fallito (dir=$dir)" >> "$OBEXLOG"; exit 1
+        ;;
+      off) bluetoothctl discoverable off >/dev/null 2>&1; pkill -x obexd 2>/dev/null; echo "off" ;;
+      status)
+        disc=$(bluetoothctl show 2>/dev/null | sed -n 's/^[[:space:]]*Discoverable:[[:space:]]*//p' | head -1)
+        if pgrep -x obexd >/dev/null 2>&1 && [ "$disc" = "yes" ]; then echo "on"; else echo "off"; fi
+        ;;
+      *) echo "uso: receive {on [DIR]|off|status}" >&2; exit 2 ;;
+    esac
+    ;;
+
+  *) echo "uso: vesper-bluetooth {status|adapter|on|off|discoverable on|off|scan [sec]|devices|info MAC|connect MAC|disconnect MAC|pair MAC|trust MAC|untrust MAC|remove MAC|send MAC FILE|receive on [DIR]|off|status}" >&2; exit 2 ;;
+esac
+exit 0

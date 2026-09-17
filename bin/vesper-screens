@@ -1,0 +1,242 @@
+#!/bin/sh
+# SPDX-License-Identifier: AGPL-3.0-or-later
+# Copyright (C) 2026 Daniele Deplano (RedRider21). Parte di Vesper.
+# Vesper - gestione schermi via xrandr (per l'applet del pannello).
+#
+# Uso:
+#   vesper-screens outputs           "NOME<TAB>connected|disconnected<TAB>primary|-<TAB>WxH"
+#   vesper-screens modes NOME        risoluzioni disponibili per l'output
+#   vesper-screens mirror            duplica su tutti gli output connessi
+#   vesper-screens extend            estende (primario + altri a destra)
+#   vesper-screens only NOME         solo quell'output (gli altri spenti)
+#   vesper-screens mode NOME WxH     imposta risoluzione
+#   vesper-screens primary NOME      imposta output primario
+#   vesper-screens autostart         all'avvio: estende se sono connessi 2+ monitor
+#
+# xrandr agisce sulla sessione X dell'utente: nessun privilegio necessario.
+#
+# Dopo ogni cambio di disposizione il desktop si riassesta AL VOLO, senza
+# riavviare nulla:
+#   1) viene toccato il file di refresh (pannello e Centro di Controllo lo
+#      ascoltano e riposizionano barre e finestre sul monitor attivo);
+#   2) si riapplicano sfondo+accent (vesper-tool apply), come un cambio profilo.
+# Prima il cambio schermo lasciava barre e finestre sul monitor spento (xrandr
+# --off/--primary spesso NON scatena "monitors-changed" di GTK).
+
+LOG=/tmp/vesper-screens.log
+REFRESH="$HOME/.cache/vesper/screens-refresh"
+
+connected() { xrandr --query 2>/dev/null | awk '/ connected/{print $1}'; }
+primary_out() { xrandr --query 2>/dev/null | awk '/ connected primary/{print $1; exit}'; }
+# Risoluzione corrente di un output (es. 1920x1080) oppure vuota.
+cur_res() {
+  xrandr --query 2>/dev/null | awk -v o="$1" '
+    $1==o { for(i=1;i<=NF;i++) if($i ~ /^[0-9]+x[0-9]+\+/) { split($i,a,"+"); print a[1]; exit } }'
+}
+
+reload_desktop() {
+  mkdir -p "$(dirname "$REFRESH")" 2>/dev/null || true
+  : > "$REFRESH" 2>/dev/null || true
+  # Riapplica sfondo+accent: il desktop si riassesta sulla nuova disposizione.
+  command -v vesper-tool >/dev/null 2>&1 && vesper-tool apply >/dev/null 2>&1 &
+}
+
+# Estende il desktop: l'output attualmente primario resta primario, gli altri
+# si dispongono a destra. Un solo comando xrandr (atomico).
+extend_all() {
+  base=$(primary_out); [ -z "$base" ] && base=$(connected | head -1)
+  [ -n "$base" ] || return 1
+  prev="$base"
+  set -- --output "$base" --auto --primary
+  for o in $(connected); do
+    [ "$o" = "$prev" ] && continue
+    set -- "$@" --output "$o" --auto --right-of "$prev"
+    prev="$o"
+  done
+  xrandr "$@" 2>>"$LOG"
+  return 0
+}
+
+# Duplica su tutti gli output connessi (stessa risoluzione del primario, cosi'
+# su monitor con risoluzioni diverse il contenuto e' davvero lo stesso).
+mirror_all() {
+  base=$(primary_out); [ -z "$base" ] && base=$(connected | head -1)
+  [ -n "$base" ] || return 1
+  res=$(cur_res "$base")
+  if [ -n "$res" ]; then
+    set -- --output "$base" --mode "$res" --primary
+    for o in $(connected); do
+      [ "$o" = "$base" ] && continue
+      set -- "$@" --output "$o" --mode "$res" --same-as "$base"
+    done
+    xrandr "$@" 2>>"$LOG" && return 0
+    echo "mirror: risoluzione $res non supportata ovunque, ripiego su --auto" >> "$LOG"
+  fi
+  set -- --output "$base" --auto --primary
+  for o in $(connected); do
+    [ "$o" = "$base" ] && continue
+    set -- "$@" --output "$o" --auto --same-as "$base"
+  done
+  xrandr "$@" 2>>"$LOG"
+}
+
+# --- Policy e coperchio -----------------------------------------------------
+# Preferenza utente: duplica (default) o estendi. Il default e' "mirror" perche'
+# su una live avviata da chiavetta e collegata a un monitor/proiettore ci si
+# aspetta di vedere la stessa cosa sui due schermi.
+CONF="$HOME/.config/vesper/screens.conf"
+screen_policy() {
+  pol=mirror
+  [ -r "$CONF" ] && . "$CONF" 2>/dev/null
+  case "${NXS_SCREEN_POLICY:-$pol}" in
+    extend) echo extend ;;
+    *)      echo mirror ;;
+  esac
+}
+
+# Pannello LCD del portatile: eDP / LVDS / DSI (gli esterni sono HDMI/DP/VGA).
+internal_out() { connected | grep -iE '^(eDP|LVDS|DSI)' | head -1; }
+
+# Stato del coperchio via ACPI (open|closed|unknown). Nessun demone acpid:
+# leggiamo direttamente il file esposto dal kernel.
+lid_state() {
+  # Override per test/diagnostica (come NXS_PREFIX/NXS_STATE altrove).
+  [ -n "${NXS_LID_STATE:-}" ] && { echo "$NXS_LID_STATE"; return; }
+  for f in /proc/acpi/button/lid/*/state; do
+    [ -r "$f" ] || continue
+    awk '{print $NF}' "$f" 2>/dev/null | head -1
+    return
+  done
+  echo unknown
+}
+
+# Applica la disposizione giusta per la situazione CORRENTE (numero di monitor,
+# policy, coperchio). E' il cuore chiamato sia all'avvio sia dal watcher.
+apply_policy() {
+  n=$(connected | wc -l)
+  intern=$(internal_out)
+  lid=$(lid_state)
+
+  # Coperchio CHIUSO con un monitor esterno collegato: spegni il pannello
+  # interno e passa tutto sull'esterno. Senza questo il desktop restava steso
+  # su uno schermo spento e sull'esterno si vedeva solo una porzione, senza
+  # barra (era il sintomo "si vede solo una parte centrale").
+  if [ "$lid" = closed ] && [ -n "$intern" ] && [ "$n" -ge 2 ]; then
+    ext=$(connected | grep -vxF "$intern" | head -1)
+    if [ -n "$ext" ]; then
+      set -- --output "$ext" --auto --primary
+      for o in $(connected); do
+        [ "$o" = "$ext" ] && continue
+        set -- "$@" --output "$o" --off
+      done
+      xrandr "$@" 2>>"$LOG"
+      return 0
+    fi
+  fi
+
+  # Un solo schermo: assicurati che sia acceso e primario (un output connesso
+  # ma senza CRTC non viene disegnato da X: resta la splash del kernel).
+  if [ "$n" -lt 2 ]; then
+    one=$(connected | head -1)
+    [ -n "$one" ] && xrandr --output "$one" --auto --primary 2>>"$LOG"
+    return 0
+  fi
+
+  case "$(screen_policy)" in
+    extend) extend_all ;;
+    *)      mirror_all ;;
+  esac
+}
+
+case "${1:-}" in
+  outputs)
+    xrandr --query 2>/dev/null | awk '
+      / connected/ {
+        name=$1; prim=($3=="primary"||$4=="primary")?"primary":"-";
+        res="-";
+        for(i=3;i<=NF;i++) if($i ~ /^[0-9]+x[0-9]+\+/){split($i,a,"+"); res=a[1]; break}
+        print name"\tconnected\t"prim"\t"res
+      }
+      / disconnected/ { print $1"\tdisconnected\t-\t-" }'
+    ;;
+
+  modes)
+    xrandr --query 2>/dev/null | awk -v o="$2" '
+      $1==o {f=1; next}
+      / connected/||/ disconnected/ {f=0}
+      f && $1 ~ /^[0-9]+x[0-9]+$/ {print $1}'
+    ;;
+
+  mirror)
+    mirror_all || exit 1
+    reload_desktop
+    ;;
+
+  extend)
+    extend_all
+    reload_desktop
+    ;;
+
+  only)
+    keep="$2"; [ -n "$keep" ] || exit 1
+    set -- --output "$keep" --auto --primary
+    for o in $(connected); do
+      [ "$o" = "$keep" ] && continue
+      set -- "$@" --output "$o" --off
+    done
+    xrandr "$@" 2>>"$LOG"
+    reload_desktop
+    ;;
+
+  mode)
+    [ -n "$2" ] && [ -n "$3" ] || exit 1
+    xrandr --output "$2" --mode "$3" 2>>"$LOG"
+    reload_desktop
+    ;;
+
+  primary)
+    [ -n "$2" ] || exit 1
+    xrandr --output "$2" --primary 2>>"$LOG"
+    reload_desktop
+    ;;
+
+  autostart)
+    # All'avvio applica la disposizione secondo la policy (default: duplica).
+    # CRUCIALE: un output connesso ma senza CRTC non viene MAI disegnato da X e
+    # sul monitor esterno resta visibile la splash del kernel. Qui lo attiviamo.
+    # Nessun refresh: desktop/pannello partono dopo e si posizionano gia'
+    # sulla configurazione finale.
+    apply_policy
+    ;;
+
+  policy)
+    # Riapplica la disposizione corrente (usato dal watcher a ogni cambiamento).
+    apply_policy
+    reload_desktop
+    ;;
+
+  lid)
+    # Stampa lo stato del coperchio (open|closed|unknown) - diagnostica.
+    lid_state
+    ;;
+
+  get-policy)
+    # Stampa la policy corrente (mirror|extend) - usata dal Centro di Controllo.
+    screen_policy
+    ;;
+
+  set-policy)
+    # set-policy mirror|extend - salva la preferenza dell'utente.
+    case "${2:-}" in
+      mirror|extend)
+        mkdir -p "$(dirname "$CONF")" 2>/dev/null || true
+        printf 'NXS_SCREEN_POLICY=%s\n' "$2" > "$CONF"
+        apply_policy; reload_desktop ;;
+      *) echo "uso: vesper-screens set-policy {mirror|extend}" >&2; exit 2 ;;
+    esac
+    ;;
+
+  *)
+    echo "uso: vesper-screens {outputs|modes NOME|mirror|extend|only NOME|mode NOME WxH|primary NOME|autostart|policy|set-policy mirror|extend|lid}" >&2
+    exit 2 ;;
+esac

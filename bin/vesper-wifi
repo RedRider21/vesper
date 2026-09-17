@@ -1,0 +1,259 @@
+#!/bin/sh
+# SPDX-License-Identifier: AGPL-3.0-or-later
+# Copyright (C) 2026 Daniele Deplano (RedRider21). Parte di Vesper.
+# Vesper - gestione WiFi minima per il pannello (scan / connect / status)
+# via wpa_supplicant + wpa_cli. L'interfaccia si autorileva (wlan*/wl*).
+#
+# Uso:
+#   vesper-wifi iface            stampa l'interfaccia WiFi (vuoto se assente)
+#   vesper-wifi status           "connected <SSID>" | "disconnected" | "no-wifi"
+#   vesper-wifi scan             elenco reti: "SSID<TAB>segnale(dBm)<TAB>flags"
+#   vesper-wifi connect SSID      connette; la passphrase si legge da STDIN
+#                              (piu' sicuro: NON compare in `ps`). Rete aperta
+#                              = STDIN vuoto. Uso legacy: connect SSID PSK.
+#   vesper-wifi disconnect       disconnette
+#
+# Elevazione: nexus e' in wheel con 'permit nopass :wheel' (doas).
+priv() { if command -v doas >/dev/null 2>&1; then doas "$@"; \
+         elif command -v sudo >/dev/null 2>&1; then sudo "$@"; else "$@"; fi; }
+
+WPACONF=/etc/wpa_supplicant/wpa_supplicant.conf
+LOG=/tmp/vesper-wifi.log        # diagnostica connect (vedi: vesper-wifi debug)
+
+detect_iface() {
+  i=$(iw dev 2>/dev/null | awk '/Interface/{print $2; exit}')
+  [ -n "$i" ] || i=$(ls /sys/class/net 2>/dev/null | grep -E '^wl' | head -1)
+  echo "$i"
+}
+IFACE="${NXS_WIFI_IFACE:-$(detect_iface)}"
+
+ensure_up() {
+  [ -n "$IFACE" ] || return 1
+  priv rfkill unblock wifi 2>/dev/null
+  priv ip link set "$IFACE" up 2>/dev/null
+  # CAUSA A MONTE (verificata): senza "GROUP=" nella conf, wpa_supplicant crea
+  # /var/run/wpa_supplicant come drwxr-x--- root:root -> wpa_cli da UTENTE
+  # fallisce SEMPRE. Sintomo classico: la rete si aggancia davvero ma il
+  # pannello mostra "disconnesso" per sempre. Creiamo/ripariamo la conf con
+  # GROUP=wheel (nexus e in wheel) e chiamiamo wpa_cli SEMPRE via priv.
+  priv sh -c "mkdir -p /etc/wpa_supplicant
+    if [ ! -f '$WPACONF' ]; then
+      printf 'ctrl_interface=DIR=/var/run/wpa_supplicant GROUP=wheel\nupdate_config=1\n' > '$WPACONF'
+    elif ! grep -q '^ctrl_interface=.*GROUP=' '$WPACONF'; then
+      if grep -q '^ctrl_interface=' '$WPACONF'; then
+        sed -i 's|^ctrl_interface=.*|ctrl_interface=DIR=/var/run/wpa_supplicant GROUP=wheel|' '$WPACONF'
+      else
+        sed -i '1i ctrl_interface=DIR=/var/run/wpa_supplicant GROUP=wheel' '$WPACONF'
+      fi
+    fi" 2>/dev/null
+  # wpa_supplicant attivo? altrimenti avvialo.
+  if ! priv wpa_cli -i "$IFACE" ping >/dev/null 2>&1; then
+    priv wpa_supplicant -B -i "$IFACE" -c "$WPACONF" >/dev/null 2>&1
+    sleep 1
+  fi
+  return 0
+}
+
+# DHCP: dhcpcd (client robusto: applica IP/gateway/DNS e rinnova il lease).
+# Se assente o fallisce, ripiego su udhcpc di BusyBox con lo script standard
+# (senza lo script l IP verrebbe ottenuto ma NON applicato all interfaccia).
+# Estratta in funzione perche la usano sia "connect" sia "auto".
+got_ip() { ip -4 addr show "$IFACE" 2>/dev/null | grep -q 'inet '; }
+fai_dhcp() {
+  if command -v dhcpcd >/dev/null 2>&1; then
+    # -n: rinnova/riparte se gia attivo. dhcpcd va in background: attendiamo
+    # che l IP venga applicato (fino ~10s) prima di dichiarare fallimento.
+    priv dhcpcd -n "$IFACE" >> "$LOG" 2>&1 || true
+    k=0; while [ "$k" -lt 10 ] && ! got_ip; do sleep 1; k=$((k + 1)); done
+  fi
+  got_ip && return 0
+  SCRIPT=/usr/share/udhcpc/default.script
+  [ -x "$SCRIPT" ] || SCRIPT=/etc/udhcpc/default.script
+  j=0
+  while [ "$j" -lt 4 ]; do
+    if [ -x "$SCRIPT" ]; then
+      priv udhcpc -i "$IFACE" -n -q -t 5 -s "$SCRIPT" >> "$LOG" 2>&1 && break
+    else
+      priv udhcpc -i "$IFACE" -n -q -t 5 >> "$LOG" 2>&1 && break
+    fi
+    sleep 2; j=$((j + 1))
+  done
+}
+
+case "${1:-}" in
+  iface) echo "$IFACE" ;;
+
+  auto)
+    # RICONNESSIONE AUTOMATICA all avvio. Con la persistenza su NXSDATA la conf
+    # conserva TUTTE le reti gia usate: qui avviamo wpa_supplicant, che si
+    # aggancia da solo a quella in portata, e prendiamo l IP.
+    #
+    # Senza questo le reti restavano salvate ma NESSUNO le agganciava finche
+    # non si apriva l applet del WiFi a mano: wpa_supplicant non e in nessun
+    # runlevel e partiva solo su richiesta da vesper-wifi.
+    [ -n "$IFACE" ] || exit 0
+    grep -q "^network=" "$WPACONF" 2>/dev/null || exit 0   # nessuna rete salvata
+    ensure_up || exit 0
+    priv wpa_cli -i "$IFACE" enable_network all >/dev/null 2>&1
+    priv wpa_cli -i "$IFACE" reconnect >/dev/null 2>&1
+    echo "=== auto $(date) [iface=$IFACE] ===" >> "$LOG"
+    st=""; i=0
+    while [ "$i" -lt 25 ]; do
+      st=$(priv wpa_cli -i "$IFACE" status 2>/dev/null | sed -n 's/^wpa_state=//p')
+      [ "$st" = "COMPLETED" ] && break
+      sleep 1; i=$((i + 1))
+    done
+    if [ "$st" != "COMPLETED" ]; then
+      echo "  auto: nessuna rete conosciuta in portata (stato: $st)" >> "$LOG"
+      exit 0
+    fi
+    got_ip || fai_dhcp
+    ssid=$(priv wpa_cli -i "$IFACE" status 2>/dev/null | sed -n 's/^ssid=//p')
+    ip=$(ip -4 addr show "$IFACE" 2>/dev/null | sed -n 's/.*inet \([0-9.]*\).*/\1/p' | head -1)
+    echo "  auto: connesso a $ssid, IP=$ip" >> "$LOG"
+    ;;
+
+  status)
+    [ -n "$IFACE" ] || { echo "no-wifi"; exit 0; }
+    st=$(priv wpa_cli -i "$IFACE" status 2>/dev/null)
+    state=$(printf '%s\n' "$st" | sed -n 's/^wpa_state=//p')
+    ssid=$(printf '%s\n' "$st" | sed -n 's/^ssid=//p')
+    if [ "$state" = "COMPLETED" ] && [ -n "$ssid" ]; then
+      echo "connected $ssid"
+    else
+      echo "disconnected"
+    fi
+    ;;
+
+  scan)
+    ensure_up || { echo ""; exit 0; }
+    # Alla PRIMA apertura wpa_supplicant e' appena partito e i risultati non
+    # sono ancora pronti: il popup usciva vuoto e serviva riaprirlo. Riproviamo
+    # lo scan finche' arrivano reti (o si esaurisce il tempo), cosi' la prima
+    # apertura funziona come le successive.
+    results=""
+    i=0
+    while [ "$i" -lt 4 ]; do
+      priv wpa_cli -i "$IFACE" scan >/dev/null 2>&1
+      sleep 2
+      results=$(priv wpa_cli -i "$IFACE" scan_results 2>/dev/null)
+      # oltre la riga di intestazione = almeno una rete trovata
+      [ "$(printf '%s\n' "$results" | wc -l)" -gt 1 ] && break
+      i=$((i + 1))
+    done
+    # scan_results: bssid  freq  signal  flags  ssid
+    printf '%s\n' "$results" | awk '
+      NR>1 {
+        sig=$3; flags=$4; ssid="";
+        for (i=5;i<=NF;i++) ssid=ssid (i>5?" ":"") $i;
+        if (ssid=="") next;
+        key=ssid;
+        if (!(key in seen) || sig>bestsig[key]) { bestsig[key]=sig; bestflags[key]=flags; seen[key]=1 }
+      }
+      END { for (k in seen) print k "\t" bestsig[k] "\t" bestflags[k] }' \
+      | sort -t"	" -k2 -nr
+    ;;
+
+  connect)
+    ssid="$2"
+    # Sicurezza: la passphrase NON si passa come argomento (sarebbe visibile in
+    # `ps` a tutti i processi). Si legge da STDIN quando non e' un terminale
+    # (il pannello la invia via pipe). Uso legacy CLI: 3o argomento (sconsigliato).
+    if [ -n "${3:-}" ]; then
+      psk="$3"
+    elif [ ! -t 0 ]; then
+      psk="$(cat 2>/dev/null || true)"
+    else
+      psk=""
+    fi
+    ensure_up || { echo "err-noiface"; exit 1; }
+    [ -n "$ssid" ] || { echo "err-nossid"; exit 1; }
+    echo "=== connect \"$ssid\" $(date) [iface=$IFACE] ===" >> "$LOG"
+    # Portatile = tante reti (casa, ospiti, aziendali...). NON cancelliamo tutte
+    # le reti conosciute (servono al roaming e a non richiedere la password ogni
+    # volta): rimuoviamo SOLO gli eventuali duplicati di QUESTO stesso SSID, cosi'
+    # non resta agganciata una vecchia voce con password errata (sintomo classico:
+    # "non si connette" pur con password giusta). FS=TAB perche' l'SSID puo' avere
+    # spazi (list_networks: id \t ssid \t bssid \t flags).
+    for nid in $(priv wpa_cli -i "$IFACE" list_networks 2>/dev/null \
+                 | awk -F'\t' -v s="$ssid" 'NR>1 && $2==s {print $1}'); do
+      priv wpa_cli -i "$IFACE" remove_network "$nid" >/dev/null 2>&1
+    done
+    id=$(priv wpa_cli -i "$IFACE" add_network 2>/dev/null | tail -1)
+    priv wpa_cli -i "$IFACE" set_network "$id" ssid "\"$ssid\"" >/dev/null 2>&1
+    # scan_ssid=1: interroga attivamente l'SSID (serve alle reti che non
+    # rispondono ai probe broadcast e a volte alle guest). Innocuo altrove.
+    priv wpa_cli -i "$IFACE" set_network "$id" scan_ssid 1 >/dev/null 2>&1
+    if [ -n "$psk" ]; then
+      # Passphrase in CHIARO (quotata): compatibile con WPA2-PSK **e** WPA3-SAE.
+      # key_mgmt NON forzato: wpa_supplicant lo autonegozia dallo scan (forzarlo
+      # romperebbe su driver senza SAE). STDIN evita la password in `ps`.
+      priv wpa_cli -i "$IFACE" set_network "$id" psk "\"$psk\"" >/dev/null 2>&1
+      psk=""
+    else
+      priv wpa_cli -i "$IFACE" set_network "$id" key_mgmt NONE >/dev/null 2>&1
+    fi
+    priv wpa_cli -i "$IFACE" enable_network "$id" >/dev/null 2>&1
+    priv wpa_cli -i "$IFACE" select_network "$id" >/dev/null 2>&1
+    # ATTENDI l'associazione: prima si lanciava il DHCP dopo 3s fissi, spesso
+    # PRIMA che il 4-way handshake fosse finito -> nessun IP. Ora aspettiamo
+    # wpa_state=COMPLETED (fino a ~20s) e SOLO dopo facciamo il DHCP.
+    st=""; i=0
+    while [ "$i" -lt 20 ]; do
+      st=$(priv wpa_cli -i "$IFACE" status 2>/dev/null | sed -n 's/^wpa_state=//p')
+      echo "  [$i] wpa_state=$st" >> "$LOG"
+      [ "$st" = "COMPLETED" ] && break
+      sleep 1; i=$((i + 1))
+    done
+    if [ "$st" != "COMPLETED" ]; then
+      # 4WAY_HANDSHAKE che non completa = quasi sempre password errata; altri
+      # stati = fuori portata / rete assente.
+      echo "  ESITO: associazione FALLITA (ultimo stato: $st)" >> "$LOG"
+      case "$st" in
+        4WAY_HANDSHAKE|WPA_HANDSHAKE) echo "err-auth" ;;   # password probabilmente errata
+        *) echo "err-assoc" ;;
+      esac
+      exit 1
+    fi
+    # Riabilita TUTTE le reti conosciute (non solo questa): cosi' spostandosi il
+    # portatile puo' riconnettersi da solo a una rete gia' salvata senza reinserire
+    # la password (select_network aveva disabilitato le altre).
+    priv wpa_cli -i "$IFACE" enable_network all >/dev/null 2>&1
+    priv wpa_cli -i "$IFACE" save_config >/dev/null 2>&1
+    fai_dhcp
+    ip=$(ip -4 addr show "$IFACE" 2>/dev/null | sed -n 's/.*inet \([0-9.]*\).*/\1/p' | head -1)
+    echo "  ESITO: associato, IP=$ip" >> "$LOG"
+    if [ -n "$ip" ]; then echo "ok"; else echo "err-dhcp"; exit 1; fi
+    ;;
+
+  debug)
+    # Diagnostica per l'utente: interfaccia, radio (rfkill), firmware caricato,
+    # stato wpa, IP, reti viste, coda di log. Utile quando "il WiFi non va":
+    # spesso e' radio bloccata (rfkill) o firmware della scheda mancante.
+    echo "IFACE=${IFACE:-<nessuna>}"
+    echo "--- stato radio (rfkill) ---"
+    if command -v rfkill >/dev/null 2>&1; then priv rfkill list 2>/dev/null
+    else echo "  (rfkill non installato)"; fi
+    echo "--- firmware / driver (dmesg) ---"
+    dmesg 2>/dev/null | grep -iE 'firmware|iwlwifi|ath[0-9]|rtl[0-9]|rtw|mt76|brcm|cfg80211|ucode' \
+      | tail -12 || echo "  (dmesg non leggibile: prova con doas dmesg)"
+    [ -n "$IFACE" ] || { echo "(nessuna interfaccia WiFi rilevata: scheda assente o firmware non caricato)"; exit 0; }
+    echo "--- wpa_cli status ---"; priv wpa_cli -i "$IFACE" status 2>/dev/null
+    echo "--- key_mgmt supportati (SAE = WPA3) ---"
+    priv wpa_cli -i "$IFACE" get_capability key_mgmt 2>/dev/null
+    echo "--- indirizzo IP ---"; ip -4 addr show "$IFACE" 2>/dev/null | sed -n 's/^.*inet /  inet /p'
+    echo "--- client DHCP disponibili ---"
+    echo "  dhcpcd: $(command -v dhcpcd || echo assente)   udhcpc: $(command -v udhcpc || echo assente)"
+    echo "--- reti configurate ---"; priv wpa_cli -i "$IFACE" list_networks 2>/dev/null
+    echo "--- ultimo log connect ---"; tail -25 "$LOG" 2>/dev/null
+    ;;
+
+  disconnect)
+    [ -n "$IFACE" ] && priv wpa_cli -i "$IFACE" disconnect >/dev/null 2>&1
+    echo "ok"
+    ;;
+
+  *)
+    echo "uso: vesper-wifi {iface|status|scan|connect SSID [PSK]|auto|disconnect|debug}" >&2
+    exit 2 ;;
+esac

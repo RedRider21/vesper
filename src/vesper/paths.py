@@ -76,12 +76,25 @@ def _data_dirs() -> list[Path]:
     env = os.environ.get("VESPER_DATA_DIRS")
     if env:
         return [Path(p) for p in env.split(os.pathsep) if p]
-    dirs = [STATE_HOME, Path("/usr/local/share") / APP, Path("/usr/share") / APP]
+    dirs = [STATE_HOME]
+    # Installazione in un prefisso qualunque: se il pacchetto sta in
+    # <prefisso>/lib/vesper/vesper, i dati stanno in <prefisso>/share/vesper.
+    here = Path(__file__).resolve()
+    prefix_share = here.parent.parent.parent / "share" / APP
+    if prefix_share.is_dir():
+        dirs.append(prefix_share)
+    dirs += [Path("/usr/local/share") / APP, Path("/usr/share") / APP]
     # Avvio dal repo dei sorgenti: src/vesper/paths.py -> <repo>/data
-    repo_data = Path(__file__).resolve().parent.parent.parent / "data"
+    repo_data = here.parent.parent.parent / "data"
     if repo_data.is_dir():
         dirs.append(repo_data)
-    return dirs
+    # niente duplicati, ordine preservato
+    seen, out = set(), []
+    for d in dirs:
+        if d not in seen:
+            seen.add(d)
+            out.append(d)
+    return out
 
 
 DATA_DIRS = _data_dirs()

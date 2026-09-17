@@ -1,0 +1,92 @@
+#!/bin/sh
+# SPDX-License-Identifier: AGPL-3.0-or-later
+# Copyright (C) 2026 Daniele Deplano (RedRider21). Parte di Vesper.
+# vesper-wallpaper - sfondo del desktop (scelta indipendente dal preset).
+# La scelta sta in ~/.config/vesper/wallpaper e sopravvive al cambio preset;
+# "reset" torna allo sfondo del preset attivo.
+#
+#   vesper-wallpaper list            elenca gli sfondi di serie
+#   vesper-wallpaper get             mostra lo sfondo attuale
+#   vesper-wallpaper set <id|file>   imposta (id es. "viola", o un percorso)
+#   vesper-wallpaper mode <modo>     stretch | fit | center | tile
+#   vesper-wallpaper reset           torna allo sfondo del preset
+# --- ambiente comune (pacchetto Python, dati, interprete) ---
+_self=$(readlink -f "$0" 2>/dev/null || echo "$0"); _d=$(dirname "$_self")
+for _e in "$_d/env.sh" "$(dirname "$_d")/lib/vesper/env.sh" \
+          /usr/local/lib/vesper/env.sh /usr/lib/vesper/env.sh; do
+  [ -r "$_e" ] && { . "$_e"; break; }
+done
+[ -n "${VESPER_PY:-}" ] || { echo "vesper-wallpaper: python3 non disponibile" >&2; exit 1; }
+
+exec "$VESPER_PY" - "$@" <<'PY'
+import sys
+from pathlib import Path
+
+from vesper.profiles import model
+
+
+def resolve(arg: str):
+    """Da argomento a file: percorso diretto, oppure id/nome di uno sfondo
+    di serie (con o senza estensione)."""
+    p = Path(arg).expanduser()
+    if p.is_file():
+        return p
+    for d in model.wallpaper_dirs():
+        for cand in (arg, arg + ".png", arg + ".jpg"):
+            f = d / cand
+            if f.is_file():
+                return f
+    return None
+
+
+def do_list():
+    dirs = model.wallpaper_dirs()
+    if not dirs:
+        print("nessuna cartella di sfondi trovata")
+        return
+    cur = model.wallpaper_path()
+    for d in dirs:
+        print("%s:" % d)
+        for f in sorted(list(d.glob("*.png")) + list(d.glob("*.jpg"))):
+            mark = "*" if cur and f.samefile(cur) else " "
+            print("  %s %-12s %s" % (mark, f.stem, f))
+
+
+def main(argv):
+    cmd = argv[0] if argv else "get"
+    if cmd in ("list", "-l"):
+        do_list()
+    elif cmd == "get":
+        p = model.wallpaper_path()
+        print(p if p else "(nessuno)")
+        print("modo:", model.wallpaper_mode())
+    elif cmd == "set":
+        if len(argv) < 2:
+            print("uso: vesper-wallpaper set <id|percorso>", file=sys.stderr)
+            return 2
+        f = resolve(argv[1])
+        if f is None:
+            print("sfondo non trovato:", argv[1], file=sys.stderr)
+            return 1
+        model.set_wallpaper(f)
+        print("sfondo impostato:", f)
+    elif cmd == "mode":
+        if len(argv) < 2 or argv[1] not in model.WALLPAPER_MODES:
+            print("modi:", " ".join(model.WALLPAPER_MODES), file=sys.stderr)
+            return 2
+        model.set_wallpaper_mode(argv[1])
+        model.set_wallpaper(model.wallpaper_path(), remember=False)
+        print("modo impostato:", argv[1])
+    elif cmd == "reset":
+        model.set_wallpaper(None)                      # svuota la scelta manuale
+        model.set_wallpaper(model.wallpaper_path(), remember=False)
+        print("sfondo: torna a quello del preset")
+    else:
+        print("uso: vesper-wallpaper {list|get|set <id|file>|mode <modo>|reset}",
+              file=sys.stderr)
+        return 2
+    return 0
+
+
+raise SystemExit(main(sys.argv[1:]))
+PY

@@ -1,0 +1,79 @@
+#!/bin/sh
+# SPDX-License-Identifier: AGPL-3.0-or-later
+# Copyright (C) 2026 Daniele Deplano (RedRider21). Parte di Vesper.
+# vesper-audio - controllo volume/uscite E microfono/sorgenti via wpctl
+# (PipeWire + WirePlumber). Usato dal widget audio del pannello (vesper.panel).
+# Best-effort: se PipeWire non e' attivo stampa uno stato neutro senza errori.
+SINK="@DEFAULT_AUDIO_SINK@"
+SOURCE="@DEFAULT_AUDIO_SOURCE@"
+
+_have() { command -v wpctl >/dev/null 2>&1; }
+
+# stampa "<pct> <muted:0|1>" per un dato oggetto wpctl (sink o source)
+_getvol() {
+  line=$(wpctl get-volume "$1" 2>/dev/null) || { echo "0 1"; return; }
+  vol=$(echo "$line" | awk '{print $2}'); [ -n "$vol" ] || vol=0
+  pct=$(awk "BEGIN{printf \"%d\", ($vol)*100}")
+  if echo "$line" | grep -q MUTED; then m=1; else m=0; fi
+  echo "$pct $m"
+}
+
+# elenca gli oggetti di una sezione di `wpctl status` (Sinks: o Sources:)
+_list() {
+  _have || return 0
+  wpctl status 2>/dev/null | awk -v sect="$1" '
+    $0 ~ sect        {s=1; next}
+    /Sinks:|Sources:|Filters:|Streams:|Devices:/ {s=0}
+    s && match($0, /[0-9]+\./) {
+      def = ($0 ~ /\*/) ? "*" : ""
+      id  = substr($0, RSTART, RLENGTH-1)
+      rest = substr($0, RSTART+RLENGTH+1)
+      sub(/ *\[vol:.*/, "", rest)
+      gsub(/^[ \t]+|[ \t]+$/, "", rest)
+      if (id != "" && rest != "") printf "%s\t%s\t%s\n", id, rest, def
+    }'
+}
+
+case "${1:-get}" in
+  # ---- USCITA (sink) ----
+  get)  _have || { echo "0 1"; exit 0; }; _getvol "$SINK" ;;
+  set)  _have && wpctl set-volume "$SINK" "${2:-50}%" 2>/dev/null ;;
+  up)   _have && wpctl set-volume -l 1.5 "$SINK" 5%+ 2>/dev/null ;;
+  down) _have && wpctl set-volume "$SINK" 5%- 2>/dev/null ;;
+  mute) _have && wpctl set-mute "$SINK" toggle 2>/dev/null ;;
+  sinks) _list "Sinks:" ;;
+  default) [ -n "${2:-}" ] && _have && wpctl set-default "$2" 2>/dev/null ;;
+
+  # ---- MICROFONO (source) ----
+  mic-get)  _have || { echo "0 1"; exit 0; }; _getvol "$SOURCE" ;;
+  mic-set)  _have && wpctl set-volume "$SOURCE" "${2:-50}%" 2>/dev/null ;;
+  mic-up)   _have && wpctl set-volume -l 1.5 "$SOURCE" 5%+ 2>/dev/null ;;
+  mic-down) _have && wpctl set-volume "$SOURCE" 5%- 2>/dev/null ;;
+  mic-mute) _have && wpctl set-mute "$SOURCE" toggle 2>/dev/null ;;
+  sources)  _list "Sources:" ;;
+  mic-default) [ -n "${2:-}" ] && _have && wpctl set-default "$2" 2>/dev/null ;;
+  mic-inuse)
+    # Stampa 1 se un'app sta CATTURANDO dal microfono, 0 altrimenti. Serve
+    # all'applet del pannello per comparire ON-DEMAND (solo quando adoperato).
+    # Metodo preferito: pactl (via pipewire-pulse) elenca i "source-outputs",
+    # cioe' gli stream che stanno registrando -> segnale netto e affidabile.
+    # Fallback senza pactl: stato dei PCM di CATTURA in /proc/asound (suffisso
+    # 'c'), che passano a "state: RUNNING" quando il device e' aperto in lettura.
+    inuse=0
+    if command -v pactl >/dev/null 2>&1; then
+      n=$(pactl list short source-outputs 2>/dev/null | grep -c .)
+      case "$n" in ''|0) : ;; *) inuse=1 ;; esac
+    fi
+    if [ "$inuse" = 0 ]; then
+      for st in /proc/asound/card*/pcm*c/sub*/status; do
+        [ -f "$st" ] || continue
+        if grep -q "state: RUNNING" "$st" 2>/dev/null; then inuse=1; break; fi
+      done
+    fi
+    echo "$inuse" ;;
+
+  *) echo "uso: vesper-audio {get|set PCT|up|down|mute|sinks|default ID| \\
+             mic-get|mic-set PCT|mic-up|mic-down|mic-mute|sources|mic-default ID}" >&2
+     exit 2 ;;
+esac
+exit 0

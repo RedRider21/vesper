@@ -1,0 +1,66 @@
+#!/bin/sh
+# SPDX-License-Identifier: AGPL-3.0-or-later
+# Copyright (C) 2026 Daniele Deplano (RedRider21). Parte di Vesper.
+# vesper-lang - lingua dell'interfaccia di Vesper (it/en/fr/es/de).
+# La scelta e' salvata in ~/.config/vesper/lang e usata da pannello, Centro di
+# Controllo e app che chiamano vesper.i18n.t().
+#
+#   vesper-lang get              stampa la lingua attiva
+#   vesper-lang list             elenca i codici disponibili
+#   vesper-lang set <codice>     imposta la lingua e riavvia il pannello
+# --- ambiente comune (pacchetto Python, dati, interprete) ---
+_self=$(readlink -f "$0" 2>/dev/null || echo "$0"); _d=$(dirname "$_self")
+for _e in "$_d/env.sh" "$(dirname "$_d")/lib/vesper/env.sh" \
+          /usr/local/lib/vesper/env.sh /usr/lib/vesper/env.sh; do
+  [ -r "$_e" ] && { . "$_e"; break; }
+done
+
+set -eu
+
+case "${1:-get}" in
+  get)
+    "$VESPER_PY" -c 'from vesper import i18n; print(i18n.current_lang())'
+    ;;
+  list)
+    "$VESPER_PY" -c 'from vesper import i18n
+for c in i18n.LANGS: print(c, i18n.LANG_NAMES[c])'
+    ;;
+  set)
+    [ -n "${2:-}" ] || { echo "uso: vesper-lang set <it|en|fr|es|de>" >&2; exit 2; }
+    "$VESPER_PY" -c 'import sys; from vesper import i18n; sys.exit(0 if i18n.set_lang(sys.argv[1]) else 1)' "$2" \
+      || { echo "lingua non valida: $2 (usa: vesper-lang list)" >&2; exit 1; }
+    echo "lingua impostata: $2"
+    # Variabili di lingua per i processi che riavviamo (i Name[xx]/Comment[xx]
+    # dei file .desktop si risolvono tramite LANGUAGE).
+    case "$2" in
+      en) LC=en_US ;; fr) LC=fr_FR ;; es) LC=es_ES ;; de) LC=de_DE ;; *) LC=it_IT ;;
+    esac
+    export LANGUAGE="$2" LANG="${LC}.UTF-8"
+    # 1) Demone "caldo" (vesper.launcherd): e' RESIDENTE e ha importato i moduli
+    #    (e la lingua) al boot -> Centro di Controllo, viste e selettore profili
+    #    resterebbero nella vecchia lingua. Va RIAVVIATO perche' riparta pulito.
+    if command -v vesper-launcherd >/dev/null 2>&1; then
+      pkill -f vesper.launcherd 2>/dev/null || true
+      sleep 1
+      setsid vesper-launcherd >/tmp/vesper-launcherd.log 2>&1 &
+    fi
+    # 2) Pannello. pkill DIRETTO (si auto-esclude) e rilancio da launcher separato
+    #    il cui argv NON contiene 'vesper.panel'.
+    if command -v vesper-panel >/dev/null 2>&1; then
+      pkill -f vesper.panel 2>/dev/null || true
+      sleep 1
+      setsid vesper-panel >/dev/null 2>&1 &
+    fi
+    # 3) Icone del desktop: i nomi Name[xx] dei .desktop si leggono all'avvio
+    #    (da LANGUAGE), quindi il desktop va riavviato perche' le etichette
+    #    cambino SUBITO. pkill DIRETTO (si auto-esclude) + rilancio separato.
+    if command -v vesper-files >/dev/null 2>&1 && [ -n "${DISPLAY:-}" ]; then
+      pkill -f "vesper-files.*--desktop" 2>/dev/null || true
+      sleep 1
+      setsid vesper-files --desktop >/dev/null 2>&1 &
+    fi
+    ;;
+  *)
+    echo "uso: vesper-lang {get|list|set <codice>}" >&2; exit 2
+    ;;
+esac

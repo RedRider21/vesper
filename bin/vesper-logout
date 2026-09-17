@@ -1,0 +1,110 @@
+#!/usr/bin/env python3
+# SPDX-License-Identifier: AGPL-3.0-or-later
+# Copyright (C) 2026 Daniele Deplano (RedRider21). Parte di Vesper.
+"""vesper-logout - dialogo di fine sessione (blocca / esci / riavvia / spegni).
+
+Finestra centrata e coerente col tema del desktop, con quattro azioni a icona
+grande. Esc o "Annulla" per chiudere. Lo richiamano il menu del pannello e il
+menu del tasto destro sul desktop.
+"""
+import subprocess
+import sys
+
+import gi
+gi.require_version("Gtk", "3.0")
+from gi.repository import Gtk, Gdk  # noqa: E402
+
+# Tema di Vesper, se raggiungibile: dialogo coerente col resto del desktop.
+try:
+    from vesper.common import apply_css
+    apply_css()
+except Exception:                     # noqa: BLE001
+    pass
+
+try:
+    from vesper.i18n import t as _t
+except Exception:                     # noqa: BLE001
+    def _t(key, **kw):
+        return key
+
+
+ACTIONS = [
+    ("system-lock-screen-symbolic", "session.lock", "Blocca",
+     ["vesper-screensaver"]),
+    ("system-log-out-symbolic", "session.logout", "Esci",
+     ["openbox", "--exit"]),
+    ("system-reboot-symbolic", "session.reboot", "Riavvia",
+     ["vesper-shutdown", "reboot"]),
+    ("system-shutdown-symbolic", "session.poweroff", "Spegni",
+     ["vesper-shutdown", "poweroff"]),
+]
+
+
+def label_for(key: str, fallback: str) -> str:
+    s = _t(key)
+    return fallback if s == key else s
+
+
+def _run(cmd, win):
+    win.destroy()
+    try:
+        subprocess.Popen(cmd, stdout=subprocess.DEVNULL,
+                         stderr=subprocess.DEVNULL, start_new_session=True)
+    except OSError as e:
+        print("vesper-logout:", e, file=sys.stderr)
+    Gtk.main_quit()
+
+
+def main():
+    win = Gtk.Window(type=Gtk.WindowType.TOPLEVEL)
+    win.set_title("Vesper")
+    win.set_decorated(False)
+    win.set_position(Gtk.WindowPosition.CENTER_ALWAYS)
+    win.set_keep_above(True)
+    win.set_skip_taskbar_hint(True)
+    win.set_resizable(False)
+    win.get_style_context().add_class("vesper-popup")
+    win.connect("destroy", Gtk.main_quit)
+    win.connect("key-press-event",
+                lambda _w, ev: win.destroy() if ev.keyval == Gdk.KEY_Escape else None)
+
+    outer = Gtk.Box(orientation=Gtk.Orientation.VERTICAL, spacing=14)
+    outer.set_border_width(22)
+    win.add(outer)
+
+    title = Gtk.Label()
+    title.set_markup("<b>%s</b>" % label_for("session.title", "Termina sessione"))
+    title.set_xalign(0.5)
+    outer.pack_start(title, False, False, 0)
+
+    row = Gtk.Box(orientation=Gtk.Orientation.HORIZONTAL, spacing=14)
+    row.set_halign(Gtk.Align.CENTER)
+    outer.pack_start(row, True, True, 0)
+
+    for icon, key, fallback, cmd in ACTIONS:
+        b = Gtk.Button()
+        b.get_style_context().add_class("vesper-menu-item")
+        bb = Gtk.Box(orientation=Gtk.Orientation.VERTICAL, spacing=8)
+        bb.set_margin_top(10)
+        bb.set_margin_bottom(10)
+        bb.set_margin_start(14)
+        bb.set_margin_end(14)
+        bb.pack_start(Gtk.Image.new_from_icon_name(icon, Gtk.IconSize.DIALOG),
+                      False, False, 0)
+        bb.pack_start(Gtk.Label(label=label_for(key, fallback)), False, False, 0)
+        b.add(bb)
+        b.connect("clicked", lambda _w, c=cmd: _run(c, win))
+        row.pack_start(b, False, False, 0)
+
+    cancel = Gtk.Button(label=label_for("session.cancel", "Annulla (Esc)"))
+    cancel.get_style_context().add_class("vesper-menu-item")
+    cancel.connect("clicked", lambda _w: win.destroy())
+    outer.pack_end(cancel, False, False, 0)
+
+    win.show_all()
+    win.present()
+    Gtk.main()
+
+
+if __name__ == "__main__":
+    main()

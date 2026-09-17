@@ -1,0 +1,14 @@
+[Desktop Entry]
+Type=Application
+Name=File manager
+Name[en]=Files
+Comment=Gestione file di Vesper
+Comment[en]=Vesper file manager
+Exec=vesper-files %U
+TryExec=vesper-files
+Icon=system-file-manager
+Terminal=false
+Categories=System;FileTools;FileManager;GTK;
+MimeType=inode/directory;
+Keywords=vesper;file;cartelle;folders;
+StartupNotify=true

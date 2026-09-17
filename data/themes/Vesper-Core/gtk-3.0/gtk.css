@@ -1,0 +1,12 @@
+/* Vesper-Core - tema GTK3: importa Adwaita scuro e ridefinisce gli accenti in
+   cyan. Cosi' e' completo senza riscrivere ogni widget. I componenti di Vesper
+   (pannello, Centro di Controllo) caricano comunque il proprio CSS. */
+@import url("resource:///org/gtk/libgtk/theme/Adwaita/gtk-contained-dark.css");
+
+@define-color theme_selected_bg_color #00334a;
+@define-color theme_selected_fg_color #00e5ff;
+@define-color accent_color #00e5ff;
+@define-color accent_bg_color #00334a;
+
+* { outline-color: #00e5ff; }
+selection { background-color: #00334a; color: #00e5ff; }

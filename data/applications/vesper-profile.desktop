@@ -1,0 +1,13 @@
+[Desktop Entry]
+Type=Application
+Name=Aspetto di Vesper
+Name[en]=Vesper appearance
+Comment=Preset di aspetto: colore d'accento, sfondo, icone
+Comment[en]=Appearance presets: accent colour, wallpaper, icons
+Exec=vesper-profile
+TryExec=vesper-profile
+Icon=vesper-logo
+Terminal=false
+Categories=Settings;DesktopSettings;GTK;
+Keywords=vesper;tema;theme;colore;sfondo;
+StartupNotify=true

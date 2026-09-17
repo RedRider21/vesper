@@ -1,0 +1,56 @@
+#!/bin/sh
+# SPDX-License-Identifier: AGPL-3.0-or-later
+# Copyright (C) 2026 Daniele Deplano (RedRider21). Parte di Vesper.
+# Vesper - imposta ora/data/fuso orario di sistema dal pannello, senza aprire
+# il Centro di Controllo. Usato da vesper/panel/panel.py (clic sull'orologio).
+#
+# Uso:
+#   vesper-datetime set-datetime "YYYY-MM-DD HH:MM:SS"   imposta data+ora
+#   vesper-datetime set-tz "Area/Citta"                  imposta il fuso orario
+#   vesper-datetime get-tz                               stampa il fuso corrente
+#
+# Elevazione: nexus e' in 'wheel' con 'permit nopass :wheel' (doas), quindi le
+# operazioni privilegiate passano da priv() senza password (come vesper-shutdown).
+priv() { if command -v doas >/dev/null 2>&1; then doas "$@"; \
+         elif command -v sudo >/dev/null 2>&1; then sudo "$@"; else "$@"; fi; }
+
+case "${1:-}" in
+  set-datetime)
+    DT="$2"
+    [ -n "$DT" ] || { echo "manca data/ora (YYYY-MM-DD HH:MM:SS)" >&2; exit 2; }
+    # busybox date: -D FORMATO per interpretare la stringa; se non regge (es.
+    # coreutils installato) si ripiega su 'date -s' diretto (GNU accetta ISO).
+    priv sh -c '
+      if date -D "%Y-%m-%d %H:%M:%S" -s "$1" >/dev/null 2>&1; then :
+      elif date -s "$1" >/dev/null 2>&1; then :
+      else echo "impossibile impostare data/ora" >&2; exit 1; fi
+      # Persisti nel RTC (best-effort): busybox usa -w, non fallire se assente.
+      command -v hwclock >/dev/null 2>&1 && hwclock -w >/dev/null 2>&1 || true
+    ' _ "$DT"
+    ;;
+  set-tz)
+    TZN="$2"
+    [ -n "$TZN" ] || { echo "manca il fuso (es. Europe/Rome)" >&2; exit 2; }
+    if [ ! -e "/usr/share/zoneinfo/$TZN" ]; then
+      echo "fuso non trovato: $TZN (tzdata installato?)" >&2; exit 1
+    fi
+    priv sh -c '
+      ln -sf "/usr/share/zoneinfo/$1" /etc/localtime
+      printf "%s\n" "$1" > /etc/timezone
+    ' _ "$TZN"
+    ;;
+  get-tz)
+    if [ -f /etc/timezone ]; then
+      cat /etc/timezone
+    elif [ -L /etc/localtime ]; then
+      # /etc/localtime -> /usr/share/zoneinfo/Area/Citta : stampa "Area/Citta".
+      readlink /etc/localtime | sed 's#.*/zoneinfo/##'
+    else
+      echo "UTC"
+    fi
+    ;;
+  *)
+    echo "uso: vesper-datetime {set-datetime \"YYYY-MM-DD HH:MM:SS\"|set-tz Area/Citta|get-tz}" >&2
+    exit 2
+    ;;
+esac

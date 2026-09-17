@@ -31,6 +31,7 @@ from gi.repository import Gtk, Gdk, GLib, GdkPixbuf, Pango  # noqa: E402
 from vesper.common import (apply_css, have, run_bg,      # noqa: E402
                            install_screens_refresh_monitor)
 from vesper import panelcfg  # noqa: E402
+from vesper.desktopentry import scan_desktop_apps, launch as launch_app  # noqa: E402
 
 # i18n condiviso (it/en/fr/es/de). Soft-import: se assente, _t restituisce la
 # chiave (l'interfaccia non va mai in crash per una traduzione mancante).
@@ -209,101 +210,6 @@ def _icon_button(icon_name, tooltip, css_class="vesper-icon"):
     b.set_image(_tray_img(icon_name))
     b.set_always_show_image(True)
     return b
-
-
-_FIELD_RE = re.compile(r'%[fFuUdDnNickvm]')
-
-
-def _parse_exec(exec_str):
-    """Exec di un .desktop -> argv, togliendo i codici di campo freedesktop
-    (%f %F %u %U %i %c %k ...) che non si passano al lancio diretto."""
-    cleaned = _FIELD_RE.sub("", exec_str).strip()
-    try:
-        return shlex.split(cleaned)
-    except ValueError:
-        return cleaned.split()
-
-
-def _read_desktop(path):
-    """Parsa la sola sezione [Desktop Entry] di un file .desktop -> dict."""
-    entry = {}
-    in_main = False
-    try:
-        with open(path, encoding="utf-8", errors="replace") as f:
-            for line in f:
-                line = line.rstrip("\n")
-                if line.startswith("["):
-                    in_main = (line.strip() == "[Desktop Entry]")
-                    continue
-                if not in_main or line.startswith("#") or "=" not in line:
-                    continue
-                k, _, v = line.partition("=")
-                entry[k.strip()] = v.strip()
-    except OSError:
-        return None
-    return entry
-
-
-def scan_desktop_apps():
-    """App installate (freedesktop): scansiona ~/.local/share/applications e le
-    directory di $XDG_DATA_DIRS (default /usr/local/share:/usr/share). Salta le
-    voci NoDisplay/Hidden e i non-Application. Le dir utente vincono su quelle di
-    sistema (dedup per nome-file). Ritorna lista ordinata per nome."""
-    home = os.path.expanduser("~")
-    xdg_data_home = os.environ.get("XDG_DATA_HOME") or os.path.join(home, ".local/share")
-    dirs = [os.path.join(xdg_data_home, "applications")]
-    xdg_dirs = os.environ.get("XDG_DATA_DIRS") or "/usr/local/share:/usr/share"
-    dirs += [os.path.join(d, "applications") for d in xdg_dirs.split(":") if d]
-
-    seen_files = set()
-    apps = {}
-    for d in dirs:
-        try:
-            names = os.listdir(d)
-        except OSError:
-            continue
-        for fn in names:
-            if not fn.endswith(".desktop") or fn in seen_files:
-                continue
-            seen_files.add(fn)                      # dir utente (prima) ha priorita'
-            e = _read_desktop(os.path.join(d, fn))
-            if not e or e.get("Type") != "Application" or not e.get("Exec"):
-                continue
-            if e.get("NoDisplay", "").lower() == "true":
-                continue
-            if e.get("Hidden", "").lower() == "true":
-                continue
-            argv = _parse_exec(e["Exec"])
-            if not argv:
-                continue
-            # OnlyShowIn/NotShowIn: rispettiamo la scelta dell'app. Vesper si
-            # presenta come "Vesper" in XDG_CURRENT_DESKTOP; accettiamo anche
-            # le voci pensate per un DE generico basato su Openbox.
-            envs = {"VESPER", "OPENBOX"}
-            only = {v.strip().upper() for v in
-                    (e.get("OnlyShowIn") or "").split(";") if v.strip()}
-            nots = {v.strip().upper() for v in
-                    (e.get("NotShowIn") or "").split(";") if v.strip()}
-            if only and not (only & envs):
-                continue
-            if nots & envs:
-                continue
-            # Nome nella lingua dell'interfaccia, se il .desktop la ha
-            # (prima era fissato all'italiano: le altre lingue perdevano le
-            # traduzioni fornite dalle app).
-            name = (e.get("Name[%s]" % _LANG) or e.get("Name")
-                    or fn[:-8])
-            apps[name] = {
-                "name": name,
-                "argv": argv,
-                "icon": e.get("Icon", "application-x-executable"),
-                "terminal": e.get("Terminal", "").lower() == "true",
-                # Categories serve a raggruppare le voci nel menu (vedi
-                # app_category): senza, tutto finirebbe in "Altre".
-                "categories": e.get("Categories", ""),
-                "comment": e.get("Comment[it]") or e.get("Comment", ""),
-            }
-    return sorted(apps.values(), key=lambda a: a["name"].lower())
 
 
 def _app_image(icon, px=22):
@@ -1235,11 +1141,12 @@ class Panel(Gtk.Window):
         footer.get_style_context().add_class("vesper-startmenu-footer")
         footer.pack_start(Gtk.Separator(orientation=Gtk.Orientation.HORIZONTAL),
                           False, False, 0)
-        # Un'unica voce che apre il dialogo di sessione (vesper-session:
+        # Un'unica voce che apre il dialogo di fine sessione (vesper-logout:
         # Blocca/Esci/Riavvia/Spegni), coerente col menu del desktop.
+        # NB: vesper-session AVVIA la sessione, non la chiude: non va qui.
         for icon, label, cmd, mv, conf in [
             ("system-shutdown-symbolic", _t("menu.session"),
-             ["vesper-session"], None, None),
+             ["vesper-logout"], None, None),
         ]:
             footer.pack_start(self._menu_item("menu", icon, label, cmd, mv, conf),
                               False, False, 0)
@@ -1269,15 +1176,9 @@ class Panel(Gtk.Window):
             run_bg(["wmctrl", "-k", "on"])
 
     def _launch_desktop(self, app):
-        """Lancia un'app .desktop: in terminale se Terminal=true, altrimenti
-        diretta. Il terminale NON è fissato a un programma preciso: lo decide
-        `vesper-terminal`, che sceglie il primo emulatore disponibile (così il
-        menu funziona su qualsiasi distro)."""
-        argv = app["argv"]
-        if app.get("terminal"):
-            run_bg(["vesper-terminal", "-e"] + argv)
-        else:
-            run_bg(argv)
+        """Lancia un'app .desktop (vedi vesper.desktopentry.launch): in
+        terminale se Terminal=true, altrimenti diretta."""
+        launch_app(app)
 
     # --- helper comando con output ---
     def _run_out(self, cmd, timeout=20):

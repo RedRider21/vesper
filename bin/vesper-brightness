@@ -1,0 +1,64 @@
+#!/bin/sh
+# SPDX-License-Identifier: AGPL-3.0-or-later
+# Copyright (C) 2026 Daniele Deplano (RedRider21). Parte di Vesper.
+# Vesper - controllo luminosita' schermo.
+#
+# Due strade, scelte in automatico:
+#   HARDWARE (portatile): se esiste un backlight in /sys/class/backlight usa
+#     `brightnessctl` (con fallback doas se i permessi udev non bastano).
+#   SOFTWARE (VM / schermi senza backlight): usa `xrandr --brightness`, che
+#     agisce sul gamma della sessione X (nessun privilegio) su TUTTI gli output
+#     connessi. Lo stato software e' persistito in ~/.config/vesper/brightness.
+#
+# Uso: vesper-brightness up|down|set <0.1..1.5 | 0..100%> ; passo default 10%.
+# Pensato per i tasti Fn del portatile (XF86MonBrightness*) e per un pulsante.
+
+STEP="${2:-10}"                       # percentuale (hw) o *100 (sw)
+STATE_DIR="$HOME/.config/vesper"
+STATE="$STATE_DIR/brightness"
+SW_MIN=0.20; SW_MAX=1.50              # limiti software (evita nero totale)
+
+have_backlight() { [ -n "$(ls -A /sys/class/backlight 2>/dev/null)" ]; }
+
+bctl() {
+  if command -v brightnessctl >/dev/null 2>&1; then
+    brightnessctl -q "$@" 2>/dev/null || doas brightnessctl -q "$@" 2>/dev/null
+  fi
+}
+
+# --- software (xrandr) -------------------------------------------------------
+sw_outputs() { xrandr --query 2>/dev/null | awk '/ connected/{print $1}'; }
+sw_get() { [ -f "$STATE" ] && cat "$STATE" 2>/dev/null || echo "1.0"; }
+sw_clamp() { awk -v v="$1" -v a="$SW_MIN" -v b="$SW_MAX" \
+  'BEGIN{ if(v<a)v=a; if(v>b)v=b; printf "%.2f", v }'; }
+sw_apply() {
+  cur="$(sw_clamp "$1")"
+  mkdir -p "$STATE_DIR"; echo "$cur" > "$STATE"
+  for o in $(sw_outputs); do xrandr --output "$o" --brightness "$cur" 2>/dev/null; done
+  echo "$cur"
+}
+sw_delta() {
+  # STEP e' in "percento": 10 => 0.10
+  d="$(awk -v s="$STEP" -v sign="$1" 'BEGIN{ printf "%.2f", sign*(s/100.0) }')"
+  new="$(awk -v c="$(sw_get)" -v d="$d" 'BEGIN{ printf "%.2f", c+d }')"
+  sw_apply "$new"
+}
+
+case "$1" in
+  up)
+    if have_backlight; then bctl set "+${STEP}%"; else sw_delta 1; fi ;;
+  down)
+    if have_backlight; then bctl set "${STEP}%-"; else sw_delta -1; fi ;;
+  set)
+    if have_backlight; then
+      case "$STEP" in *%) bctl set "$STEP" ;; *) bctl set "${STEP}%" ;; esac
+    else
+      # set software: accetta 0..100 (percento) o 0.x (frazione)
+      v="$(awk -v s="$STEP" 'BEGIN{ if(s>1.5) printf "%.2f", s/100.0; else printf "%.2f", s }')"
+      sw_apply "$v"
+    fi ;;
+  get)
+    if have_backlight; then bctl get; else sw_get; fi ;;
+  *)
+    echo "uso: vesper-brightness up|down|set <valore>|get [passo%]" >&2; exit 2 ;;
+esac

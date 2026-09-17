@@ -1,0 +1,39 @@
+#!/bin/sh
+# SPDX-License-Identifier: AGPL-3.0-or-later
+# Copyright (C) 2026 Daniele Deplano (RedRider21). Parte di Vesper.
+# vesper-nightlight - filtro luce blu (night-light) via gamma xrandr.
+#
+# Riduce le componenti blu/verde della gamma su TUTTE le uscite connesse, per
+# affaticare meno la vista. Nessuna dipendenza extra (xrandr gia' presente).
+#
+# NB onesto: la correzione gamma e' applicata dal DRIVER. Su hardware reale
+# funziona; su alcune GPU VIRTUALI (VM) il driver la ignora -> il filtro "non fa
+# nulla" (nessun danno). NON usiamo un overlay traslucido perche' senza
+# compositore attivo (frequente in VM) diventerebbe OPACO e coprirebbe lo schermo.
+#
+# Uso: vesper-nightlight on|off|toggle|status|restore
+set -eu
+
+STATE="${XDG_CONFIG_HOME:-$HOME/.config}/vesper/nightlight"
+WARM="1.0:0.85:0.70"     # gamma calda (meno blu/verde)
+NEUTRAL="1.0:1.0:1.0"
+
+_outputs() { xrandr --query 2>/dev/null | awk '/ connected/{print $1}'; }
+
+_apply() {  # $1 = gamma
+  for o in $(_outputs); do
+    xrandr --output "$o" --gamma "$1" 2>/dev/null || true
+  done
+}
+
+_is_on() { [ -f "$STATE" ] && [ "$(cat "$STATE" 2>/dev/null)" = "on" ]; }
+_save() { mkdir -p "$(dirname "$STATE")"; printf '%s\n' "$1" > "$STATE"; }
+
+case "${1:-status}" in
+  on)      _apply "$WARM";    _save on;  echo "night-light: ON" ;;
+  off)     _apply "$NEUTRAL"; _save off; echo "night-light: OFF" ;;
+  toggle)  if _is_on; then "$0" off; else "$0" on; fi ;;
+  status)  _is_on && echo on || echo off ;;
+  restore) _is_on && _apply "$WARM" || true ;;
+  *) echo "uso: vesper-nightlight {on|off|toggle|status|restore}" >&2; exit 2 ;;
+esac

@@ -1,0 +1,117 @@
+#!/bin/sh
+# SPDX-License-Identifier: AGPL-3.0-or-later
+# Copyright (C) 2026 Daniele Deplano (RedRider21). Parte di Vesper.
+#
+# vesper-session - avvia la sessione desktop Vesper.
+# È l'Exec del file /usr/share/xsessions/vesper.desktop: lo esegue il display
+# manager (LightDM, SDDM, GDM, ...) quando si scegle "Vesper" al login. Si può
+# anche lanciare a mano da .xinitrc con `exec vesper-session`.
+#
+# Cosa fa, in ordine:
+#   1. prepara l'ambiente (percorsi, XDG_CURRENT_DESKTOP=Vesper, D-Bus);
+#   2. al primo avvio crea la configurazione utente in ~/.config/vesper
+#      (rc.xml e menu del window manager) SENZA toccare un'eventuale
+#      configurazione Openbox già esistente dell'utente;
+#   3. applica il preset di aspetto (accent, sfondo, icone);
+#   4. avvia i componenti: desktop (sfondo+icone), pannello, servizi;
+#   5. esegue l'autostart XDG (~/.config/autostart, /etc/xdg/autostart);
+#   6. passa il controllo al window manager (Openbox) in primo piano: quando
+#      questo esce, la sessione termina.
+set -u
+
+# --- ambiente comune (pacchetto Python, dati, interprete) ---
+_self=$(readlink -f "$0" 2>/dev/null || echo "$0"); _d=$(dirname "$_self")
+for _e in "$_d/env.sh" "$(dirname "$_d")/lib/vesper/env.sh" \
+          /usr/local/lib/vesper/env.sh /usr/lib/vesper/env.sh; do
+  [ -r "$_e" ] && { . "$_e"; break; }
+done
+
+# Siamo NOI la sessione: qui l'identificazione del desktop si impone.
+XDG_CURRENT_DESKTOP=Vesper
+XDG_SESSION_DESKTOP=vesper
+export XDG_CURRENT_DESKTOP XDG_SESSION_DESKTOP
+
+CONF="${XDG_CONFIG_HOME:-$HOME/.config}/vesper"
+CACHE="${XDG_CACHE_HOME:-$HOME/.cache}/vesper"
+mkdir -p "$CONF" "$CACHE" 2>/dev/null || true
+LOG="$CACHE/session.log"
+
+# Bus di SESSIONE: serve alle notifiche, al Bluetooth (obexd) e a molte app.
+# Se non c'è, ci riavviamo dentro dbus-run-session (una volta sola: la guardia
+# VESPER_DBUS evita il loop).
+if [ -z "${DBUS_SESSION_BUS_ADDRESS:-}" ] && [ -z "${VESPER_DBUS:-}" ] \
+   && command -v dbus-run-session >/dev/null 2>&1; then
+  VESPER_DBUS=1
+  export VESPER_DBUS
+  exec dbus-run-session -- "$0" "$@"
+fi
+
+exec >>"$LOG" 2>&1
+echo "=== sessione Vesper avviata $(date) ==="
+
+# --- 2. configurazione del window manager, solo se manca -------------------
+# Vesper tiene il PROPRIO rc.xml in ~/.config/vesper e avvia Openbox con
+# --config-file: così non tocca ~/.config/openbox, e chi usa Openbox "nudo"
+# in un'altra sessione se lo ritrova intatto.
+RC="$CONF/openbox-rc.xml"
+MENU="$CONF/openbox-menu.xml"
+for d in ${VESPER_DATA_DIRS:-} /usr/local/share/vesper /usr/share/vesper; do
+  [ -d "$d/skel/openbox" ] || continue
+  [ -f "$RC" ]   || cp "$d/skel/openbox/rc.xml" "$RC" 2>/dev/null
+  [ -f "$MENU" ] || cp "$d/skel/openbox/openbox-menu.xml" "$MENU" 2>/dev/null
+  break
+done
+# Tutti i componenti che modificano rc.xml (margini del pannello, editor
+# scorciatoie, tema finestre) devono scrivere QUESTO file.
+[ -f "$RC" ] && { VESPER_RC_XML="$RC"; export VESPER_RC_XML; }
+
+# Layout di tastiera, se l'utente ne ha scelto uno (~/.config/vesper/keyboard).
+if [ -r "$CONF/keyboard" ] && command -v setxkbmap >/dev/null 2>&1; then
+  setxkbmap $(head -1 "$CONF/keyboard") 2>/dev/null || true
+fi
+
+# --- 3. aspetto: accent, sfondo, tema icone del preset attivo --------------
+command -v vesper-profile >/dev/null 2>&1 && vesper-profile apply || true
+
+# --- 4. componenti del desktop ---------------------------------------------
+# Schermi: normalizza la disposizione PRIMA di disegnare qualcosa.
+command -v vesper-screens >/dev/null 2>&1 && vesper-screens autostart || true
+
+# Desktop (sfondo + icone) e pannello.
+command -v vesper-files >/dev/null 2>&1 && vesper-files --desktop &
+command -v vesper-panel >/dev/null 2>&1 && vesper-panel &
+
+# Servizi di corredo, tutti best-effort: se mancano, la sessione parte comunque.
+command -v vesper-audio-unmute >/dev/null 2>&1 && (sleep 2; vesper-audio-unmute) &
+command -v vesper-clipboard >/dev/null 2>&1 && (sleep 1; vesper-clipboard daemon) &
+command -v vesper-nightlight >/dev/null 2>&1 && (sleep 2; vesper-nightlight restore) &
+# Demone notifiche: senza, notify-send è un no-op. Si prende il primo presente.
+for n in dunst mako xfce4-notifyd; do
+  command -v "$n" >/dev/null 2>&1 && { "$n" & break; }
+done
+# Agente PolicyKit: prompt grafici per i privilegi (installarne uno è opzionale).
+for pk in lxpolkit lxqt-policykit-agent polkit-mate-authentication-agent-1 \
+          polkit-gnome-authentication-agent-1 /usr/lib/policykit-1-gnome/polkit-gnome-authentication-agent-1; do
+  command -v "$pk" >/dev/null 2>&1 && { "$pk" & break; }
+done
+# Composizione (angoli/trasparenze): la accende il preset se serve, qui no.
+
+# Integrazione con le macchine virtuali (mouse e ridimensionamento automatico).
+command -v VBoxClient-all >/dev/null 2>&1 && VBoxClient-all 2>/dev/null &
+command -v spice-vdagent >/dev/null 2>&1 && spice-vdagent 2>/dev/null &
+
+# --- 5. autostart XDG (le app che l'utente/la distro voglione all'avvio) ----
+command -v vesper-autostart >/dev/null 2>&1 && (sleep 2; vesper-autostart) &
+
+# --- 6. window manager in primo piano: la sessione vive quanto lui ---------
+if ! command -v openbox >/dev/null 2>&1; then
+  echo "vesper-session: openbox non installato: la sessione non può partire" >&2
+  command -v xmessage >/dev/null 2>&1 && \
+    xmessage -center "Vesper richiede Openbox come gestore finestre.
+Installa il pacchetto 'openbox' e riprova." 2>/dev/null
+  exit 1
+fi
+if [ -f "$RC" ]; then
+  exec openbox --config-file "$RC"
+fi
+exec openbox

@@ -1,0 +1,196 @@
+#!/bin/sh
+# SPDX-License-Identifier: AGPL-3.0-or-later
+# Copyright (C) 2026 Daniele Deplano (RedRider21). Parte di Vesper.
+# vesper-battery - stato alimentazione da /sys/class/power_supply (nessuna dipendenza).
+# Usato dall'applet del pannello.
+#   vesper-battery status  -> "nobattery" | "ac-only" | "<pct>\t<stato>\t<ac 0|1>"
+#                          stato: charging|discharging|full|notcharging|unknown
+#   vesper-battery info    -> righe key=value con tutti i dettagli disponibili
+PS=/sys/class/power_supply
+
+_read() { [ -f "$1" ] && cat "$1" 2>/dev/null || echo ""; }
+
+# trova la prima batteria e il primo alimentatore AC
+_find_bat() {
+  for d in "$PS"/*; do
+    [ -d "$d" ] || continue
+    t="$(_read "$d/type")"
+    [ "$t" = "Battery" ] && { echo "$d"; return; }
+  done
+}
+_ac_online() {
+  for d in "$PS"/*; do
+    [ -d "$d" ] || continue
+    t="$(_read "$d/type")"
+    case "$t" in Mains|USB|USB_PD|USB_PD_DRP|USB_C)
+      [ "$(_read "$d/online")" = "1" ] && { echo 1; return; } ;;
+    esac
+  done
+  echo 0
+}
+_have_ac() {
+  for d in "$PS"/*; do
+    [ -d "$d" ] || continue
+    case "$(_read "$d/type")" in Mains|USB|USB_PD|USB_PD_DRP|USB_C) echo 1; return ;; esac
+  done
+  echo 0
+}
+
+# percentuale: usa 'capacity' se c'e', altrimenti energy_now/full o charge_now/full
+_pct() {
+  b="$1"
+  cap="$(_read "$b/capacity")"
+  if [ -n "$cap" ]; then echo "$cap"; return; fi
+  en="$(_read "$b/energy_now")"; ef="$(_read "$b/energy_full")"
+  [ -z "$en" ] && { en="$(_read "$b/charge_now")"; ef="$(_read "$b/charge_full")"; }
+  if [ -n "$en" ] && [ -n "$ef" ] && [ "$ef" -gt 0 ] 2>/dev/null; then
+    echo $(( en * 100 / ef )); return
+  fi
+  echo ""
+}
+
+# stato normalizzato
+_state() {
+  s="$(_read "$1/status")"
+  case "$s" in
+    Charging) echo charging ;;
+    Discharging) echo discharging ;;
+    Full) echo full ;;
+    "Not charging") echo notcharging ;;
+    *) echo unknown ;;
+  esac
+}
+
+# AC "effettivo": alimentatore Mains/USB online OPPURE dedotto dallo stato
+# batteria. Molte VM (VirtualBox/QEMU/UTM) NON espongono un device Mains, ma lo
+# stato della batteria e' comunque affidabile: se e' charging/full/notcharging
+# il portatile e' per forza attaccato alla corrente (una batteria "piena" o
+# "non in carica" non puo' esserlo a spina staccata: sarebbe "discharging").
+# Arg $1 = stato normalizzato della batteria (per evitare di rileggerlo).
+_ac_effective() {
+  [ "$(_ac_online)" = "1" ] && { echo 1; return; }
+  case "$1" in charging|full|notcharging) echo 1; return ;; esac
+  echo 0
+}
+
+# --- trend della percentuale (memoria fra chiamate) --------------------------
+# Serve a capire se la batteria si sta davvero RIEMPIENDO. Su VirtualBox lo
+# stato resta "Not charging" e il tasso (power_now/current_now) e' esposto ma
+# vale 0 anche mentre ricarica: l'UNICO segnale affidabile e' la percentuale che
+# cresce. Confrontiamo la lettura attuale con quella precedente salvata in un
+# file. "sticky": una volta vista salire, resta "charging" finche' non scende o
+# lo stato grezzo diventa esplicito (Full/Discharging) -> cosi' non lampeggia fra
+# un incremento e l'altro. Il portatile reale fermo a soglia (% stabile) NON
+# scatta mai: resta correttamente "non in carica".
+_TREND_F="/tmp/vesper-battery.$(id -u 2>/dev/null || echo 0).trend"
+_trend_get() { [ -f "$_TREND_F" ] && { read -r _p _t < "$_TREND_F" 2>/dev/null; echo "$_t"; }; }
+_trend_clear() { rm -f "$_TREND_F" 2>/dev/null; }
+_trend_update() {          # arg1=pct -> stampa up|down|flat e aggiorna il file
+  cur="$1"; prev=""; ptrend=""
+  [ -f "$_TREND_F" ] && read -r prev ptrend < "$_TREND_F" 2>/dev/null
+  res=flat; newtrend="$ptrend"
+  if [ -n "$prev" ] && [ "$cur" -gt "$prev" ] 2>/dev/null; then
+    res=up; newtrend=charging
+  elif [ -n "$prev" ] && [ "$cur" -lt "$prev" ] 2>/dev/null; then
+    res=down; newtrend=
+  fi
+  printf '%s %s\n' "$cur" "$newtrend" > "$_TREND_F" 2>/dev/null
+  echo "$res"
+}
+
+# Stato "mostrato": corregge VM/EC che non espongono lo stato "Charging".
+# arg1=stato grezzo  arg2=ac(0|1)  arg3=pct  arg4=dir batteria
+_disp_state() {
+  raw="$1"; ac="$2"; pct="$3"; bat="$4"
+  # Stati espliciti dell'ACPI: fidati e azzera il trend.
+  case "$raw" in
+    charging|discharging|full) _trend_clear; echo "$raw"; return ;;
+  esac
+  # notcharging/unknown = caso ambiguo.
+  # 1) tasso di carica esplicito e POSITIVO = sicuramente in carica (HW reale).
+  for f in power_now current_now; do
+    v="$(_read "$bat/$f")"
+    if [ -n "$v" ] && [ "$v" -gt 0 ] 2>/dev/null; then _trend_clear; echo charging; return; fi
+  done
+  # 2) niente segnale certo (VirtualBox: tasso 0): guarda il TREND della %.
+  if [ "$ac" = "1" ]; then
+    case "$(_trend_update "${pct:-0}")" in
+      up) echo charging; return ;;
+      flat) [ "$(_trend_get)" = "charging" ] && { echo charging; return; } ;;
+    esac
+  else
+    _trend_clear
+  fi
+  echo "$raw"
+}
+
+BAT="$(_find_bat)"
+
+case "${1:-status}" in
+  status)
+    if [ -z "$BAT" ]; then
+      [ "$(_have_ac)" = "1" ] && echo "ac-only" || echo "nobattery"
+      exit 0
+    fi
+    pct="$(_pct "$BAT")"; [ -z "$pct" ] && pct=0
+    raw="$(_state "$BAT")"
+    ac="$(_ac_effective "$raw")"
+    st="$(_disp_state "$raw" "$ac" "$pct" "$BAT")"
+    printf '%s\t%s\t%s\n' "$pct" "$st" "$ac"
+    ;;
+  info)
+    if [ -z "$BAT" ]; then
+      echo "ac=$(_ac_online)"
+      echo "battery=0"
+      exit 0
+    fi
+    raw="$(_state "$BAT")"
+    ac="$(_ac_effective "$raw")"
+    echo "ac=$ac"
+    echo "battery=1"
+    pct="$(_pct "$BAT")"
+    echo "percent=${pct:-0}"
+    st="$(_disp_state "$raw" "$ac" "${pct:-0}" "$BAT")"
+    echo "state=$st"
+    # energie/cariche in unita' native (uWh o uAh)
+    en="$(_read "$BAT/energy_now")"; ef="$(_read "$BAT/energy_full")"
+    efd="$(_read "$BAT/energy_full_design")"; pw="$(_read "$BAT/power_now")"
+    vn="$(_read "$BAT/voltage_now")"
+    if [ -z "$en" ]; then
+      # sistemi charge_* (uAh): converti a energia con la tensione
+      cn="$(_read "$BAT/charge_now")"; cf="$(_read "$BAT/charge_full")"
+      cfd="$(_read "$BAT/charge_full_design")"; cur="$(_read "$BAT/current_now")"
+      if [ -n "$vn" ] && [ "$vn" -gt 0 ] 2>/dev/null; then
+        [ -n "$cn" ] && en=$(( cn * vn / 1000000 ))
+        [ -n "$cf" ] && ef=$(( cf * vn / 1000000 ))
+        [ -n "$cfd" ] && efd=$(( cfd * vn / 1000000 ))
+        [ -n "$cur" ] && pw=$(( cur * vn / 1000000 ))
+      fi
+    fi
+    # potenza in W (una cifra decimale) e tensione in V
+    if [ -n "$pw" ] && [ "$pw" -gt 0 ] 2>/dev/null; then
+      echo "power_w=$(( pw / 100000 ))"     # decimi di W (es. 78 = 7.8 W)
+    fi
+    [ -n "$vn" ] && [ "$vn" -gt 0 ] 2>/dev/null && echo "voltage_mv=$(( vn / 1000 ))"
+    # salute = energy_full / energy_full_design
+    if [ -n "$ef" ] && [ -n "$efd" ] && [ "$efd" -gt 0 ] 2>/dev/null; then
+      echo "health=$(( ef * 100 / efd ))"
+    fi
+    # tempo residuo (minuti): carica o scarica (usa lo stato mostrato, $st)
+    if [ -n "$pw" ] && [ "$pw" -gt 0 ] 2>/dev/null; then
+      if [ "$st" = "discharging" ] && [ -n "$en" ]; then
+        echo "eta_min=$(( en * 60 / pw ))"
+      elif [ "$st" = "charging" ] && [ -n "$en" ] && [ -n "$ef" ]; then
+        rem=$(( ef - en )); [ "$rem" -lt 0 ] && rem=0
+        echo "eta_min=$(( rem * 60 / pw ))"
+      fi
+    fi
+    cyc="$(_read "$BAT/cycle_count")"; [ -n "$cyc" ] && [ "$cyc" -gt 0 ] 2>/dev/null && echo "cycles=$cyc"
+    tech="$(_read "$BAT/technology")"; [ -n "$tech" ] && echo "technology=$tech"
+    man="$(_read "$BAT/manufacturer")"; [ -n "$man" ] && echo "manufacturer=$man"
+    mod="$(_read "$BAT/model_name")"; [ -n "$mod" ] && echo "model=$mod"
+    lvl="$(_read "$BAT/capacity_level")"; [ -n "$lvl" ] && echo "level=$lvl"
+    ;;
+  *) echo "uso: vesper-battery {status|info}" >&2; exit 2 ;;
+esac
+exit 0

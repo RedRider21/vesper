@@ -1,0 +1,35 @@
+#!/bin/sh
+# SPDX-License-Identifier: AGPL-3.0-or-later
+# Copyright (C) 2026 Daniele Deplano (RedRider21). Parte di Vesper.
+# vesper-terminal - apre l'emulatore di terminale disponibile.
+#
+# Vesper non impone un terminale: prova quello scelto dall'utente
+# (~/.config/vesper/terminal o $TERMINAL), poi i più diffusi, infine xterm
+# intonato al tema. Con "-e CMD ..." esegue un comando nel terminale.
+CONF="${XDG_CONFIG_HOME:-$HOME/.config}/vesper/terminal"
+[ -r "$CONF" ] && PREF=$(head -1 "$CONF" | tr -d '\n')
+CANDIDATI="${PREF:-} ${TERMINAL:-} x-terminal-emulator alacritty kitty foot
+           lxterminal xfce4-terminal mate-terminal gnome-terminal konsole
+           sakura st urxvt uxterm xterm"
+
+# Con -e: il modo di passare il comando cambia da terminale a terminale.
+if [ "${1:-}" = "-e" ]; then
+  shift
+  [ $# -gt 0 ] || { echo "vesper-terminal -e: manca il comando" >&2; exit 2; }
+  for t in $CANDIDATI; do
+    command -v "$t" >/dev/null 2>&1 || continue
+    case "$t" in
+      gnome-terminal) exec "$t" -- "$@" ;;
+      konsole|alacritty|kitty|foot|st|urxvt|uxterm|xterm) exec "$t" -e "$@" ;;
+      *) exec "$t" -e "$*" ;;          # lxterminal/xfce4/mate: comando in UNA stringa
+    esac
+  done
+  echo "vesper-terminal: nessun emulatore di terminale trovato" >&2
+  exit 1
+fi
+
+for t in $CANDIDATI; do
+  command -v "$t" >/dev/null 2>&1 && exec "$t"
+done
+echo "vesper-terminal: nessun emulatore di terminale trovato" >&2
+exit 1

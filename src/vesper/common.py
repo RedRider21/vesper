@@ -283,9 +283,14 @@ calendar.vesper-calendar:indeterminate { color: #5a8a9a; }
 
 /* Applet monitor risorse (mini-grafici CPU/RAM/Rete) */
 .vesper-loadmon { padding: 0 2px; margin: 2px 1px; }
+
+/* Etichette di stato nei popup (es. rete connessa, servizio attivo) */
+label.vesper-ok { color: #4be38a; font-size: 9pt; }
+label.vesper-attn { color: #e5b34b; font-size: 9pt; }
 """
 
 _css_done = False
+_icon_paths_done = False
 
 
 # Accent del preset attivo: CSS opzionale generato da vesper.profiles
@@ -308,10 +313,33 @@ _paneltheme_mon = None
 _paneltheme_reloading = False
 
 
+def install_icon_paths() -> None:
+    """Rende trovabili le icone di Vesper (il marchio, i temi icone dei
+    preset) anche quando il DE gira dai sorgenti o è installato in un prefisso
+    non standard: aggiunge le nostre cartelle al percorso di ricerca di GTK.
+    Inerte se già fatto o se non c'è uno schermo."""
+    global _icon_paths_done
+    if _icon_paths_done:
+        return
+    try:
+        theme = Gtk.IconTheme.get_default()
+    except Exception:                    # noqa: BLE001
+        return
+    if theme is None:
+        return
+    for d in paths.data_dirs("icons"):
+        try:
+            theme.append_search_path(str(d))
+        except Exception:                # noqa: BLE001
+            pass
+    _icon_paths_done = True
+
+
 def apply_css() -> None:
     global _css_done
     if _css_done:
         return
+    install_icon_paths()
     prov = Gtk.CssProvider()
     # Difensivo: un errore nel CSS NON deve mai far crashare il pannello/le app
     # (in GTK3 load_from_data SOLLEVA su CSS non valido). Se fallisce, l'app

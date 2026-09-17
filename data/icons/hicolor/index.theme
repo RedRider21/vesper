@@ -1,0 +1,11 @@
+[Icon Theme]
+Name=Hicolor
+Comment=Icone di Vesper (si innestano nel tema hicolor di sistema)
+Directories=scalable/apps
+
+[scalable/apps]
+Size=48
+MinSize=16
+MaxSize=512
+Context=Applications
+Type=Scalable

@@ -1,0 +1,20 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!-- Marchio di Vesper: la stella della sera sopra l'orizzonte.
+     Griglia 64x64, tutto in currentColor + opacita': la stessa figura fa da
+     icona simbolica nel pannello e da logo grande. -->
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 64 64" width="64" height="64">
+  <g fill="currentColor" stroke="none">
+    <!-- cielo della sera: un arco appena accennato, non un disco pieno -->
+    <circle cx="32" cy="27" r="24" fill="none" stroke="currentColor"
+            stroke-width="1.2" opacity="0.30"/>
+    <circle cx="32" cy="27" r="24" opacity="0.05"/>
+    <!-- stella della sera: quattro punte a lati concavi -->
+    <path d="M32 4 Q34.6 23 50 27 Q34.6 31 32 50 Q29.4 31 14 27 Q29.4 23 32 4 Z"/>
+    <!-- stella compagna, piccola, in alto a destra -->
+    <path d="M49 10 Q49.9 14.6 54 15.5 Q49.9 16.4 49 21 Q48.1 16.4 44 15.5 Q48.1 14.6 49 10 Z"
+          opacity="0.70"/>
+    <!-- orizzonte: due filetti sottili, il secondo tenue (foschia della sera) -->
+    <rect x="11" y="55" width="42" height="2" rx="1"/>
+    <rect x="22" y="59.5" width="20" height="1.6" rx="0.8" opacity="0.40"/>
+  </g>
+</svg>

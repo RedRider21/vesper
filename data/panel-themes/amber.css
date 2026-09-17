@@ -1,0 +1,74 @@
+/* name: Retro Amber */
+/* Vesper - skin colore pannello (auto-generato da tools/make-panel-themes.py).
+   Palette FISSA: ignora l'accent del preset. NON modificare a mano. */
+.vesper-panel { background-color:#140d00; border-top:1px solid #4a3600; }
+.vesper-panel.vesper-panel-top { border-top:none; border-bottom:1px solid #4a3600; }
+.vesper-panel button { color:#ffb000; }
+.vesper-panel button:hover { background-color:rgba(255,176,0,0.14); border-color:#4a3600; }
+.vesper-panel button:active { background-color:rgba(255,176,0,0.24); }
+.vesper-panel button image { color:#ffb000; }
+.vesper-panel button.vesper-icon:hover image { color:#ffb000; }
+.vesper-panel button.vesper-menu { color:#ffb000; }
+.vesper-panel button.vesper-menu image { color:#ffb000; }
+.vesper-panel button.vesper-launcher image { color:#ffb000; }
+.vesper-panel button.vesper-task { color:#a06f00; }
+.vesper-panel button.vesper-task:hover { color:#ffb000; }
+.vesper-panel button.vesper-task-active { color:#ffb000; background-color:rgba(255,176,0,0.14); border-color:#4a3600; }
+.vesper-panel button.vesper-pager-btn { color:#a06f00; border-color:#4a3600; }
+.vesper-panel button.vesper-pager-btn:hover { color:#ffb000; }
+.vesper-panel button.vesper-pager-active { color:#140d00; background-color:#ffb000; border-color:#ffb000; }
+.vesper-panel label.vesper-clock { color:#ffb000; }
+.vesper-panel label.vesper-clock-date { color:#a06f00; }
+.vesper-panel separator { background-color:#4a3600; }
+.vesper-popup, .vesper-popup.background { background-color:#1c1400; border:1px solid #4a3600; }
+menu, .menu, menu.background { background-color:#1c1400; color:#ffb000; border:1px solid #4a3600; }
+menu menuitem { color:#ffb000; }
+menu menuitem:hover { background-color:rgba(255,176,0,0.14); }
+popover.vesper-startmenu, popover.vesper-startmenu.background { background-color:#1c1400; border:1px solid #4a3600; }
+popover.vesper-startmenu > arrow { background-color:#2a1e00; border:1px solid #4a3600; }
+.vesper-menu-strip { background-image: linear-gradient(to top, #0a0700, #2a1e00 45%, #ffb000); border-right:1px solid #4a3600; }
+.vesper-menu-strip label.brand { color:#ffd27f; }
+.vesper-menu-strip label.brand-sub { color:#ffd27f; }
+.vesper-startmenu-list button.vesper-menu-item { color:#ffb000; }
+/* Colore del TESTO di TUTTE le voci menu (lista E footer esci/riavvia/spegni):
+   il CSS base forza le label a un colore chiaro (button.vesper-menu-item label),
+   che sulla skin "Chiaro" sparirebbe sul fondo bianco. Sovrascriviamo con lo
+   stesso selettore (stessa specificita', ma priorita' skin piu' alta). */
+button.vesper-menu-item label { color:#ffb000; }
+.vesper-startmenu-list button.vesper-menu-item:hover { background-color:rgba(255,176,0,0.14); }
+.vesper-startmenu-list button.vesper-menu-item:hover label { color:#ffb000; }
+/* TUTTE le icone del menu start seguono la skin (righe app, categorie,
+   e il FOOTER esci/riavvia/spegni). NB: il menu e' una Gtk.Window (classe
+   .vesper-popup) col contenuto in .vesper-startmenu, NON un elemento <popover>:
+   quindi i selettori DEVONO essere per-CLASSE (element-agnostici), altrimenti
+   il footer e altre parti restano col colore dell'accent del profilo. */
+.vesper-startmenu button image,
+.vesper-startmenu-list button image,
+.vesper-startmenu-footer button image,
+.vesper-popup button image { color:#ffb000; }
+.vesper-startmenu-list label { color:#ffb000; }
+button.vesper-menu-cat, label.vesper-menu-cat { color:#a06f00; }
+button.vesper-menu-cat:hover { color:#ffb000; border-left-color:#ffb000; }
+button.vesper-app-item { color:#ffb000; }
+button.vesper-app-item:hover { background-color:rgba(255,176,0,0.14); }
+button.vesper-app-item:hover label { color:#ffb000; }
+entry.vesper-menu-search { background-color:#1c1400; color:#ffb000; border:1px solid #4a3600; }
+entry.vesper-menu-search image { color:#a06f00; }
+entry.vesper-menu-search:focus { border-color:#ffb000; }
+/* --- CONTENUTO dei POPUP dei widget del pannello (wifi/audio/batteria/
+   bluetooth/calendario/schermi) --- Questi popup sono finestre
+   .vesper-popup: il loro TESTO usa i colori del tema SCURO base (label chiare,
+   valori chiari, accenti ciano) che sulle skin CHIARE spariscono. Qui lo
+   adeguiamo alla palette della skin. NB: le voci del menu start (anch'esse in
+   .vesper-popup) hanno regole piu' specifiche che restano valide. */
+.vesper-popup { color:#ffb000; }
+.vesper-popup label { color:#ffb000; }
+.vesper-popup .vesper-val { color:#ffb000; }
+.vesper-popup .vesper-key, .vesper-popup .vesper-card-title, .vesper-popup .vesper-eyebrow { color:#ffb000; }
+.vesper-popup .vesper-headerbar label.title { color:#ffb000; }
+.vesper-popup .vesper-headerbar label.subtitle { color:#a06f00; }
+.vesper-popup .vesper-dt-row label { color:#a06f00; }
+.vesper-popup calendar { color:#ffb000; }
+.vesper-popup calendar.header, .vesper-popup calendar.button,
+.vesper-popup calendar.highlight { color:#ffb000; }
+.vesper-popup calendar:indeterminate { color:#a06f00; }

@@ -1,0 +1,41 @@
+# ~/.config/vesper/shrc - prompt della shell di Vesper, commutabile.
+# Sorgiato dalle shell interattive: bash via ~/.bashrc, busybox ash via $ENV
+# (esportato in ~/.profile, quindi ereditato da X, pannello e terminali). Lo
+# stile e' in ~/.config/vesper/prompt (default | parrot | plain) e si cambia con
+# "vesper-prompt set <stile>": apri un NUOVO terminale per vederlo.
+
+# Agisci solo sulle shell INTERATTIVE (l'$ENV di ash viene letto anche da
+# script non interattivi: la' non tocchiamo il prompt).
+case "$-" in
+  *i*) ;;
+  *) return 0 2>/dev/null || exit 0 ;;
+esac
+
+_vesper_pstyle=default
+if [ -r "$HOME/.config/vesper/prompt" ]; then
+  _vesper_pstyle=$(cat "$HOME/.config/vesper/prompt" 2>/dev/null)
+fi
+
+# Utente e host li calcoliamo UNA volta e li incorporiamo nel PS1: alcune
+# versioni di busybox espandono male \u/\h nel prompt. La cartella (\w) resta
+# dinamica (funziona sia in bash sia in busybox). \[ \] marcano le sequenze a
+# larghezza zero (bash le usa per il ritorno a capo; busybox le tollera).
+_vesper_u="${USER:-$(id -un 2>/dev/null || echo user)}"
+_vesper_h="$(hostname 2>/dev/null || echo host)"
+
+case "$_vesper_pstyle" in
+  parrot)
+    # Stile Parrot/Kali a due righe. Box-drawing UTF-8 (terminale UTF-8).
+    PS1="\[\033[1;34m\]┌──[\[\033[1;32m\]${_vesper_u}@${_vesper_h}\[\033[1;34m\]]─[\[\033[1;37m\]\w\[\033[1;34m\]]
+└──╼\[\033[0m\] "
+    ;;
+  plain)
+    PS1="${_vesper_u}@${_vesper_h}:\w\\$ "
+    ;;
+  *)
+    # default: una riga con l'accento di Vesper.
+    PS1="\[\033[1;36m\]${_vesper_u}\[\033[0m\]@\[\033[1;34m\]${_vesper_h}\[\033[0m\]:\[\033[1;35m\]\w\[\033[0m\]\\$ "
+    ;;
+esac
+unset _vesper_pstyle _vesper_u _vesper_h
+export PS1

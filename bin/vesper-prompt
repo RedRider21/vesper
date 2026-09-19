@@ -1,0 +1,32 @@
+#!/bin/sh
+# SPDX-License-Identifier: AGPL-3.0-or-later
+# Copyright (C) 2026 Daniele Deplano (RedRider21). Parte di Vesper.
+# vesper-prompt - stile del prompt del terminale, commutabile.
+# La scelta e' salvata in ~/.config/vesper/prompt e letta da ~/.config/vesper/shrc
+# (bash via ~/.bashrc, ash via $ENV). Ha effetto sui NUOVI terminali.
+#
+#   vesper-prompt get                 stampa lo stile attivo
+#   vesper-prompt list                elenca gli stili
+#   vesper-prompt set <stile>         default | parrot | plain
+set -eu
+CONF="$HOME/.config/vesper/prompt"
+
+case "${1:-get}" in
+  get)
+    [ -r "$CONF" ] && cat "$CONF" || echo default ;;
+  list)
+    echo "default  prompt di Vesper a una riga (accent ciano)"
+    echo "parrot   due righe stile Parrot: ┌──[user@host]─[dir] / └──╼"
+    echo "plain    minimale: user@host:dir\$" ;;
+  set)
+    st="${2:-}"
+    case "$st" in
+      default|parrot|plain) ;;
+      *) echo "stile non valido: '$st' (usa: vesper-prompt list)" >&2; exit 1 ;;
+    esac
+    mkdir -p "$(dirname "$CONF")"
+    printf '%s\n' "$st" > "$CONF"
+    echo "prompt impostato: $st (apri un nuovo terminale per vederlo)" ;;
+  *)
+    echo "uso: vesper-prompt [get|list|set <default|parrot|plain>]" >&2; exit 2 ;;
+esac

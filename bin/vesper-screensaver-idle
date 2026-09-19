@@ -1,0 +1,41 @@
+#!/bin/sh
+# SPDX-License-Identifier: AGPL-3.0-or-later
+# Copyright (C) 2026 Daniele Deplano (RedRider21). Parte di Vesper.
+# vesper-screensaver-idle - gestore inattività del salvaschermo (xautolock).
+# Legge ~/.config/vesper/screensaver.conf e (ri)avvia xautolock che lancia
+# 'vesper-screensaver' dopo N minuti di inattivita'. Idempotente: uccide la
+# eventuale istanza precedente prima di ripartire.
+#
+#   vesper-screensaver-idle start|stop|restart   (default: start)
+#
+# Config (key=value):
+#   enabled=1|0     attiva/disattiva il salvaschermo automatico
+#   timeout=5       minuti di inattivita' prima dell'avvio
+#   style=nebula    stile passato a vesper-screensaver
+CONF="$HOME/.config/vesper/screensaver.conf"
+
+get() { [ -f "$CONF" ] && sed -n "s/^$1=//p" "$CONF" | head -1; }
+
+stop() { pkill -x xautolock 2>/dev/null; }
+
+start() {
+  command -v xautolock >/dev/null 2>&1 || exit 0
+  enabled="$(get enabled)"; [ -z "$enabled" ] && enabled=1
+  [ "$enabled" = "0" ] && { stop; exit 0; }
+  timeout="$(get timeout)"; [ -z "$timeout" ] && timeout=5
+  # sanifica: interi 1..120
+  case "$timeout" in ''|*[!0-9]*) timeout=5 ;; esac
+  [ "$timeout" -lt 1 ] && timeout=1
+  [ "$timeout" -gt 120 ] && timeout=120
+  stop
+  # -detectsleep: riparte il conteggio dopo sospensione; -locker: il salvaschermo.
+  xautolock -time "$timeout" -locker "vesper-screensaver" -detectsleep \
+            -corners "0-00" >/dev/null 2>&1 &
+}
+
+case "${1:-start}" in
+  start)   start ;;
+  stop)    stop ;;
+  restart) stop; start ;;
+  *) echo "uso: vesper-screensaver-idle {start|stop|restart}" >&2; exit 2 ;;
+esac

@@ -533,16 +533,34 @@ def set_theme_family(fam: str) -> None:
 #   metacity  idem, versione GNOME storica
 # La scelta sta in ~/.config/vesper/wm e la legge vesper-session.
 WM_CONF = CONF_DIR / "wm"
-WM_SUPPORTED = ("openbox", "marco", "metacity")
-WM_DEFAULT = "openbox"
+WM_SUPPORTED = ("auto", "openbox", "marco", "metacity")
+WM_DEFAULT = "auto"
 
 
 def get_wm() -> str:
+    """Scelta dell'utente: auto (predefinito), openbox, marco, metacity."""
     try:
         v = WM_CONF.read_text().strip().lower()
         return v if v in WM_SUPPORTED else WM_DEFAULT
     except OSError:
         return WM_DEFAULT
+
+
+def resolve_wm() -> str:
+    """Gestore finestre da avviare davvero.
+
+    In "auto" si preferiscono le decorazioni VERE di Mint: se sulla macchina
+    c'è marco (o metacity) e c'è un tema Mint da dargli, si usa quello; in
+    mancanza si torna a Openbox con le decorazioni di Vesper. È la scelta
+    predefinita perché quelle decorazioni sono più curate e più familiari."""
+    wm = get_wm()
+    if wm != "auto":
+        return wm if shutil.which(wm) else "openbox"
+    if wm_theme_name():
+        for cand in ("marco", "metacity"):
+            if shutil.which(cand):
+                return cand
+    return "openbox"
 
 
 def set_wm(name: str) -> str:
@@ -551,7 +569,7 @@ def set_wm(name: str) -> str:
     name = name if name in WM_SUPPORTED else WM_DEFAULT
     paths.ensure_config()
     WM_CONF.write_text(name + "\n")
-    if name in ("marco", "metacity"):
+    if resolve_wm() in ("marco", "metacity"):
         set_wm_theme()
     return name
 
@@ -581,7 +599,7 @@ def set_wm_theme(key: str | None = None) -> str:
     theme = wm_theme_name(key)
     if not theme:
         return ""
-    wm = get_wm()
+    wm = resolve_wm()
     schema = {"marco": "org.mate.Marco.general",
               "metacity": "org.gnome.desktop.wm.preferences"}.get(wm)
     if schema is None or not shutil.which("gsettings"):

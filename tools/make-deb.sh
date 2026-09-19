@@ -55,8 +55,8 @@ Priority: optional
 Architecture: all
 Maintainer: Daniele Deplano <deplano.d@gmail.com>
 Installed-Size: $INSTALLED
-Depends: openbox, python3 (>= 3.8), python3-gi, python3-gi-cairo, gir1.2-gtk-3.0, gir1.2-gdkpixbuf-2.0, wmctrl, x11-xserver-utils
-Recommends: dunst, xautolock, lxappearance, brightnessctl, xdg-user-dirs, fonts-dejavu-core
+Depends: openbox | marco | metacity, python3 (>= 3.8), python3-gi, python3-gi-cairo, gir1.2-gtk-3.0, gir1.2-gdkpixbuf-2.0, wmctrl, x11-xserver-utils
+Recommends: marco | metacity, mint-themes, dunst, xautolock, lxappearance, brightnessctl, xdg-user-dirs, fonts-dejavu-core
 Suggests: picom, bluez, bluez-tools, policykit-1-gnome, alsa-utils, maim, xclip
 Description: ambiente desktop leggero in Python + GTK3 su Openbox
  Vesper è un ambiente desktop completo e leggero: pannello con menu delle

@@ -112,8 +112,9 @@ command -v vesper-autostart >/dev/null 2>&1 && (sleep 2; vesper-autostart) &
 #   metacity  come sopra, versione GNOME storica
 # Openbox non sa leggere quei temi (formato diverso), ed è il motivo per cui
 # esiste questa scelta.
-WM=openbox
-[ -r "$CONF/wm" ] && WM=$(head -1 "$CONF/wm" | tr -d ' \n')
+# La scelta la risolve Vesper: in "auto" preferisce marco/metacity, che sanno
+# disegnare le decorazioni vere di Mint, e ripiega su Openbox se non ci sono.
+WM=$(vesper-wm --risolto 2>/dev/null | tr -d ' \n')
 case "$WM" in
   marco|metacity|openbox) ;;
   *) WM=openbox ;;

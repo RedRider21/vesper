@@ -4,6 +4,7 @@
 # vesper-wm - quale gestore finestre usa la sessione.
 #
 #   vesper-wm              mostra la scelta e cosa è disponibile
+#   vesper-wm auto         preferisce le decorazioni Mint (predefinito)
 #   vesper-wm openbox      decorazioni di Vesper, coordinate col preset
 #   vesper-wm marco        decorazioni VERE di Mint (temi metacity-1)
 #   vesper-wm metacity     come marco, versione GNOME storica
@@ -25,6 +26,11 @@ import sys
 
 from vesper.profiles import model
 
+if len(sys.argv) > 1 and sys.argv[1] in ("--risolto", "--resolved"):
+    # lo usa vesper-session per sapere quale gestore avviare
+    print(model.resolve_wm())
+    raise SystemExit(0)
+
 if len(sys.argv) > 1:
     scelto = model.set_wm(sys.argv[1])
     print("gestore finestre:", scelto)
@@ -34,13 +40,14 @@ if len(sys.argv) > 1:
     raise SystemExit(0)
 
 attuale = model.get_wm()
-print("attuale:", attuale)
+print("scelta:", attuale, "-> in uso:", model.resolve_wm())
 for wm in model.WM_SUPPORTED:
+    if wm == "auto":
+        print("  %-9s %-15s %s" % ("auto", "-",
+              "preferisce le decorazioni Mint, ripiega su Openbox"))
+        continue
     stato = "disponibile" if shutil.which(wm) else "non installato"
-    note = ""
-    if wm == "openbox":
-        note = "decorazioni di Vesper, coordinate col preset"
-    else:
-        note = "decorazioni vere di Mint (temi metacity-1)"
+    note = ("decorazioni di Vesper, coordinate col preset" if wm == "openbox"
+            else "decorazioni vere di Mint (temi metacity-1)")
     print("  %-9s %-15s %s" % (wm, stato, note))
 PY

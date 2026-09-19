@@ -101,11 +101,14 @@ def open_disks(_btn=None):
     azioni2 = Gtk.Box(orientation=Gtk.Orientation.HORIZONTAL, spacing=6)
     body.pack_start(azioni2, False, False, 0)
 
-    b_ro = icon_button(_t("dk.mount_ro"), "drive-harddisk-symbolic", primary=True)
-    b_rw = icon_button(_t("dk.mount_rw"), "dialog-warning-symbolic")
+    # In Vesper montare vuol dire montare NORMALMENTE (lettura e scrittura):
+    # e' un desktop, non una distro forensic. La sola lettura resta un pulsante
+    # a parte, per chiavette sospette o dischi da non toccare.
+    b_rw = icon_button(_t("dk.mount_rw"), "drive-harddisk-symbolic", primary=True)
+    b_ro = icon_button(_t("dk.mount_ro"), "changes-prevent-symbolic")
     b_um = icon_button(_t("dk.unmount"), "media-eject-symbolic")
     b_apri = icon_button(_t("dk.open_folder"), "folder-open-symbolic")
-    for b in (b_ro, b_rw, b_um, b_apri):
+    for b in (b_rw, b_ro, b_um, b_apri):
         azioni.pack_start(b, False, False, 0)
 
     b_prot = icon_button(_t("dk.lock_write"), "changes-prevent-symbolic")
@@ -220,16 +223,7 @@ def open_disks(_btn=None):
 
     def on_rw(_w):
         n = ctx["sel"]
-        if not n:
-            return
-        d = Gtk.MessageDialog(transient_for=win, modal=True,
-                              message_type=Gtk.MessageType.WARNING,
-                              buttons=Gtk.ButtonsType.OK_CANCEL,
-                              text=_t("dk.mount_rw_q") % n.path)
-        d.format_secondary_text(_t("dk.mount_rw_body"))
-        r = d.run()
-        d.destroy()
-        if r == Gtk.ResponseType.OK:
+        if n:
             esegui(lambda: mount.mount_rw(n), _t("dk.mounting_rw") % n.path)
 
     def on_um(_w):

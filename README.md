@@ -1,5 +1,9 @@
 <p align="center">
-  <img src="docs/img/banner.png" alt="Vesper — ambiente desktop leggero, Python + GTK3 su Openbox" width="100%">
+  <picture>
+    <source media="(prefers-color-scheme: dark)" srcset="docs/img/banner-chiaro.png">
+    <source media="(prefers-color-scheme: light)" srcset="docs/img/banner.png">
+    <img src="docs/img/banner.png" alt="Vesper — ambiente desktop leggero, Python + GTK3" width="100%">
+  </picture>
 </p>
 
 # Vesper

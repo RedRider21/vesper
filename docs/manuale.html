@@ -42,7 +42,7 @@
   <h2>1. Installare</h2>
 
   <h3>Debian, Ubuntu, Linux Mint</h3>
-<pre>sudo apt install ./vesper_0.2.0_all.deb</pre>
+<pre>sudo apt install ./vesper_0.2.1_all.deb</pre>
   <p class="intro">
     Il pacchetto tira dietro le dipendenze da solo. Per toglierlo:
     <code>sudo apt remove vesper</code> (la configurazione in
@@ -50,7 +50,7 @@
   </p>
 
   <h3>Qualsiasi distribuzione, dai sorgenti</h3>
-<pre>tar xzf vesper-0.2.0.tar.gz &amp;&amp; cd vesper-0.2.0
+<pre>tar xzf vesper-0.2.1.tar.gz &amp;&amp; cd vesper-0.2.1
 sudo ./install.sh --prefix=/usr     # come i pacchetti della distro
 sudo ./install.sh                   # in /usr/local
 ./install.sh --user                 # in ~/.local, senza root
@@ -237,6 +237,7 @@ vesper-wm auto       # lascia decidere a Vesper (predefinito)</pre>
     <tr><td><code>vesper-recorder</code></td><td>registratore vocale (salva in ~/Musica/Registrazioni)</td></tr>
     <tr><td><code>vesper-disks</code></td><td>dischi e chiavette: elenco, montaggio, smontaggio</td></tr>
     <tr><td><code>vesper-keys</code></td><td>scorciatoie del desktop (usato dal Centro di Controllo)</td></tr>
+    <tr><td><code>vesper-launcherd</code>, <code>vesper-launch</code></td><td>avvio «caldo» delle finestre: <code>--status</code>, <code>--stop</code></td></tr>
     <tr><td><code>vesper-screenshot</code>, <code>vesper-clipboard</code>, <code>vesper-nightlight</code>, <code>vesper-screens</code>, <code>vesper-audio</code>, <code>vesper-wifi</code>, <code>vesper-bluetooth</code>, <code>vesper-battery</code>, <code>vesper-brightness</code></td><td>utilità richiamate dal pannello e dalle scorciatoie</td></tr>
   </table>
 </section>
@@ -260,6 +261,22 @@ vesper-wm auto       # lascia decidere a Vesper (predefinito)</pre>
   <p class="intro">
     Vesper non tocca <code>~/.config/openbox</code>: se usi Openbox anche per
     conto tuo, la tua configurazione resta intatta.
+  </p>
+</section>
+
+<section id="problemi">
+  <h3>Avvio «caldo» delle finestre</h3>
+  <p class="intro">
+    La sessione avvia <code>vesper-launcherd</code>, un processo che tiene GTK
+    e i moduli del desktop gia' importati e apre le finestre dentro di se':
+    Centro di Controllo, preset, file manager e dischi partono in qualche
+    decina di millisecondi invece di ripagare ogni volta il costo degli
+    import — si sente soprattutto su live, VM e dischi lenti. Se il servizio
+    non gira, i comandi partono nel modo normale: non e' mai una dipendenza.
+    <code>vesper-launcherd --status</code> dice se e' attivo,
+    <code>--stop</code> lo ferma. L'editor e i lettori multimediali restano
+    processi a se': il primo puo' avere documenti non salvati, i secondi
+    portano dentro le pipeline di GStreamer.
   </p>
 </section>
 

@@ -1,127 +1,55 @@
-# Vesper — piano di porting dal desktop di NexusSec OS
+# Vesper — stato del porting
 
-> Documento di **handoff**: contiene tutto il necessario per portare in Vesper —
-> in una sessione dedicata — il lavoro desktop già maturato in **NexusSec OS**,
-> **senza riferimenti a NexusSec** (Vesper è un DE generico e autonomo).
-> Ultimo aggiornamento: 2026-09-14.
+> Il porting del desktop è **fatto**. Questo documento tiene il conto di cosa è
+> stato portato, cosa è stato volutamente lasciato fuori e cosa manca ancora
+> per stare alla pari con gli altri ambienti desktop.
+> Ultimo aggiornamento: 2026-09-19.
 
-## 0. Stato
-- Vesper oggi = **scaffold** (1 commit reale). Di concreto solo
-  `src/vesper/filemanager/desktop.py` (modalità desktop del file manager).
-- Il **desktop è maturo in NexusSec** e va **portato** qui (rinominato e
-  scollegato dalla distro). Il porting **NON è ancora iniziato**.
+## 1. Fatto
 
-## 1. Sorgente di verità (dove sta il codice da portare)
-Repo `../NexusSec-OS/` (branch `master`):
-- `overlay/usr/local/lib/nxs_cc/` — pannello + Centro di Controllo + CSS/tema:
-  - `common.py` (725 righe) — CSS/tema, `apply_css()`, `panel_window()` (con
-    ScrolledWindow), helper `icon_button`, centratura multi-monitor.
-  - `panel.py` (2833) — pannello inferiore: menu+ricerca, tasklist, orologio+fuso,
-    monitor risorse (Cairo), tray, applet.
-  - `views.py` (3540) — viste del Centro di Controllo.
-  - `main.py` (319) — dispatch argomenti → viste; `paneltheme.py`, `panelcfg.py`,
-    `launcherd.py` (launcher "caldo"), `bootsplash.py` (splash).
-- `overlay/usr/local/lib/nxs_profiles/` — `model.py` (917), `selector.py` (231),
-  `cli.py` (182), `isolation.py` (766, **NON portare**, è l'arsenale).
-- `overlay/usr/local/bin/nxs-*` — launcher/utility (vedi §3).
-- `overlay/home/nexus/.config/openbox/` (rc.xml, menu.xml, autostart),
-  `.themes/` (temi Openbox + CSS finestre + sfondi), `.xinitrc`, `.profile`.
-
-## 2. Cosa PORTARE (generico) vs ESCLUDERE (NexusSec-specifico)
-
-### PORTARE (fa parte del DE generico)
-- **Core**: `common.py` (CSS/tema), `panel.py` (pannello), le viste di `views.py`
-  **generiche**, `main.py`, `launcherd.py`, `bootsplash.py`, `paneltheme.py`,
-  `panelcfg.py`.
-- **Profili come PRESET di aspetto** (accent + sfondo + tema icone/finestre):
-  da `model.py`/`selector.py` tenere SOLO il meccanismo accent/sfondo/temi
-  (NIENTE meta-pacchetti `sec-profile-*`, niente `apk add` dei profili).
-- **Applet pannello generiche**: audio, luminosità, batteria, Bluetooth, WiFi,
-  schermi, orologio/calendario+fuso, monitor risorse, **notifiche**, tasklist.
-- **Utility desktop** (vedi §3): sessione/logout, greeter, night-light, appunti,
-  editor scorciatoie, screenshot, blocco schermo, datetime.
-- **Aspetto coordinato**: temi finestre (Core/Retro/Cards) + prompt terminale.
-- **i18n** (`nxs_i18n` → `vesper.i18n`).
-- **File manager** `vesper-files` (già iniziato).
-
-### ESCLUDERE (è la distro di sicurezza, non un DE)
-- **Arsenale tool**: `isolation.py`, `cli.py` (nxs-tool), `repo.json`,
-  `kali_catalog.json`, i profili di **sicurezza** `sec-profile-*`.
-- **Sicurezza/anonimato**: `nxs-firewall`, `nxs-tor`, `nxs-anon`, `nxs-macspoof`,
-  `nxs-panic`, `nxs-metadata`, `nxs-harden`, `nxs-writeblock`, dischi forensic.
-- **HORUS** (`nxs-horus`) e il resto OSINT/forense.
-- **Persistenza/installazione distro**: `nxs-persist`, `nxs-install`,
-  `nxs-unlock-data`, LUKS NXSDATA, apkovl/genapkovl, mkimage, aports.
-- **greeter/auth**: il **concetto** greeter si porta (vedi §3), ma con auth
-  generica (PAM se disponibile, o `vesper-chkpwd` setuid come su NexusSec).
-
-## 3. Feature desktop "realizzate finora" — da portare (con note)
-| NexusSec (sorgente) | Vesper (destinazione) | Note / gotcha |
+| Fase | Contenuto | Dove |
 |---|---|---|
-| `nxs-session` | `vesper-session` | dialogo logout/lock/reboot/shutdown; icone azioni |
-| `nxs-greeter` | `vesper-greeter` | GTK, logo esagonale (Cairo), card a tema, mostra/nascondi pw, **sfondo disegnato con Cairo (Overlay+DrawingArea)** — NON usare CSS background-image su window (in GTK3 non dipinge). Serve `DISPLAY` (guardia con messaggio). |
-| `nxs-authcheck` + `aports/nxs-chkpwd` (C setuid) | `vesper-chkpwd` | Alpine non usa PAM → verifica shadow con crypt via ctypes/C. **Setuid deve stare in `/usr/bin`** (abuild vieta /usr/local). Su distro con PAM valutare `pam`/`unix_chkpwd`. Password SEMPRE da STDIN, mai argv. |
-| `nxs-nightlight` | `vesper-nightlight` | **usare gamma `xrandr`** (on/off/toggle/restore). L'overlay traslucido è stato SCARTATO: in VM senza compositore diventa opaco e copre lo schermo. |
-| `nxs-clipboard` | `vesper-clipboard` | daemon + popup finestra-lista con **refresh live**; NON `Gtk.Menu.popup_at_pointer` (dà GTK-CRITICAL da terminale). |
-| `nxs-keys` + editor in `views.open_hotkeys` | `vesper-keys` + vista | editor scorciatoie rc.xml **text-based** (preserva commenti), cattura combinazione, applica con `openbox --reconfigure`. |
-| dunst + `dunstrc` + autostart | idem | demone notifiche; feedback install → in Vesper NON c'è install-on-demand, quindi le notifiche restano per app generiche. |
-| `acpid` + `/etc/acpi/nxs-handler.sh` | `vesper` power mgmt | coperchio→lock, accensione→shutdown, batteria scarica (sysfs nel pannello). |
-| gate greeter al boot: `.profile` (loop startx) + autostart (dopo splash) + flag | equivalente Vesper | flag `~/.config/vesper/greeter.on` o via un `vesper-session`/DM. Su distro generica valutare integrazione con un vero DM o con la sessione xinit. |
+| 1. Core | percorsi, CSS/tema, accent e skin a caldo, skin del pannello | `src/vesper/{paths,common,paneltheme,panelcfg}.py` |
+| 2. Preset | preset di aspetto (accento, sfondo, icone, stile finestre), 14 colori, marchio nuovo, 14 sfondi | `src/vesper/profiles/`, `data/`, `tools/make-wallpapers.py` |
+| 3. Pannello | barra multi-monitor, applet, menu applicazioni per categorie, i18n | `src/vesper/panel/`, `src/vesper/i18n/` |
+| 4. Utility e sessione | 28 comandi `vesper-*`, avvio sessione, autostart XDG, installazione | `bin/`, `install.sh`, `data/skel/` |
+| 5. File manager | finestra (schede, viste, operazioni async, cestino) e desktop (sfondo + icone) | `src/vesper/filemanager/` |
+| 6. Centro di Controllo | 19 viste native + salvaschermo con blocco schermo | `src/vesper/control_center/`, `src/vesper/screensaver/` |
+| 7. Aspetto coordinato | icone del colore del preset, temi finestre Retro/Cards per ogni preset, 1977 e Arc inclusi | `tools/make-openbox-themes.py`, `data/themes/` |
+| 8. Distribuzione | `.deb` pulito secondo lintian, tarball, PKGBUILD, spec RPM, APKBUILD | `tools/make-deb.sh`, `packaging/` |
 
-## 4. Regole di rename / decoupling (applicare ovunque)
-- Codice: `nxs_cc` → `vesper` (pacchetto), `nxs_profiles` → `vesper.profiles`,
-  `nxs_i18n` → `vesper.i18n`.
-- Comandi: `nxs-*` → `vesper-*` (aggiornare menu.xml, autostart, rc.xml, chiamate
-  interne, e i path assoluti tipo `/usr/local/bin/...` → path Vesper).
-- Percorsi dati: `/usr/local/share/nexussec/` → `/usr/share/vesper/`;
-  `/etc/sec_os/` e `~/.config/nxs/` → `~/.config/vesper/`; sfondi/temi sotto
-  `/usr/share/vesper/` o `~/.local/share/vesper/`.
-- Branding: rimuovere nome/logo/marchi **NexusSec**; la **palette** si può tenere
-  ma rinominata (Vesper = stella della sera, accent cyan di default).
-- Rimuovere gli import "morbidi" verso `nxs_profiles.model` legati all'arsenale;
-  tenere solo model degli aspetti (accent/sfondo/tema).
-- **Niente** riferimenti a NexusSec nei testi/commenti (richiesta esplicita utente).
+## 2. Lasciato fuori di proposito
 
-## 5. Piano a fasi (ordine consigliato)
-1. **common** (`vesper.common`: CSS/tema, apply_css, panel_window, icon_button).
-2. **profiles-as-presets** (accent/sfondo/temi finestre + prompt), senza sicurezza.
-3. **panel** (`vesper-panel`): menu+ricerca, tasklist, orologio+fuso, monitor
-   risorse, multi-monitor; applet generiche (audio/brightness/battery/bt/wifi/
-   screens/notifiche/clipboard/nightlight). Rimuovere l'applet "scudo" sicurezza.
-4. **control center** (`vesper-settings`): aspetto, sfondo, schermi, audio, BT,
-   mouse, tastiera, autostart, **editor scorciatoie**. Rimuovere: sicurezza/
-   harden/firewall/utenti/persist/pacchetti-apk/profili-sicurezza/HORUS.
-5. **utility** (§3): session, greeter(+chkpwd), nightlight, clipboard, keys,
-   screenshot, screensaver, datetime; notifiche (dunst) + power (acpid).
-6. **session**: `.xinitrc`/`.profile` equivalenti, voce `/usr/share/xsessions/`,
-   loop logout→greeter.
-7. **file manager** finestra (completare `vesper-files`).
-8. **packaging** (APKBUILD Alpine + poi deb/rpm) e MIME/app predefinite.
+Roba della distribuzione di origine, non di un ambiente desktop: arsenale di
+strumenti e relativo catalogo, profili di sicurezza, firewall, Tor/anonimato,
+MAC spoofing, panico/wipe, write-blocker forense, gestione pacchetti apk,
+gestione utenti, hardening, dischi e casi forensi, OSINT, assistente IA,
+persistenza e installazione della distro, splash di avvio, demone
+"launcher caldo".
 
-## 6. Servizi da DE generico ANCORA da implementare (non presenti in NexusSec)
-(vedi anche `confronto-desktop.md`)
-1. **Demone notifiche**: c'è dunst (ok).
-2. **Agente PolicyKit** (prompt grafici privilegi) — **manca**.
-3. **Settings/XSettings daemon** (tema GTK/cursore/DPI/HiDPI) — **manca**.
-4. **Power management** completo (oltre lid/power base) — parziale.
-5. **Automount rimovibili** (udisks2) opzionale — **manca** (NexusSec lo evita
-   apposta; su Vesper generico ha senso offrirlo).
+## 3. Ancora da fare
 
-## 7. Gotcha tecnici ereditati (NON re-derivare)
-- **GTK3, non GTK4**: niente `text-transform`/`letter-spacing` nel CSS (eccezione
-  → crash di `apply_css`). Uppercase in Python.
-- **.pyc stale**: non impacchettare `__pycache__`; con mtime azzerati Python
-  esegue bytecode vecchio. Il packaging deve eliminarli.
-- **Riavvio pannello**: `pkill -f` da una shell il cui argv contiene il pattern si
-  autouccide → usare pkill diretto + launcher con argv "pulito".
-- **rc.xml Openbox** deve restare il default COMPLETO (sezione `<mouse>`),
-  altrimenti finestre non gestibili.
-- **Setuid**: i pacchetti apk NON possono installare in `/usr/local` → `/usr/bin`.
-- **greeter background**: Cairo (Overlay+DrawingArea), non CSS.
-- **nightlight**: gamma xrandr (overlay opaco in VM).
+1. **Schermata di login (greeter)** — c'era nella sorgente ma legata a
+   `chkpwd` setuid e ad Alpine. Su una distro qualunque conviene appoggiarsi
+   al display manager, oppure portare il greeter con autenticazione PAM.
+2. **Demone notifiche proprio** — oggi Vesper avvia quello che trova (dunst,
+   mako, xfce4-notifyd). Un demone nostro darebbe notifiche a tema.
+3. **Agente PolicyKit proprio** — stessa logica: oggi si avvia quello
+   installato, se c'è.
+4. **Daemon XSettings** — propagazione di tema, cursore e DPI/HiDPI alle app
+   che non rileggono `settings.ini`.
+5. **Power management completo** — coperchio, sospensione, batteria scarica
+   (oggi c'è l'applet batteria e l'avviso di batteria scarica).
+6. **Automount dei dispositivi rimovibili** (udisks2) nel file manager.
+7. **Pagine di manuale** per i comandi `vesper-*` (l'unico avviso che lintian
+   segnala sul pacchetto).
+8. **Set di icone proprio** — oggi si usano quelli del sistema, scelti per
+   colore. Un tema icone originale sarebbe il passo successivo.
 
-## 8. Come riprendere in una sessione dedicata
-Aprire una sessione nella cartella `vesper/`, leggere QUESTO file +
-`docs/design.md` + `docs/confronto-desktop.md`. Il codice sorgente da cui copiare
-è in `../NexusSec-OS/overlay/usr/local/`. Procedere per fasi (§5), committando a
-ogni passo (regola: commit locale a ogni modifica), **senza** riferimenti a NexusSec.
+## 4. Gotcha già risolti (non re-derivare)
+
+Sono elencati in [`../CLAUDE.md`](../CLAUDE.md): riavvio del pannello senza
+auto-suicidio, `rc.xml` completo, `.pyc` stantii, provider CSS per-widget,
+viste a elenco bianche, `settings.ini` senza `[Settings]`, lanciatori
+`.desktop` rifiutati da GLib, sfondo del salvaschermo in Cairo, luce blu con
+gamma xrandr.

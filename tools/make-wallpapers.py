@@ -184,11 +184,17 @@ def sparkle_pts(cx, cy, rv, rh, waist=0.17, steps=26):
     return pts
 
 
-def emblem(accent, cx, cy, w, h, scale=1.0):
+def emblem(accent, cx, cy, w, h, scale=1.0, ss=3):
     """Emblema: la stella della sera dentro due anelli tenui, con la compagna
-    piccola in alto a destra. Nessun testo: va bene con qualsiasi colore."""
-    layer = Image.new("RGBA", (w, h), (0, 0, 0, 0))
-    d = ImageDraw.Draw(layer)
+    piccola in alto a destra. Nessun testo: va bene con qualsiasi colore.
+
+    Disegnato a `ss` volte la risoluzione e poi ridotto (sovracampionamento):
+    i bordi della stella restano NETTI. Prima si disegnava a dimensione piena
+    e l'alone li faceva sembrare sfocati."""
+    big = Image.new("RGBA", (w * ss, h * ss), (0, 0, 0, 0))
+    d = ImageDraw.Draw(big)
+    cx, cy = cx * ss, cy * ss
+    scale = scale * ss
     hard = accent + (240,)
     soft = accent + (150,)
     faint = accent + (55,)
@@ -201,7 +207,7 @@ def emblem(accent, cx, cy, w, h, scale=1.0):
     # stella compagna
     d.polygon(sparkle_pts(cx + int(255 * scale), cy - int(230 * scale),
                           70 * scale, 58 * scale), fill=soft)
-    return layer
+    return big.resize((w, h), Image.LANCZOS)
 
 
 def horizon(accent, w, h, y, cx, scale=1.0):
@@ -250,7 +256,7 @@ def make(cid: str, accent_hex: str, deep_hex: str, w: int, h: int,
     d'accento. Stessa composizione, tono opposto."""
     accent = hx(accent_hex)
     deep = hx(deep_hex)
-    scale = min(w / W, h / H) * 0.62       # soggetto contenuto: e' uno SFONDO
+    scale = min(w / W, h / H) * 0.56       # soggetto contenuto: e' uno SFONDO
     hor_y = int(h * 0.72)                  # l'orizzonte nel terzo inferiore
     # stella spostata a destra: in alto a sinistra ci vanno le icone del desktop
     cx, cy = int(w * 0.655), int(h * 0.42)
@@ -275,8 +281,9 @@ def make(cid: str, accent_hex: str, deep_hex: str, w: int, h: int,
 
     img = glow_compose(img, horizon(accent, w, h, hor_y, cx, scale),
                        radius=6 if light else 14)
+    # alone leggero: troppo, e i contorni della stella sembrano sfocati
     img = glow_compose(img, emblem(accent, cx, cy, w, h, scale),
-                       radius=4 if light else 12)
+                       radius=2 if light else 7)
 
     os.makedirs(DEST, exist_ok=True)
     out = os.path.join(DEST, cid + ".png")

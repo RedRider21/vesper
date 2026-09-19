@@ -1,7 +1,7 @@
 # Ricetta per Fedora / openSUSE / RHEL. Stesso install.sh, layout identico:
 # cambiano solo i nomi dei pacchetti richiesti.
 Name:           vesper
-Version:        0.1.0
+Version:        0.1.1
 Release:        1%{?dist}
 Summary:        Ambiente desktop leggero in Python + GTK3 su Openbox
 License:        AGPL-3.0-or-later
@@ -51,5 +51,5 @@ find %{buildroot} -name '__pycache__' -type d -exec rm -rf {} + 2>/dev/null || t
 %{_datadir}/icons/hicolor/scalable/apps/vesper-logo*.svg
 
 %changelog
-* Sat Sep 19 2026 Daniele Deplano <deplano.d@gmail.com> - 0.1.0-1
+* Sat Sep 19 2026 Daniele Deplano <deplano.d@gmail.com> - 0.1.1-1
 - Prima versione pacchettizzata.

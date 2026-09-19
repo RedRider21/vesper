@@ -4,7 +4,7 @@
 # dei file è identico su tutte le distribuzioni, cambiano solo i NOMI dei
 # pacchetti di dipendenza.
 pkgname=vesper
-pkgver=0.1.0
+pkgver=0.1.1
 pkgrel=1
 pkgdesc="Ambiente desktop leggero in Python + GTK3 su Openbox"
 arch=('any')

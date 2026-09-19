@@ -285,10 +285,23 @@ class _Meter(Gtk.DrawingArea):
         del self.hist[0]
         self.queue_draw()
 
+    @staticmethod
+    def _chiaro() -> bool:
+        """Interfaccia chiara? Il grafico è disegnato in Cairo, quindi il CSS
+        non lo tocca: il colore di fondo va scelto qui."""
+        try:
+            from vesper import palette
+            return palette.is_light()
+        except Exception:                # noqa: BLE001
+            return False
+
     def _draw(self, _w, cr):
         w = self.get_allocated_width()
         h = self.get_allocated_height()
-        cr.set_source_rgba(0.02, 0.06, 0.10, 0.85)   # sfondo scuro
+        if self._chiaro():
+            cr.set_source_rgba(1.0, 1.0, 1.0, 0.75)      # fondo chiaro
+        else:
+            cr.set_source_rgba(0.02, 0.06, 0.10, 0.85)   # fondo scuro
         cr.rectangle(0, 0, w, h)
         cr.fill()
         r, g, b = self.rgb
@@ -304,7 +317,7 @@ class _Meter(Gtk.DrawingArea):
                 cr.line_to(i * step, yv(v))
             cr.line_to((n - 1) * step, h)
             cr.close_path()
-            cr.set_source_rgba(r, g, b, 0.30)
+            cr.set_source_rgba(r, g, b, 0.45 if self._chiaro() else 0.30)
             cr.fill()
             # linea di contorno
             cr.set_source_rgba(r, g, b, 0.95)
@@ -312,7 +325,10 @@ class _Meter(Gtk.DrawingArea):
             for i, v in enumerate(self.hist):
                 (cr.move_to if i == 0 else cr.line_to)(i * step, yv(v))
             cr.stroke()
-        cr.set_source_rgba(0.10, 0.23, 0.32, 0.9)     # bordo tenue
+        if self._chiaro():
+            cr.set_source_rgba(0.72, 0.78, 0.83, 0.9)  # bordo tenue (chiaro)
+        else:
+            cr.set_source_rgba(0.10, 0.23, 0.32, 0.9)  # bordo tenue (scuro)
         cr.set_line_width(1)
         cr.rectangle(0.5, 0.5, w - 1, h - 1)
         cr.stroke()

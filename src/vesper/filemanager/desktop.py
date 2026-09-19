@@ -806,48 +806,97 @@ class Desktop(Gtk.Window):
         d.destroy()
 
     # -- menu --------------------------------------------------------------
-    def _mi(self, menu, text, cb):
-        mi = Gtk.MenuItem(label=text)
+    def _mi(self, menu, text, cb, icon=None, scorciatoia=""):
+        """Voce di menu con icona a sinistra e, se c'è, la scorciatoia grigia a
+        destra. Gtk.ImageMenuItem è deprecato: si compone a mano una riga."""
+        mi = Gtk.MenuItem()
+        row = Gtk.Box(orientation=Gtk.Orientation.HORIZONTAL, spacing=10)
+        img = Gtk.Image.new_from_icon_name(icon or "", Gtk.IconSize.MENU)
+        img.set_pixel_size(16)
+        row.pack_start(img, False, False, 0)
+        lab = Gtk.Label(label=text)
+        lab.set_xalign(0)
+        row.pack_start(lab, True, True, 0)
+        if scorciatoia:
+            acc = Gtk.Label(label=scorciatoia)
+            acc.get_style_context().add_class("vesper-menu-head")
+            row.pack_end(acc, False, False, 0)
+        mi.add(row)
         mi.connect("activate", lambda *_: cb())
+        menu.append(mi)
+        return mi
+
+    def _head(self, menu, text):
+        """Intestazione di sezione: una voce non selezionabile, piccola."""
+        mi = Gtk.MenuItem()
+        mi.set_sensitive(False)
+        lab = Gtk.Label(label=text.upper())
+        lab.set_xalign(0)
+        lab.get_style_context().add_class("vesper-menu-head")
+        mi.add(lab)
         menu.append(mi)
         return mi
 
     def icon_menu(self, ev, it):
         sel = self.selection() or [it]
         m = Gtk.Menu()
-        self._mi(m, label("fm.open", "Apri"), lambda: [self.launch(i) for i in sel])
+        m.get_style_context().add_class("vesper-popup")
+        titolo = it.name if len(sel) == 1 else (
+            label("fm.n_selected", "%d elementi selezionati") % len(sel))
+        self._head(m, titolo[:32])
+        self._mi(m, label("fm.open", "Apri"), lambda: [self.launch(i) for i in sel],
+                 "document-open-symbolic", "Invio")
         if len(sel) == 1:
-            self._mi(m, label("fm.open_with", "Apri con…"), lambda: self.open_with(it))
-            self._mi(m, label("fm.rename", "Rinomina") + "  (F2)",
-                     lambda: self.rename(it))
+            self._mi(m, label("fm.open_with", "Apri con…"),
+                     lambda: self.open_with(it), "system-run-symbolic")
+            self._mi(m, label("fm.rename", "Rinomina"), lambda: self.rename(it),
+                     "document-edit-symbolic", "F2")
         m.append(Gtk.SeparatorMenuItem())
-        self._mi(m, label("fm.trash", "Sposta nel cestino") + "  (Del)",
-                 lambda: self.trash(sel))
+        self._mi(m, label("fm.trash", "Sposta nel cestino"),
+                 lambda: self.trash(sel), "user-trash-symbolic", "Canc")
         if len(sel) == 1:
             m.append(Gtk.SeparatorMenuItem())
-            self._mi(m, label("fm.props", "Proprietà"), lambda: self.properties(it))
+            self._mi(m, label("fm.props", "Proprietà"),
+                     lambda: self.properties(it), "document-properties-symbolic")
         m.show_all()
         m.popup_at_pointer(ev)
 
     def desktop_menu(self, ev, _it):
         m = Gtk.Menu()
+        m.get_style_context().add_class("vesper-popup")
+        self._head(m, label("fm.desktop", "Desktop"))
+        self._mi(m, label("fm.new_folder", "Nuova cartella"), self.new_folder,
+                 "folder-new-symbolic")
         self._mi(m, label("fm.open_files", "Apri il file manager"),
-                 lambda: self._spawn(["vesper-files", str(self.desktop_dir)]))
+                 lambda: self._spawn(["vesper-files", str(self.desktop_dir)]),
+                 "system-file-manager-symbolic")
         self._mi(m, label("fm.open_terminal", "Apri un terminale qui"),
-                 self.open_terminal)
-        self._mi(m, label("fm.new_folder", "Nuova cartella"), self.new_folder)
+                 self.open_terminal, "utilities-terminal-symbolic")
         m.append(Gtk.SeparatorMenuItem())
+
+        self._head(m, label("fm.icons", "Icone"))
         chk = Gtk.CheckMenuItem(label=label("fm.auto_arrange",
-                                            "Allinea automaticamente le icone"))
+                                            "Allinea automaticamente"))
         chk.set_active(self.state.auto_arrange)
         chk.connect("toggled", self.on_toggle_arrange)
         m.append(chk)
-        self._mi(m, label("fm.refresh", "Aggiorna") + "  (F5)", self.load_icons)
+        self._mi(m, label("fm.refresh", "Aggiorna"), self.load_icons,
+                 "view-refresh-symbolic", "F5")
         m.append(Gtk.SeparatorMenuItem())
+
+        self._head(m, label("fm.look", "Aspetto"))
+        self._mi(m, label("fm.appearance", "Preset di aspetto…"),
+                 lambda: self._spawn(["vesper-profile"]), "vesper-logo-symbolic")
         self._mi(m, label("fm.wallpaper", "Cambia sfondo…"),
-                 lambda: self._spawn(["vesper-control-center", "sfondo"]))
-        self._mi(m, label("fm.appearance", "Aspetto del desktop…"),
-                 lambda: self._spawn(["vesper-profile"]))
+                 lambda: self._spawn(["vesper-control-center", "sfondo"]),
+                 "preferences-desktop-wallpaper-symbolic")
+        self._mi(m, label("fm.settings", "Impostazioni di Vesper…"),
+                 lambda: self._spawn(["vesper-control-center"]),
+                 "preferences-system-symbolic")
+        m.append(Gtk.SeparatorMenuItem())
+        self._mi(m, label("fm.session", "Esci / Spegni…"),
+                 lambda: self._spawn(["vesper-logout"]),
+                 "system-shutdown-symbolic")
         m.show_all()
         m.popup_at_pointer(ev)
 

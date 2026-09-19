@@ -41,53 +41,53 @@ DEST = os.path.join(ROOT, "data", "backgrounds")
 DEFAULT_PRESET = "cyan"
 
 PALETTE = {
-    # id: (accent, fondo, nome, descrizione, [temi icone], [temi GTK], chiaro)
+    # id: (accent, fondo, nome, descrizione, [icone], [GTK], [WM], chiaro)
     "cyan":    ("#00e5ff", "#020611", "Cyan", "Blu notte con accento cyan: il colore di Vesper.",
                 ["Mint-Y-Cyan", "Mint-Y-Aqua", "Mint-L-Aqua", "Mint-X-Aqua"],
-                ["Mint-Y-Dark-Aqua", "Mint-L-Dark-Aqua", "Mint-Y-Dark"], False),
+                ["Mint-Y-Dark-Aqua", "Mint-L-Dark-Aqua", "Mint-Y-Dark"], ["Mint-L-Dark-Aqua", "Mint-Y-Aqua", "Mint-L-Aqua"], False),
     "acqua":   ("#2ad1c5", "#02100f", "Acquamarina", "Verde-azzurro tenue, riposante.",
                 ["Mint-Y-Aqua", "Mint-Y-Teal", "Mint-L-Teal", "Mint-X-Teal"],
-                ["Mint-Y-Dark-Teal", "Mint-L-Dark-Teal", "Mint-Y-Dark"], False),
+                ["Mint-Y-Dark-Teal", "Mint-L-Dark-Teal", "Mint-Y-Dark"], ["Mint-L-Dark-Teal", "Mint-Y-Teal", "Mint-L-Teal"], False),
     "verde":   ("#23d18b", "#02100a", "Verde", "Verde smeraldo su fondo scuro.",
                 ["Mint-Y", "Mint-L", "Mint-X"],
-                ["Mint-Y-Dark", "Mint-L-Dark", "Adwaita-dark"], False),
+                ["Mint-Y-Dark", "Mint-L-Dark", "Adwaita-dark"], ["Mint-L-Dark", "Mint-Y", "Mint-L"], False),
     "lime":    ("#b8ff3b", "#060c02", "Lime", "Verde acido, molto contrastato.",
                 ["Mint-Y", "Mint-L", "Mint-X"],
-                ["Mint-Y-Dark", "Mint-L-Dark", "Adwaita-dark"], False),
+                ["Mint-Y-Dark", "Mint-L-Dark", "Adwaita-dark"], ["Mint-L-Dark", "Mint-Y", "Mint-L"], False),
     "giallo":  ("#ffe14b", "#0d0c02", "Giallo", "Giallo caldo, alta visibilità.",
                 ["Mint-Y-Yellow", "Mint-L-Yellow", "Mint-X-Yellow", "Mint-Y-Sand"],
-                ["Mint-Y-Dark-Sand", "Mint-L-Dark-Sand", "Mint-Y-Dark"], False),
+                ["Mint-Y-Dark-Sand", "Mint-L-Dark-Sand", "Mint-Y-Dark"], ["Mint-L-Dark-Sand", "Mint-Y-Sand", "Mint-L-Sand"], False),
     "ambra":   ("#ffb000", "#0f0902", "Ambra", "Ambra da terminale d'altri tempi.",
                 ["Mint-Y-Sand", "Mint-L-Sand", "Mint-X-Sand", "Mint-Y-Orange"],
-                ["Mint-Y-Dark-Sand", "Mint-L-Dark-Sand", "Mint-Y-Dark"], False),
+                ["Mint-Y-Dark-Sand", "Mint-L-Dark-Sand", "Mint-Y-Dark"], ["Mint-L-Dark-Sand", "Mint-Y-Sand", "Mint-L-Sand"], False),
     "arancio": ("#ff8a3b", "#0f0602", "Arancio", "Arancio tramonto, caldo.",
                 ["Mint-Y-Orange", "Mint-L-Orange", "Mint-X-Orange"],
-                ["Mint-Y-Dark-Orange", "Mint-L-Dark-Orange", "Mint-Y-Dark"], False),
+                ["Mint-Y-Dark-Orange", "Mint-L-Dark-Orange", "Mint-Y-Dark"], ["Mint-L-Dark-Orange", "Mint-Y-Orange", "Mint-L-Orange"], False),
     "rosso":   ("#ff3b5c", "#0c0205", "Rosso", "Rosso acceso su nero.",
                 ["Mint-Y-Red", "Mint-L-Red", "Mint-X-Red"],
-                ["Mint-Y-Dark-Red", "Mint-L-Dark-Red", "Mint-Y-Dark"], False),
+                ["Mint-Y-Dark-Red", "Mint-L-Dark-Red", "Mint-Y-Dark"], ["Mint-L-Dark-Red", "Mint-Y-Red", "Mint-L-Red"], False),
     "rosa":    ("#ff5a8a", "#0f0309", "Rosa", "Rosa intenso, tono serale.",
                 ["Mint-Y-Pink", "Mint-L-Pink", "Mint-X-Pink"],
-                ["Mint-Y-Dark-Pink", "Mint-L-Dark-Pink", "Mint-Y-Dark"], False),
+                ["Mint-Y-Dark-Pink", "Mint-L-Dark-Pink", "Mint-Y-Dark"], ["Mint-L-Dark-Pink", "Mint-Y-Pink", "Mint-L-Pink"], False),
     "magenta": ("#ff5ad0", "#0f0310", "Magenta", "Magenta vivido, stile neon.",
                 ["Mint-Y-Pink", "Mint-Y-Purple", "Mint-L-Pink", "Mint-X-Pink"],
-                ["Mint-Y-Dark-Pink", "Mint-Y-Dark-Purple", "Mint-Y-Dark"], False),
+                ["Mint-Y-Dark-Pink", "Mint-Y-Dark-Purple", "Mint-Y-Dark"], ["Mint-L-Dark-Pink", "Mint-Y-Pink", "Mint-L-Purple"], False),
     "viola":   ("#a06bff", "#070310", "Viola", "Viola crepuscolo.",
                 ["Mint-Y-Purple", "Mint-L-Purple", "Mint-X-Purple"],
-                ["Mint-Y-Dark-Purple", "Mint-L-Dark-Purple", "Mint-Y-Dark"], False),
+                ["Mint-Y-Dark-Purple", "Mint-L-Dark-Purple", "Mint-Y-Dark"], ["Mint-L-Dark-Purple", "Mint-Y-Purple", "Mint-L-Purple"], False),
     "indaco":  ("#6366f1", "#04030f", "Indaco", "Indaco profondo, sobrio.",
                 ["Mint-Y-Navy", "Mint-Y-Blue", "Mint-L-Blue", "Mint-X-Blue"],
-                ["Mint-Y-Dark-Blue", "Mint-L-Dark-Blue", "Mint-Y-Dark"], False),
+                ["Mint-Y-Dark-Blue", "Mint-L-Dark-Blue", "Mint-Y-Dark"], ["Mint-L-Dark-Blue", "Mint-Y-Blue", "Mint-L-Blue"], False),
     "blu":     ("#3b82f6", "#02060f", "Blu", "Blu pieno, classico.",
                 ["Mint-Y-Blue", "Mint-L-Blue", "Mint-X-Blue"],
-                ["Mint-Y-Dark-Blue", "Mint-L-Dark-Blue", "Mint-Y-Dark"], False),
+                ["Mint-Y-Dark-Blue", "Mint-L-Dark-Blue", "Mint-Y-Dark"], ["Mint-L-Dark-Blue", "Mint-Y-Blue", "Mint-L-Blue"], False),
     "argento": ("#b8c6d0", "#05080c", "Argento", "Grigio argento: senza dominante di colore.",
                 ["Mint-Y-Grey", "Mint-L-Grey", "Mint-X-Grey"],
-                ["Mint-Y-Dark-Grey", "Mint-L-Dark-Grey", "Mint-Y-Dark"], False),
+                ["Mint-Y-Dark-Grey", "Mint-L-Dark-Grey", "Mint-Y-Dark"], ["Mint-L-Dark-Grey", "Mint-Y-Grey", "Mint-L-Grey"], False),
     # --- preset CHIARO: sfondo bianco, interfaccia chiara ---
     "bianco":  ("#1a73e8", "#eef3f8", "Bianco", "Chiaro: sfondo bianco e interfaccia chiara.",
                 ["Mint-Y-Blue", "Mint-Y", "Mint-L-Blue", "Mint-X-Blue"],
-                ["Mint-Y-Blue", "Mint-Y", "Mint-L-Blue", "Adwaita"], True),
+                ["Mint-Y-Blue", "Mint-Y", "Mint-L-Blue", "Adwaita"], ["Mint-Y-Blue", "Mint-Y", "Mint-L-Blue"], True),
 }
 
 # Ripieghi comuni in coda a ogni catena: temi quasi sempre presenti, così un
@@ -302,9 +302,13 @@ def write_presets() -> str:
                 "gtk_themes": gtk + [t for t in GTK_FALLBACK if t not in gtk],
                 # interfaccia chiara o scura (vale anche per i componenti di
                 # Vesper: pannello, Centro di Controllo, file manager)
+                # temi del GESTORE FINESTRE in formato metacity-1: sono le
+                # decorazioni VERE di Mint, usabili quando la sessione gira
+                # con marco o metacity al posto di Openbox
+                "wm_themes": wm,
                 "light": bool(light),
             }
-            for cid, (accent, _deep, name, desc, icons, gtk, light) in PALETTE.items()
+            for cid, (accent, _deep, name, desc, icons, gtk, wm, light) in PALETTE.items()
         },
     }
     out = os.path.join(ROOT, "data", "presets.json")
@@ -335,7 +339,7 @@ def main() -> int:
             print("colore sconosciuto:", cid, "- disponibili:", ", ".join(PALETTE))
             return 2
         accent, deep = PALETTE[cid][0], PALETTE[cid][1]
-        light = PALETTE[cid][6]
+        light = PALETTE[cid][7]
         print("generato", make(cid, accent, deep, w, h, light=light))
     print("catalogo preset:", write_presets())
     print(f"[sfondi] {len(wanted)} file in {os.path.normpath(DEST)}")

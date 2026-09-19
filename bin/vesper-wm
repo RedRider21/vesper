@@ -1,0 +1,46 @@
+#!/bin/sh
+# SPDX-License-Identifier: AGPL-3.0-or-later
+# Copyright (C) 2026 Daniele Deplano (RedRider21). Parte di Vesper.
+# vesper-wm - quale gestore finestre usa la sessione.
+#
+#   vesper-wm              mostra la scelta e cosa è disponibile
+#   vesper-wm openbox      decorazioni di Vesper, coordinate col preset
+#   vesper-wm marco        decorazioni VERE di Mint (temi metacity-1)
+#   vesper-wm metacity     come marco, versione GNOME storica
+#
+# Ha effetto al prossimo accesso (il gestore finestre si sceglie all'avvio
+# della sessione). Openbox non sa leggere i temi di Mint: è il motivo per cui
+# esiste questa scelta.
+# --- ambiente comune (pacchetto Python, dati, interprete) ---
+_self=$(readlink -f "$0" 2>/dev/null || echo "$0"); _d=$(dirname "$_self")
+for _e in "$_d/env.sh" "$(dirname "$_d")/lib/vesper/env.sh" \
+          /usr/local/lib/vesper/env.sh /usr/lib/vesper/env.sh; do
+  [ -r "$_e" ] && { . "$_e"; break; }
+done
+[ -n "${VESPER_PY:-}" ] || { echo "vesper-wm: python3 non disponibile" >&2; exit 1; }
+
+exec "$VESPER_PY" - "$@" <<'PY'
+import shutil
+import sys
+
+from vesper.profiles import model
+
+if len(sys.argv) > 1:
+    scelto = model.set_wm(sys.argv[1])
+    print("gestore finestre:", scelto)
+    if scelto in ("marco", "metacity"):
+        print("decorazioni:", model.wm_theme_name() or "(nessun tema Mint trovato)")
+    print("Ha effetto al prossimo accesso.")
+    raise SystemExit(0)
+
+attuale = model.get_wm()
+print("attuale:", attuale)
+for wm in model.WM_SUPPORTED:
+    stato = "disponibile" if shutil.which(wm) else "non installato"
+    note = ""
+    if wm == "openbox":
+        note = "decorazioni di Vesper, coordinate col preset"
+    else:
+        note = "decorazioni vere di Mint (temi metacity-1)"
+    print("  %-9s %-15s %s" % (wm, stato, note))
+PY

@@ -138,6 +138,16 @@ def darken(hex_color, factor=0.72):
     return "#%02x%02x%02x" % (r, g, b)
 
 
+def lighten(hex_color, factor=0.35):
+    """Versione più chiara di #rrggbb (per il pallino Chiudi sotto il mouse)."""
+    h = hex_color.lstrip("#")
+    if len(h) != 6:
+        return hex_color
+    r, g, b = (int(h[i:i + 2], 16) for i in (0, 2, 4))
+    r, g, b = (int(c + (255 - c) * factor) for c in (r, g, b))
+    return "#%02x%02x%02x" % (r, g, b)
+
+
 def render(template_text, accent, light=False):
     """Sostituisce i colori del preset. Se il preset è CHIARO, la famiglia
     Core viene tradotta nella variante chiara con la stessa mappa usata per
@@ -146,6 +156,7 @@ def render(template_text, accent, light=False):
     non si toccano."""
     out = (template_text
            .replace("@ACCENT_DK@", darken(accent))
+           .replace("@ACCENT_LT@", lighten(accent))
            .replace("@ACCENT@", accent))
     if light:
         try:

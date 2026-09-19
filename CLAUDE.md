@@ -85,4 +85,10 @@ vesper/
 - Attenzione: `vesper-audio-unmute` agisce sul mixer VERO della macchina, e
   `vesper-screens`/`vesper-nightlight` su xrandr reale. In prova vanno tenuti
   fuori dal PATH.
+- **gsettings/dconf ignorano HOME**: scrivono SEMPRE nella configurazione
+  della sessione reale, attraverso il bus di sessione. `set_wm_theme()` le usa
+  per il tema di marco/metacity: in prova si esporta `VESPER_NO_GSETTINGS=1`,
+  altrimenti si cambiano tema e pulsanti del desktop vero dell'utente
+  (successo: tema marco e button-layout modificati e poi ripristinati a mano).
+- Chiudere sempre le finestre Xephyr a fine prova (`pkill Xephyr`).
 - Commit locale a ogni modifica; nei messaggi niente riferimenti a Claude.

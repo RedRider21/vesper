@@ -1,97 +1,105 @@
-# Vesper-Core - tema finestre predefinito. Generato da
-# tools/make-openbox-themes.py (#1a73e8 = colore del preset, #1252a7 =
-# variante scura). NON modificare i temi generati: si cambia QUESTO template e
-# si rigenera con  python3 tools/make-openbox-themes.py
+# Vesper-Core - tema finestre predefinito, nello stile dei temi Mint-Y.
+# Generato da tools/make-openbox-themes.py (#1a73e8 = colore del preset,
+# #1252a7 / #6aa4f0 = varianti scura e chiara). NON modificare i temi
+# generati: si cambia QUESTO template e si rigenera con
+#   python3 tools/make-openbox-themes.py
 #
-# Look: barra del titolo PIATTA e compatta come nei desktop moderni (Mint,
-# GNOME), titolo centrato, tre pulsanti completi a destra (minimizza,
-# massimizza, chiudi) che si illuminano al passaggio del mouse; il chiudi
-# diventa rosso. Cornice sottile, filetto d'accento sotto la barra della
-# finestra attiva. Le maschere dei pulsanti sono glifi pieni generati da
-# tools/make-button-masks.py: sono 12px e la barra è alta abbastanza da
-# contenerli interi (maschere troppo grandi Openbox le RITAGLIA, e i pulsanti
-# si vedono "a spicchi").
+# I colori sono quelli veri dei temi Mint-Y (letti dal loro tema xfwm4):
+# barra #e8e8e8, testo #202020 sull'attiva e #9d9d9d sull'inattiva, cornice
+# sottile scura. Mint non ha un tema per Openbox, quindi la decorazione è
+# ricostruita qui con le sue misure e i suoi colori.
+#
+# Pulsanti a destra, come in Mint: minimizza e massimizza sono glifi a tratto,
+# il CHIUDI è un pallino pieno nel colore del preset con la X scavata dentro
+# (maschere generate da tools/make-button-masks.py, 12px: più grandi Openbox
+# le ritaglia e si vedono "a spicchi").
 
-# --- Geometria: barra del titolo alta ~30px, cornice sottile ----------------
-padding.width: 9
-padding.height: 8
+# --- Geometria: barra alta ~36px come in Mint, cornice sottile -------------
+padding.width: 10
+padding.height: 10
 border.width: 1
 window.client.padding.width: 0
 window.client.padding.height: 0
 window.handle.width: 0
 
 # --- Cornice ----------------------------------------------------------------
-window.active.border.color: #1252a7
-window.inactive.border.color: #ccd6de
+window.active.border.color: #c6c6c6
+window.inactive.border.color: #c6c6c6
 
-# --- Barra del titolo: piatta, con filetto d'accento sotto l'attiva ---------
+# --- Barra del titolo: piatta, stesso colore su attiva e inattiva ----------
 window.active.title.bg: flat solid
-window.active.title.bg.color: #e9eef3
+window.active.title.bg.color: #e8e8e8
 window.inactive.title.bg: flat solid
-window.inactive.title.bg.color: #e9eef3
-window.active.title.separator.color: #1a73e8
-window.inactive.title.separator.color: #ccd6de
+window.inactive.title.bg.color: #e8e8e8
+# separatore invisibile: in Mint non c'è nessuna riga sotto il titolo
+window.active.title.separator.color: #e8e8e8
+window.inactive.title.separator.color: #e8e8e8
 
-# --- Testo del titolo: centrato, chiaro sull'attiva -------------------------
+# --- Testo del titolo: centrato, come in Mint ------------------------------
 window.active.label.bg: parentrelative
 window.inactive.label.bg: parentrelative
-window.active.label.text.color: #0d1720
-window.inactive.label.text.color: #5d6b76
+window.active.label.text.color: #202020
+window.inactive.label.text.color: #9d9d9d
 window.label.text.justify: center
 window.active.label.text.font:shadow=n
 window.inactive.label.text.font:shadow=n
 
-# --- Pulsanti: glifi completi, sfondo solo all'hover ------------------------
+# --- Pulsanti ---------------------------------------------------------------
 window.active.button.unpressed.bg: parentrelative
 window.inactive.button.unpressed.bg: parentrelative
 window.active.button.disabled.bg: parentrelative
 window.inactive.button.disabled.bg: parentrelative
 window.active.button.hover.bg: flat solid
-window.active.button.hover.bg.color: #dce6ed
+window.active.button.hover.bg.color: #d8d8d8
 window.active.button.pressed.bg: flat solid
-window.active.button.pressed.bg.color: #1252a7
+window.active.button.pressed.bg.color: #c9c9c9
 
-window.active.button.unpressed.image.color: #17242e
-window.inactive.button.unpressed.image.color: #9aa7b1
-window.active.button.hover.image.color: #1a73e8
-window.inactive.button.hover.image.color: #17242e
-window.active.button.pressed.image.color: #ffffff
-window.active.button.disabled.image.color: #b9c6d0
-window.inactive.button.disabled.image.color: #c6d1d9
+window.active.button.unpressed.image.color: #404040
+window.inactive.button.unpressed.image.color: #a5a5a5
+window.active.button.hover.image.color: #101010
+window.inactive.button.hover.image.color: #404040
+window.active.button.pressed.image.color: #101010
+window.active.button.disabled.image.color: #bcbcbc
+window.inactive.button.disabled.image.color: #c9c9c9
 
-# Il pulsante CHIUDI si accende di rosso sotto il mouse, come ci si aspetta.
-window.active.button.close.hover.bg: flat solid
-window.active.button.close.hover.bg.color: #ffd9e1
-window.active.button.close.hover.image.color: #7a2038
-window.active.button.close.pressed.bg: flat solid
-window.active.button.close.pressed.bg.color: #ff5a8a
-window.active.button.close.pressed.image.color: #ffffff
+# CHIUDI: il pallino colorato di Mint, qui nel colore del preset attivo.
+window.active.button.close.unpressed.bg: parentrelative
+window.active.button.close.unpressed.image.color: #1a73e8
+window.active.button.close.hover.bg: parentrelative
+window.active.button.close.hover.image.color: #6aa4f0
+window.active.button.close.pressed.bg: parentrelative
+window.active.button.close.pressed.image.color: #1252a7
+window.inactive.button.close.unpressed.image.color: #b0b0b0
 
-# --- Menu del window manager -----------------------------------------------
+# --- Menu del window manager (tasto destro sul desktop) --------------------
+# Stessa impostazione dei menu di Mint: fondo scuro uniforme, voce attiva
+# evidenziata col colore del preset, bordo sottile.
 menu.border.width: 1
-menu.border.color: #ccd6de
+menu.border.color: #c6c6c6
 menu.title.bg: flat solid
-menu.title.bg.color: #e9eef3
-menu.title.text.color: #1a73e8
+menu.title.bg.color: #e8e8e8
+menu.title.text.color: #202020
 menu.title.text.justify: center
 menu.items.bg: flat solid
-menu.items.bg.color: #e9eef3
-menu.items.text.color: #17242e
-menu.items.disabled.text.color: #9aa7b1
+menu.items.bg.color: #f2f2f2
+menu.items.text.color: #202020
+menu.items.disabled.text.color: #a5a5a5
 menu.items.active.bg: flat solid
-menu.items.active.bg.color: #1252a7
-menu.items.active.text.color: #0d1720
-menu.separator.color: #ccd6de
+menu.items.active.bg.color: #1a73e8
+menu.items.active.text.color: #ffffff
+menu.separator.color: #d6d6d6
 menu.separator.width: 1
+menu.separator.padding.width: 6
+menu.separator.padding.height: 3
 menu.overlap.x: -2
 
 # --- OSD (indicatori a schermo) --------------------------------------------
 osd.border.width: 1
-osd.border.color: #ccd6de
+osd.border.color: #c6c6c6
 osd.bg: flat solid
-osd.bg.color: #e9eef3
-osd.label.text.color: #1a73e8
+osd.bg.color: #e8e8e8
+osd.label.text.color: #202020
 osd.hilight.bg: flat solid
 osd.hilight.bg.color: #1a73e8
 osd.unhilight.bg: flat solid
-osd.unhilight.bg.color: #ccd6de
+osd.unhilight.bg.color: #c9c9c9

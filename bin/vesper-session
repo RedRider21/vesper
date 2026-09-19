@@ -15,7 +15,8 @@
 #   3. applica il preset di aspetto (accent, sfondo, icone);
 #   4. avvia i componenti: desktop (sfondo+icone), pannello, servizi;
 #   5. esegue l'autostart XDG (~/.config/autostart, /etc/xdg/autostart);
-#   6. passa il controllo al window manager (Openbox) in primo piano: quando
+#   6. passa il controllo al gestore finestre in primo piano (Openbox, oppure
+#      marco/metacity se si vogliono le decorazioni vere di Mint): quando
 #      questo esce, la sessione termina.
 set -u
 
@@ -104,14 +105,41 @@ command -v spice-vdagent >/dev/null 2>&1 && spice-vdagent 2>/dev/null &
 command -v vesper-autostart >/dev/null 2>&1 && (sleep 2; vesper-autostart) &
 
 # --- 6. window manager in primo piano: la sessione vive quanto lui ---------
-if ! command -v openbox >/dev/null 2>&1; then
-  echo "vesper-session: openbox non installato: la sessione non può partire" >&2
+# Quale gestore finestre: la scelta sta in ~/.config/vesper/wm.
+#   openbox   (predefinito) decorazioni di Vesper, coordinate col preset
+#   marco     gestore finestre di MATE: usa i temi metacity-1, quindi disegna
+#             le decorazioni VERE di Mint (Mint-Y, Mint-L, ...)
+#   metacity  come sopra, versione GNOME storica
+# Openbox non sa leggere quei temi (formato diverso), ed è il motivo per cui
+# esiste questa scelta.
+WM=openbox
+[ -r "$CONF/wm" ] && WM=$(head -1 "$CONF/wm" | tr -d ' \n')
+case "$WM" in
+  marco|metacity|openbox) ;;
+  *) WM=openbox ;;
+esac
+# se il gestore scelto non c'è, si ripiega su quello che c'è
+command -v "$WM" >/dev/null 2>&1 || WM=""
+if [ -z "$WM" ]; then
+  for c in openbox marco metacity; do
+    command -v "$c" >/dev/null 2>&1 && { WM="$c"; break; }
+  done
+fi
+if [ -z "$WM" ]; then
+  echo "vesper-session: nessun gestore finestre trovato (serve openbox)" >&2
   command -v xmessage >/dev/null 2>&1 && \
-    xmessage -center "Vesper richiede Openbox come gestore finestre.
+    xmessage -center "Vesper ha bisogno di un gestore finestre.
 Installa il pacchetto 'openbox' e riprova." 2>/dev/null
   exit 1
 fi
-if [ -f "$RC" ]; then
-  exec openbox --config-file "$RC"
-fi
-exec openbox
+echo "gestore finestre: $WM"
+
+case "$WM" in
+  openbox)
+    if [ -f "$RC" ]; then
+      exec openbox --config-file "$RC"
+    fi
+    exec openbox ;;
+  marco)     exec marco ;;
+  metacity)  exec metacity ;;
+esac

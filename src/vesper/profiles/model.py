@@ -524,6 +524,88 @@ def set_theme_family(fam: str) -> None:
     set_window_theme()
 
 
+# ---- gestore finestre: Openbox (predefinito) oppure marco/metacity --------
+# Openbox non sa leggere i temi di Mint (che sono in formato metacity-1 e
+# xfwm4): per avere le decorazioni VERE di Mint la sessione deve girare con un
+# gestore finestre che quel formato lo legge. Vesper lascia scegliere:
+#   openbox   (predefinito) decorazioni di Vesper, coordinate col preset
+#   marco     il gestore finestre di MATE: usa i temi metacity-1 di Mint
+#   metacity  idem, versione GNOME storica
+# La scelta sta in ~/.config/vesper/wm e la legge vesper-session.
+WM_CONF = CONF_DIR / "wm"
+WM_SUPPORTED = ("openbox", "marco", "metacity")
+WM_DEFAULT = "openbox"
+
+
+def get_wm() -> str:
+    try:
+        v = WM_CONF.read_text().strip().lower()
+        return v if v in WM_SUPPORTED else WM_DEFAULT
+    except OSError:
+        return WM_DEFAULT
+
+
+def set_wm(name: str) -> str:
+    """Salva il gestore finestre della sessione (ha effetto al prossimo
+    accesso) e, se serve, gli applica subito il tema del preset."""
+    name = name if name in WM_SUPPORTED else WM_DEFAULT
+    paths.ensure_config()
+    WM_CONF.write_text(name + "\n")
+    if name in ("marco", "metacity"):
+        set_wm_theme()
+    return name
+
+
+def wm_theme_name(key: str | None = None) -> str:
+    """Tema di decorazione (formato metacity-1) abbinato al preset: il primo
+    installato fra quelli del suo colore."""
+    for name in (preset_data(key).get("wm_themes") or []):
+        if _wm_theme_installed(name):
+            return name
+    return "Mint-Y" if _wm_theme_installed("Mint-Y") else ""
+
+
+def _wm_theme_installed(name: str) -> bool:
+    for d in (HOME / ".themes", HOME / ".local" / "share" / "themes",
+              Path("/usr/share/themes"), Path("/usr/local/share/themes")):
+        if (d / name / "metacity-1" / "metacity-theme-3.xml").is_file() or \
+           (d / name / "metacity-1" / "metacity-theme-2.xml").is_file() or \
+           (d / name / "metacity-1" / "metacity-theme-1.xml").is_file():
+            return True
+    return False
+
+
+def set_wm_theme(key: str | None = None) -> str:
+    """Applica al gestore finestre (marco o metacity) il tema del preset.
+    Si passa da gsettings, che è come quei window manager leggono la scelta."""
+    theme = wm_theme_name(key)
+    if not theme:
+        return ""
+    wm = get_wm()
+    schema = {"marco": "org.mate.Marco.general",
+              "metacity": "org.gnome.desktop.wm.preferences"}.get(wm)
+    if schema is None or not shutil.which("gsettings"):
+        return theme
+    # ATTENZIONE: gsettings/dconf NON rispettano HOME, scrivono sempre nella
+    # configurazione della sessione REALE attraverso il bus di sessione. Per
+    # provare Vesper senza toccare il desktop dell'utente si esporta
+    # VESPER_NO_GSETTINGS=1: qui ci si ferma prima di scrivere.
+    if os.environ.get("VESPER_NO_GSETTINGS"):
+        return theme
+    try:
+        subprocess.run(["gsettings", "set", schema, "theme", theme],
+                       stdout=subprocess.DEVNULL, stderr=subprocess.DEVNULL,
+                       timeout=5)
+        # il titolo centrato e i pulsanti a destra, come in Mint
+        subprocess.run(["gsettings", "set", schema, "button-layout",
+                        "menu:minimize,maximize,close"],
+                       stdout=subprocess.DEVNULL, stderr=subprocess.DEVNULL,
+                       timeout=5)
+    except Exception:                    # noqa: BLE001
+        pass
+    return theme
+
+
 def ensure_themes_visible() -> int:
     """Rende i temi finestre di Vesper visibili a Openbox e a GTK.
 
@@ -945,6 +1027,7 @@ def activate_preset(key: str, log=print) -> bool:
     set_wallpaper(wallpaper_path(key), remember=False)
     write_accent_css(key)
     set_window_theme(key)
+    set_wm_theme(key)          # se la sessione usa marco/metacity
     return True
 
 
@@ -957,6 +1040,7 @@ def apply_current() -> dict:
     set_wallpaper(wallpaper_path(key), remember=False)
     write_accent_css(key)
     set_window_theme(key)
+    set_wm_theme(key)          # se la sessione usa marco/metacity
     return preset_data(key)
 
 

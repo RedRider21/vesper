@@ -11,7 +11,9 @@ TRATTO è fatto di bit accesi e il resto è spento.
 Due stili:
 
 - `simbolico`: minimizza «—», massimizza «□», ripristina «❐», chiudi «✕»,
-  tratti pieni e completi. È lo stile del tema predefinito di Vesper.
+  tratti pieni e completi.
+- `misto`: come sopra, ma il CHIUDI è un pallino pieno col simbolo scavato
+  dentro — la stessa impostazione dei temi di Mint. È lo stile predefinito.
 - `sfera`: il disco pieno dei pulsanti stile macOS, col simbolo SCAVATO
   dentro (bit spenti). Usato dalla famiglia Cards.
 
@@ -102,20 +104,26 @@ def sfera(glyph: str, size: int = 12) -> Image.Image:
 
 
 GLIFI = ("iconify", "max", "max_toggled", "close", "shade", "desk")
+# "misto" = come Mint: il CHIUDI è un pallino pieno col simbolo scavato, gli
+# altri due sono glifi a tratto. È lo stile del tema predefinito di Vesper.
+MISTO = {"close": "sfera"}
 
 
 def scrivi(dest: str, stile: str, size: int) -> int:
     os.makedirs(dest, exist_ok=True)
-    fn = simbolico if stile == "simbolico" else sfera
     n = 0
     for g in GLIFI:
         if stile == "sfera" and g in ("shade", "desk"):
             continue                               # Cards non li usa
+        if stile == "misto":
+            fn = sfera if MISTO.get(g) == "sfera" else simbolico
+        else:
+            fn = simbolico if stile == "simbolico" else sfera
         img = fn(g, size)
         img.save(os.path.join(dest, g + ".xbm"))
         n += 1
     # Openbox cerca anche max_disabled/desk_toggled: li facciamo uguali
-    if stile == "simbolico":
+    if stile in ("simbolico", "misto"):
         simbolico("max", size).save(os.path.join(dest, "max_disabled.xbm"))
         simbolico("desk", size).save(os.path.join(dest, "desk_toggled.xbm"))
         n += 2
@@ -126,7 +134,8 @@ def main() -> int:
     ap = argparse.ArgumentParser(description="Maschere dei pulsanti Openbox")
     ap.add_argument("--size", type=int, default=12, help="lato in pixel (default 12)")
     ap.add_argument("--dest", default="", help="cartella di destinazione")
-    ap.add_argument("--stile", choices=("simbolico", "sfera"), default="simbolico")
+    ap.add_argument("--stile", choices=("simbolico", "sfera", "misto"),
+                    default="simbolico")
     args = ap.parse_args()
     if args.dest:
         n = scrivi(args.dest, args.stile, args.size)
@@ -136,7 +145,7 @@ def main() -> int:
     core = os.path.join(HERE, "openbox-templates", "core", "openbox-3")
     cards = os.path.join(HERE, "openbox-templates", "cards", "openbox-3")
     retro = os.path.join(HERE, "openbox-templates", "retro", "openbox-3")
-    print("%d maschere simboliche in %s" % (scrivi(core, "simbolico", args.size), core))
+    print("%d maschere miste in %s" % (scrivi(core, "misto", args.size), core))
     print("%d maschere a sfera in %s" % (scrivi(cards, "sfera", args.size), cards))
     print("%d maschere simboliche in %s" % (scrivi(retro, "simbolico", args.size), retro))
     return 0

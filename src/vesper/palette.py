@@ -62,7 +62,22 @@ LIGHT = {
     "#2a4452": "#b9c6d0",   # glifi disabilitati
     "#223440": "#c6d1d9",   # glifi disabilitati (inattiva)
     "#03070f": "#dfe7ee",   # base della banda del menu
-    # --- tema finestre "Core" (decorazione Openbox) ---
+    # --- tema finestre "Core": colori Mint-Y scuro -> Mint-Y chiaro ---
+    "#2b2b2b": "#e8e8e8",   # barra del titolo
+    "#323232": "#f2f2f2",   # voci di menu
+    "#e3e3e3": "#202020",   # testo attivo
+    "#acacac": "#9d9d9d",   # testo inattivo
+    "#d3d3d3": "#404040",   # glifi dei pulsanti
+    "#7d7d7d": "#a5a5a5",   # glifi inattivi
+    "#3a3a3a": "#d8d8d8",   # sfondo pulsante sotto il mouse
+    "#4a4a4a": "#c9c9c9",   # sfondo pulsante premuto
+    "#5a5a5a": "#bcbcbc",   # glifi disabilitati
+    "#1f1f1f": "#c6c6c6",   # cornice
+    "#6f6f6f": "#b0b0b0",   # chiudi inattivo
+    "#464646": "#d6d6d6",   # separatore di menu
+    "#10161c": "#ffffff",   # testo sulla voce di menu attiva
+    "#ffffff": "#101010",   # glifo sotto il mouse
+    # --- tema finestre "Core" (vecchi colori, tenuti per compatibilità) ---
     "#16222c": "#ccd6de",   # cornice inattiva
     "#17303f": "#dce6ed",   # sfondo del pulsante sotto il mouse
     "#7a2038": "#ffd9e1",   # sfondo del pulsante Chiudi sotto il mouse

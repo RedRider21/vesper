@@ -2745,6 +2745,56 @@ def open_appearance(_btn=None):
     for rb in fam_radios.values():
         rb.connect("toggled", lambda w: w.get_active() and fam_apply())
 
+    # --- Gestore finestre: Openbox o le decorazioni VERE di Mint -----------
+    # Openbox non sa leggere i temi di Mint (formato metacity-1): per averli
+    # davvero la sessione deve girare con marco o metacity. Qui si sceglie; la
+    # scelta ha effetto al prossimo accesso.
+    h_wm = Gtk.Label(label=_t("v.wm.title"))
+    h_wm.set_xalign(0)
+    h_wm.get_style_context().add_class("vesper-section")
+    body.pack_start(h_wm, False, False, 0)
+
+    wm_intro = Gtk.Label(label=_t("v.wm_intro"))
+    wm_intro.set_xalign(0)
+    wm_intro.set_line_wrap(True)
+    wm_intro.get_style_context().add_class("vesper-val")
+    body.pack_start(wm_intro, False, False, 0)
+
+    wm_row = Gtk.Box(orientation=Gtk.Orientation.HORIZONTAL, spacing=8)
+    wm_row.get_style_context().add_class("vesper-card")
+    wm_combo = Gtk.ComboBoxText()
+    wm_labels = {"openbox": _t("v.wm.openbox"), "marco": _t("v.wm.marco"),
+                 "metacity": _t("v.wm.metacity")}
+    if _m is not None:
+        for wm in _m.WM_SUPPORTED:
+            etichetta = wm_labels.get(wm, wm)
+            if not have(wm):
+                etichetta += "  " + _t("v.wm.missing")
+            wm_combo.append(wm, etichetta)
+        wm_combo.set_active_id(_m.get_wm())
+    wm_row.pack_start(wm_combo, True, True, 0)
+    body.pack_start(wm_row, False, False, 0)
+
+    wm_status = Gtk.Label(label="")
+    wm_status.set_xalign(0)
+    wm_status.set_line_wrap(True)
+    wm_status.get_style_context().add_class("vesper-val")
+    body.pack_start(wm_status, False, False, 0)
+
+    def wm_changed(combo):
+        if _m is None:
+            return
+        wm = combo.get_active_id()
+        if not wm:
+            return
+        _m.set_wm(wm)
+        if wm == "openbox":
+            wm_status.set_text(_t("v.wm.set_openbox"))
+        else:
+            tema = _m.wm_theme_name() or "-"
+            wm_status.set_text(_t("v.wm.set_mint") % (wm, tema))
+    wm_combo.connect("changed", wm_changed)      # DOPO set_active_id
+
     # --- Oppure un tema FISSO fra tutti quelli installati -------------------
     # Qui compaiono anche i temi di terze parti inclusi in Vesper (i "1977" nei
     # vari colori) e qualunque tema che l'utente abbia messo in ~/.themes.

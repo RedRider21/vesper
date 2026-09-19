@@ -168,13 +168,25 @@ spinner { color: #00e5ff; }
 .vesper-panel label.vesper-clock { color: #c8f5ff; font-size: 10pt; padding: 0 6px; }
 .vesper-panel label.vesper-clock-date { color: #5a8a9a; font-size: 8pt; padding: 0 6px; }
 .vesper-panel separator { background-color: #1a3a52; margin: 5px 4px; }
-/* Menu a comparsa del pulsante del menu */
+/* Menu a comparsa (tasto destro sul desktop, menu del pannello) */
 menu, .menu, menu.background {
-  background-color: #0a1a26; color: #c8f5ff; border: 1px solid #1a3a52;
+  background-color: #0a1a26; color: #c8f5ff;
+  border: 1px solid #1a3a52; border-radius: 10px; padding: 6px 0;
 }
-menu menuitem { padding: 6px 14px; }
+menu menuitem {
+  padding: 7px 14px; margin: 1px 6px; border-radius: 6px;
+  min-height: 20px;
+}
 menu menuitem:hover { background-color: rgba(0,229,255,0.14); color: #00e5ff; }
-menu separator { background-color: #1a3a52; }
+menu menuitem:disabled { color: #45606e; }
+menu menuitem image { color: #00e5ff; -gtk-icon-style: symbolic; }
+menu menuitem:hover image { color: #00e5ff; }
+/* intestazione di sezione dentro il menu del desktop */
+menu label.vesper-menu-head {
+  color: #5a8a9a; font-size: 8pt; font-weight: bold;
+  padding: 2px 2px 4px 2px;
+}
+menu separator { background-color: #1a3a52; margin: 4px 10px; }
 
 /* Popup del pannello come finestre toplevel (menu start, calendario) */
 .vesper-popup, .vesper-popup.background {

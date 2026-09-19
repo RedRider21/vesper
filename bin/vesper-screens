@@ -19,15 +19,40 @@
 # riavviare nulla:
 #   1) viene toccato il file di refresh (pannello e Centro di Controllo lo
 #      ascoltano e riposizionano barre e finestre sul monitor attivo);
-#   2) si riapplicano sfondo+accent (vesper-tool apply), come un cambio profilo.
+#   2) si riapplicano sfondo+accent (vesper-profile apply).
 # Prima il cambio schermo lasciava barre e finestre sul monitor spento (xrandr
 # --off/--primary spesso NON scatena "monitors-changed" di GTK).
+
+# Gli strumenti di sistema stampano messaggi TRADOTTI: qui se ne legge
+# l'output, quindi serve la lingua neutra o il parsing non trova nulla.
+LC_ALL=C
+LANG=C
+export LC_ALL LANG
 
 LOG=/tmp/vesper-screens.log
 REFRESH="$HOME/.cache/vesper/screens-refresh"
 
 connected() { xrandr --query 2>/dev/null | awk '/ connected/{print $1}'; }
 primary_out() { xrandr --query 2>/dev/null | awk '/ connected primary/{print $1; exit}'; }
+# Rotazione corrente di un output: normal | left | right | inverted.
+# xrandr la scrive come parola SUBITO DOPO la geometria, prima della parentesi
+# ("HDMI-1 connected 1080x1920+0+0 left (normal left ...)"); se non c'e', e'
+# normale. Serve a NON perdere l'orientamento quando si riapplica la
+# disposizione (schermo verticale che tornava orizzontale da solo).
+cur_rot() {
+  xrandr --query 2>/dev/null | awk -v o="$1" '
+    $1==o {
+      for (i=1; i<=NF; i++) {
+        if ($i ~ /^[0-9]+x[0-9]+\+/) {
+          r = $(i+1)
+          if (r=="left" || r=="right" || r=="inverted") { print r; exit }
+          print "normal"; exit
+        }
+      }
+      print "normal"; exit
+    }'
+}
+
 # Risoluzione corrente di un output (es. 1920x1080) oppure vuota.
 cur_res() {
   xrandr --query 2>/dev/null | awk -v o="$1" '
@@ -38,7 +63,9 @@ reload_desktop() {
   mkdir -p "$(dirname "$REFRESH")" 2>/dev/null || true
   : > "$REFRESH" 2>/dev/null || true
   # Riapplica sfondo+accent: il desktop si riassesta sulla nuova disposizione.
-  command -v vesper-tool >/dev/null 2>&1 && vesper-tool apply >/dev/null 2>&1 &
+  # (prima qui c'era "vesper-tool apply", comando che in Vesper non esiste:
+  # dopo un cambio schermo lo sfondo non veniva più ridisegnato)
+  command -v vesper-profile >/dev/null 2>&1 && vesper-profile apply >/dev/null 2>&1 &
 }
 
 # Estende il desktop: l'output attualmente primario resta primario, gli altri
@@ -47,10 +74,12 @@ extend_all() {
   base=$(primary_out); [ -z "$base" ] && base=$(connected | head -1)
   [ -n "$base" ] || return 1
   prev="$base"
-  set -- --output "$base" --auto --primary
+  set -- --output "$base" --auto --primary --rotate "$(cur_rot "$base")"
   for o in $(connected); do
     [ "$o" = "$prev" ] && continue
-    set -- "$@" --output "$o" --auto --right-of "$prev"
+    # --rotate: senza, uno schermo messo in verticale tornerebbe orizzontale
+    # a ogni riapplicazione della disposizione
+    set -- "$@" --output "$o" --auto --rotate "$(cur_rot "$o")" --right-of "$prev"
     prev="$o"
   done
   xrandr "$@" 2>>"$LOG"
@@ -80,17 +109,18 @@ mirror_all() {
   xrandr "$@" 2>>"$LOG"
 }
 
-# --- Policy e coperchio -----------------------------------------------------
-# Preferenza utente: duplica (default) o estendi. Il default e' "mirror" perche'
-# su una live avviata da chiavetta e collegata a un monitor/proiettore ci si
-# aspetta di vedere la stessa cosa sui due schermi.
+# --- Disposizione e coperchio ----------------------------------------------
+# Preferenza dell'utente: estendi (predefinito) o duplica.
+# Il predefinito e' "extend" perche' su un computer normale collegare un
+# secondo schermo significa AMPLIARE la scrivania; chi collega un proiettore
+# sceglie "duplica" dal Centro di Controllo o con:  vesper-screens set-policy mirror
 CONF="$HOME/.config/vesper/screens.conf"
 screen_policy() {
-  pol=mirror
+  pol=extend
   [ -r "$CONF" ] && . "$CONF" 2>/dev/null
-  case "${NXS_SCREEN_POLICY:-$pol}" in
-    extend) echo extend ;;
-    *)      echo mirror ;;
+  case "${VESPER_SCREEN_POLICY:-${NXS_SCREEN_POLICY:-$pol}}" in
+    mirror) echo mirror ;;
+    *)      echo extend ;;
   esac
 }
 
@@ -100,8 +130,9 @@ internal_out() { connected | grep -iE '^(eDP|LVDS|DSI)' | head -1; }
 # Stato del coperchio via ACPI (open|closed|unknown). Nessun demone acpid:
 # leggiamo direttamente il file esposto dal kernel.
 lid_state() {
-  # Override per test/diagnostica (come NXS_PREFIX/NXS_STATE altrove).
-  [ -n "${NXS_LID_STATE:-}" ] && { echo "$NXS_LID_STATE"; return; }
+  # Override per prove e diagnostica.
+  [ -n "${VESPER_LID_STATE:-${NXS_LID_STATE:-}}" ] && {
+      echo "${VESPER_LID_STATE:-$NXS_LID_STATE}"; return; }
   for f in /proc/acpi/button/lid/*/state; do
     [ -r "$f" ] || continue
     awk '{print $NF}' "$f" 2>/dev/null | head -1
@@ -124,7 +155,7 @@ apply_policy() {
   if [ "$lid" = closed ] && [ -n "$intern" ] && [ "$n" -ge 2 ]; then
     ext=$(connected | grep -vxF "$intern" | head -1)
     if [ -n "$ext" ]; then
-      set -- --output "$ext" --auto --primary
+      set -- --output "$ext" --auto --primary --rotate "$(cur_rot "$ext")"
       for o in $(connected); do
         [ "$o" = "$ext" ] && continue
         set -- "$@" --output "$o" --off
@@ -138,13 +169,14 @@ apply_policy() {
   # ma senza CRTC non viene disegnato da X: resta la splash del kernel).
   if [ "$n" -lt 2 ]; then
     one=$(connected | head -1)
-    [ -n "$one" ] && xrandr --output "$one" --auto --primary 2>>"$LOG"
+    [ -n "$one" ] && xrandr --output "$one" --auto --primary \
+        --rotate "$(cur_rot "$one")" 2>>"$LOG"
     return 0
   fi
 
   case "$(screen_policy)" in
-    extend) extend_all ;;
-    *)      mirror_all ;;
+    mirror) mirror_all ;;
+    *)      extend_all ;;
   esac
 }
 
@@ -200,6 +232,31 @@ case "${1:-}" in
     reload_desktop
     ;;
 
+  rotation)
+    # Stampa l'orientamento corrente di un output (o di tutti).
+    if [ -n "${2:-}" ]; then
+      cur_rot "$2"
+    else
+      for o in $(connected); do printf '%s\t%s\n' "$o" "$(cur_rot "$o")"; done
+    fi
+    ;;
+
+  rotate)
+    # Ruota uno schermo: utile con un monitor montato in VERTICALE.
+    #   vesper-screens rotate HDMI-1 left
+    # normal = orizzontale, left/right = verticale (a seconda di come e'
+    # girato il monitor), inverted = capovolto.
+    [ -n "${2:-}" ] || { echo "uso: vesper-screens rotate OUTPUT {normal|left|right|inverted}" >&2; exit 2; }
+    case "${3:-}" in
+      normal|left|right|inverted) ;;
+      *) echo "orientamento non valido: ${3:-} (normal|left|right|inverted)" >&2; exit 2 ;;
+    esac
+    xrandr --output "$2" --rotate "$3" 2>>"$LOG" || exit 1
+    # Dopo una rotazione cambiano le dimensioni dello schermo: barre e finestre
+    # vanno riposizionate, e lo sfondo ridisegnato.
+    reload_desktop
+    ;;
+
   autostart)
     # All'avvio applica la disposizione secondo la policy (default: duplica).
     # CRUCIALE: un output connesso ma senza CRTC non viene MAI disegnato da X e
@@ -230,7 +287,7 @@ case "${1:-}" in
     case "${2:-}" in
       mirror|extend)
         mkdir -p "$(dirname "$CONF")" 2>/dev/null || true
-        printf 'NXS_SCREEN_POLICY=%s\n' "$2" > "$CONF"
+        printf 'VESPER_SCREEN_POLICY=%s\n' "$2" > "$CONF"
         apply_policy; reload_desktop ;;
       *) echo "uso: vesper-screens set-policy {mirror|extend}" >&2; exit 2 ;;
     esac

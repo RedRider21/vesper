@@ -1,70 +1,218 @@
 #!/bin/sh
 # SPDX-License-Identifier: AGPL-3.0-or-later
 # Copyright (C) 2026 Daniele Deplano (RedRider21). Parte di Vesper.
-# vesper-audio - controllo volume/uscite E microfono/sorgenti via wpctl
-# (PipeWire + WirePlumber). Usato dal widget audio del pannello (vesper.panel).
-# Best-effort: se PipeWire non e' attivo stampa uno stato neutro senza errori.
+#
+# vesper-audio - volume e microfono per l'applet audio del pannello.
+#
+# Funziona con TRE sistemi audio, scegliendo il primo disponibile:
+#   1. wpctl   (PipeWire + WirePlumber)
+#   2. pactl   (PulseAudio, e anche PipeWire col ponte pipewire-pulse)
+#   3. amixer  (solo ALSA, sistemi minimali)
+# Prima usava solo wpctl: su una macchina con PulseAudio ogni comando tornava
+# vuoto e l'applet sembrava rotta ("l'audio non va").
+#
+# Uso:
+#   vesper-audio get|set PCT|up|down|mute|sinks|default ID
+#   vesper-audio mic-get|mic-set PCT|mic-up|mic-down|mic-mute|sources|mic-default ID
+#   vesper-audio mic-inuse      1 se qualcuno sta registrando, 0 altrimenti
+#   vesper-audio backend        stampa quale sistema audio sta usando
+#
+# Ogni comando stampa uno stato neutro invece di fallire: l'applet non deve
+# mai rompersi per un sistema audio assente.
+
+# Gli strumenti audio stampano messaggi TRADOTTI (pactl in italiano scrive
+# "Nome:" e "Descrizione:"): qui si legge il loro output, quindi va forzata la
+# lingua neutra, altrimenti il parsing non trova nulla e l'applet resta vuota.
+LC_ALL=C
+LANG=C
+export LC_ALL LANG
+
 SINK="@DEFAULT_AUDIO_SINK@"
 SOURCE="@DEFAULT_AUDIO_SOURCE@"
+PASSO=5                       # incremento in percentuale per up/down
 
-_have() { command -v wpctl >/dev/null 2>&1; }
+_backend() {
+  if command -v wpctl >/dev/null 2>&1 && wpctl status >/dev/null 2>&1; then
+    echo wpctl
+  elif command -v pactl >/dev/null 2>&1 && pactl info >/dev/null 2>&1; then
+    echo pactl
+  elif command -v amixer >/dev/null 2>&1; then
+    echo amixer
+  else
+    echo none
+  fi
+}
+BK=$(_backend)
 
-# stampa "<pct> <muted:0|1>" per un dato oggetto wpctl (sink o source)
-_getvol() {
-  line=$(wpctl get-volume "$1" 2>/dev/null) || { echo "0 1"; return; }
-  vol=$(echo "$line" | awk '{print $2}'); [ -n "$vol" ] || vol=0
-  pct=$(awk "BEGIN{printf \"%d\", ($vol)*100}")
-  if echo "$line" | grep -q MUTED; then m=1; else m=0; fi
-  echo "$pct $m"
+# ---------------------------------------------------------------- lettura
+# stampa "<percentuale> <muto:0|1>"
+_get() {          # $1 = sink|source
+  case "$BK" in
+    wpctl)
+      obj=$SINK; [ "$1" = source ] && obj=$SOURCE
+      line=$(wpctl get-volume "$obj" 2>/dev/null) || { echo "0 1"; return; }
+      vol=$(echo "$line" | awk '{print $2}'); [ -n "$vol" ] || vol=0
+      pct=$(awk "BEGIN{printf \"%d\", ($vol)*100}")
+      if echo "$line" | grep -q MUTED; then m=1; else m=0; fi
+      echo "$pct $m" ;;
+    pactl)
+      obj=@DEFAULT_SINK@; tipo=sink
+      [ "$1" = source ] && { obj=@DEFAULT_SOURCE@; tipo=source; }
+      pct=$(pactl get-${tipo}-volume "$obj" 2>/dev/null \
+            | awk '/%/{for(i=1;i<=NF;i++) if($i ~ /%$/){gsub(/%/,"",$i); print $i; exit}}')
+      [ -n "$pct" ] || pct=0
+      if pactl get-${tipo}-mute "$obj" 2>/dev/null | grep -qi yes; then m=1; else m=0; fi
+      echo "$pct $m" ;;
+    amixer)
+      ctl=Master; [ "$1" = source ] && ctl=Capture
+      line=$(amixer sget "$ctl" 2>/dev/null | grep -m1 -o '\[[0-9]*%\] \[o[nf]*\]')
+      pct=$(echo "$line" | sed -n 's/^\[\([0-9]*\)%.*/\1/p')
+      [ -n "$pct" ] || pct=0
+      if echo "$line" | grep -q '\[off\]'; then m=1; else m=0; fi
+      echo "$pct $m" ;;
+    *) echo "0 1" ;;
+  esac
 }
 
-# elenca gli oggetti di una sezione di `wpctl status` (Sinks: o Sources:)
-_list() {
-  _have || return 0
-  wpctl status 2>/dev/null | awk -v sect="$1" '
-    $0 ~ sect        {s=1; next}
-    /Sinks:|Sources:|Filters:|Streams:|Devices:/ {s=0}
-    s && match($0, /[0-9]+\./) {
-      def = ($0 ~ /\*/) ? "*" : ""
-      id  = substr($0, RSTART, RLENGTH-1)
-      rest = substr($0, RSTART+RLENGTH+1)
-      sub(/ *\[vol:.*/, "", rest)
-      gsub(/^[ \t]+|[ \t]+$/, "", rest)
-      if (id != "" && rest != "") printf "%s\t%s\t%s\n", id, rest, def
-    }'
+# ---------------------------------------------------------------- scrittura
+_set() {          # $1 = sink|source, $2 = percentuale
+  pct=${2:-50}
+  case "$BK" in
+    wpctl)
+      obj=$SINK; [ "$1" = source ] && obj=$SOURCE
+      wpctl set-volume "$obj" "${pct}%" 2>/dev/null ;;
+    pactl)
+      obj=@DEFAULT_SINK@; tipo=sink
+      [ "$1" = source ] && { obj=@DEFAULT_SOURCE@; tipo=source; }
+      pactl set-${tipo}-volume "$obj" "${pct}%" 2>/dev/null ;;
+    amixer)
+      ctl=Master; [ "$1" = source ] && ctl=Capture
+      amixer -q sset "$ctl" "${pct}%" 2>/dev/null ;;
+  esac
+}
+
+_step() {         # $1 = sink|source, $2 = + oppure -
+  case "$BK" in
+    wpctl)
+      obj=$SINK; [ "$1" = source ] && obj=$SOURCE
+      if [ "$2" = "+" ]; then
+        wpctl set-volume -l 1.5 "$obj" ${PASSO}%+ 2>/dev/null
+      else
+        wpctl set-volume "$obj" ${PASSO}%- 2>/dev/null
+      fi ;;
+    pactl)
+      obj=@DEFAULT_SINK@; tipo=sink
+      [ "$1" = source ] && { obj=@DEFAULT_SOURCE@; tipo=source; }
+      pactl set-${tipo}-volume "$obj" "${2}${PASSO}%" 2>/dev/null ;;
+    amixer)
+      ctl=Master; [ "$1" = source ] && ctl=Capture
+      if [ "$2" = "+" ]; then
+        amixer -q sset "$ctl" ${PASSO}%+ unmute 2>/dev/null
+      else
+        amixer -q sset "$ctl" ${PASSO}%- 2>/dev/null
+      fi ;;
+  esac
+}
+
+_mute() {         # $1 = sink|source
+  case "$BK" in
+    wpctl)
+      obj=$SINK; [ "$1" = source ] && obj=$SOURCE
+      wpctl set-mute "$obj" toggle 2>/dev/null ;;
+    pactl)
+      obj=@DEFAULT_SINK@; tipo=sink
+      [ "$1" = source ] && { obj=@DEFAULT_SOURCE@; tipo=source; }
+      pactl set-${tipo}-mute "$obj" toggle 2>/dev/null ;;
+    amixer)
+      ctl=Master; [ "$1" = source ] && ctl=Capture
+      amixer -q sset "$ctl" toggle 2>/dev/null ;;
+  esac
+}
+
+# ---------------------------------------------------------------- elenchi
+# righe "ID<TAB>nome<TAB>*"  (* = predefinito)
+_list() {         # $1 = sink|source
+  case "$BK" in
+    wpctl)
+      sect="Sinks:"; [ "$1" = source ] && sect="Sources:"
+      wpctl status 2>/dev/null | awk -v sect="$sect" '
+        $0 ~ sect        {s=1; next}
+        /Sinks:|Sources:|Filters:|Streams:|Devices:/ {s=0}
+        s && match($0, /[0-9]+\./) {
+          def = ($0 ~ /\*/) ? "*" : ""
+          id  = substr($0, RSTART, RLENGTH-1)
+          rest = substr($0, RSTART+RLENGTH+1)
+          sub(/ *\[vol:.*/, "", rest)
+          gsub(/^[ \t]+|[ \t]+$/, "", rest)
+          if (id != "" && rest != "") printf "%s\t%s\t%s\n", id, rest, def
+        }' ;;
+    pactl)
+      tipo=sinks; [ "$1" = source ] && tipo=sources
+      if [ "$1" = source ]; then
+        pred=$(pactl info 2>/dev/null | sed -n 's/^Default Source: //p')
+      else
+        pred=$(pactl info 2>/dev/null | sed -n 's/^Default Sink: //p')
+      fi
+      # UNA sola lettura di `pactl list`: si accoppiano Name e Description
+      # mentre si scorre (prima si rileggeva tutto per ogni scheda: lento e
+      # la descrizione non veniva trovata).
+      pactl list "$tipo" 2>/dev/null | awk -v pred="$pred" '
+        /^[[:space:]]*Name:/        { nome = $2 }
+        /^[[:space:]]*Description:/ {
+          sub(/^[[:space:]]*Description:[[:space:]]*/, "")
+          if (nome != "") {
+            def = (nome == pred) ? "*" : ""
+            printf "%s\t%s\t%s\n", nome, $0, def
+            nome = ""
+          }
+        }' ;;
+    amixer)
+      # ALSA puro: le "uscite" sono le schede
+      awk '/^ *[0-9]+ \[/{gsub(/[][]/,""); printf "%s\t%s\t\n", $1, $3}' \
+          /proc/asound/cards 2>/dev/null ;;
+  esac
+}
+
+_default() {      # $1 = sink|source, $2 = id
+  [ -n "${2:-}" ] || return 0
+  case "$BK" in
+    wpctl)  wpctl set-default "$2" 2>/dev/null ;;
+    pactl)
+      if [ "$1" = source ]; then pactl set-default-source "$2" 2>/dev/null
+      else pactl set-default-sink "$2" 2>/dev/null; fi ;;
+  esac
 }
 
 case "${1:-get}" in
-  # ---- USCITA (sink) ----
-  get)  _have || { echo "0 1"; exit 0; }; _getvol "$SINK" ;;
-  set)  _have && wpctl set-volume "$SINK" "${2:-50}%" 2>/dev/null ;;
-  up)   _have && wpctl set-volume -l 1.5 "$SINK" 5%+ 2>/dev/null ;;
-  down) _have && wpctl set-volume "$SINK" 5%- 2>/dev/null ;;
-  mute) _have && wpctl set-mute "$SINK" toggle 2>/dev/null ;;
-  sinks) _list "Sinks:" ;;
-  default) [ -n "${2:-}" ] && _have && wpctl set-default "$2" 2>/dev/null ;;
+  backend) echo "$BK" ;;
 
-  # ---- MICROFONO (source) ----
-  mic-get)  _have || { echo "0 1"; exit 0; }; _getvol "$SOURCE" ;;
-  mic-set)  _have && wpctl set-volume "$SOURCE" "${2:-50}%" 2>/dev/null ;;
-  mic-up)   _have && wpctl set-volume -l 1.5 "$SOURCE" 5%+ 2>/dev/null ;;
-  mic-down) _have && wpctl set-volume "$SOURCE" 5%- 2>/dev/null ;;
-  mic-mute) _have && wpctl set-mute "$SOURCE" toggle 2>/dev/null ;;
-  sources)  _list "Sources:" ;;
-  mic-default) [ -n "${2:-}" ] && _have && wpctl set-default "$2" 2>/dev/null ;;
+  # ---- uscita ----
+  get)     _get sink ;;
+  set)     _set sink "${2:-50}" ;;
+  up)      _step sink "+" ;;
+  down)    _step sink "-" ;;
+  mute)    _mute sink ;;
+  sinks)   _list sink ;;
+  default) _default sink "${2:-}" ;;
+
+  # ---- microfono ----
+  mic-get)     _get source ;;
+  mic-set)     _set source "${2:-50}" ;;
+  mic-up)      _step source "+" ;;
+  mic-down)    _step source "-" ;;
+  mic-mute)    _mute source ;;
+  sources)     _list source ;;
+  mic-default) _default source "${2:-}" ;;
   mic-inuse)
-    # Stampa 1 se un'app sta CATTURANDO dal microfono, 0 altrimenti. Serve
-    # all'applet del pannello per comparire ON-DEMAND (solo quando adoperato).
-    # Metodo preferito: pactl (via pipewire-pulse) elenca i "source-outputs",
-    # cioe' gli stream che stanno registrando -> segnale netto e affidabile.
-    # Fallback senza pactl: stato dei PCM di CATTURA in /proc/asound (suffisso
-    # 'c'), che passano a "state: RUNNING" quando il device e' aperto in lettura.
+    # 1 se un'applicazione sta CATTURANDO dal microfono: serve all'applet per
+    # comparire solo quando il microfono è in uso.
     inuse=0
     if command -v pactl >/dev/null 2>&1; then
       n=$(pactl list short source-outputs 2>/dev/null | grep -c .)
       case "$n" in ''|0) : ;; *) inuse=1 ;; esac
     fi
     if [ "$inuse" = 0 ]; then
+      # senza pactl: i PCM di CATTURA (suffisso 'c') passano a RUNNING
       for st in /proc/asound/card*/pcm*c/sub*/status; do
         [ -f "$st" ] || continue
         if grep -q "state: RUNNING" "$st" 2>/dev/null; then inuse=1; break; fi
@@ -72,8 +220,9 @@ case "${1:-get}" in
     fi
     echo "$inuse" ;;
 
-  *) echo "uso: vesper-audio {get|set PCT|up|down|mute|sinks|default ID| \\
-             mic-get|mic-set PCT|mic-up|mic-down|mic-mute|sources|mic-default ID}" >&2
+  *) echo "uso: vesper-audio {backend|get|set PCT|up|down|mute|sinks|default ID|" >&2
+     echo "                   mic-get|mic-set PCT|mic-up|mic-down|mic-mute|sources|" >&2
+     echo "                   mic-default ID|mic-inuse}" >&2
      exit 2 ;;
 esac
 exit 0

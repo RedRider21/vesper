@@ -163,12 +163,13 @@
      they are maximized, or when they are initially placed.
      Many programs reserve space automatically, but you can use this in other
      cases. -->
-<!-- Vesper: riserva 34px in basso per il pannello (vesper-panel), così le
-     finestre massimizzate non lo coprono. vesper/panelcfg.py aggiorna questi
-     margini quando si sposta o si ridimensiona la barra. -->
+<!-- Vesper: margini a ZERO. Lo spazio per la barra lo dichiara il pannello
+     stesso con gli strut EWMH (_NET_WM_STRUT_PARTIAL), che valgono per
+     qualunque gestore finestre e seguono la geometria vera della barra. Se
+     qui si rimettessero i margini, lo spazio verrebbe riservato due volte. -->
 <margins>
   <top>0</top>
-  <bottom>34</bottom>
+  <bottom>0</bottom>
   <left>0</left>
   <right>0</right>
 </margins>

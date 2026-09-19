@@ -3048,6 +3048,34 @@ def open_screens(_btn=None):
                            _apply(["mode", n, c.get_active_text() or ""]))
                 r.pack_start(ba, False, False, 0)
                 oc.pack_start(r, False, False, 0)
+
+                # --- Orientamento: serve a chi monta il monitor in VERTICALE.
+                #     Senza, lo schermo girato tornava orizzontale a ogni
+                #     riapplicazione della disposizione.
+                rr = Gtk.Box(orientation=Gtk.Orientation.HORIZONTAL, spacing=6)
+                rl = Gtk.Label(label=_t("v.orientation"))
+                rl.set_xalign(0)
+                rl.get_style_context().add_class("vesper-key")
+                rr.pack_start(rl, False, False, 0)
+                rot_combo = Gtk.ComboBoxText()
+                for rid, rlabel in (("normal", _t("v.rot.normal")),
+                                    ("left", _t("v.rot.left")),
+                                    ("right", _t("v.rot.right")),
+                                    ("inverted", _t("v.rot.inverted"))):
+                    rot_combo.append(rid, rlabel)
+                cur_rot = (run_capture(["vesper-screens", "rotation", name])
+                           or "normal").strip()
+                rot_combo.set_active_id(cur_rot if cur_rot in
+                                        ("normal", "left", "right", "inverted")
+                                        else "normal")
+                rr.pack_start(rot_combo, True, True, 0)
+                br = Gtk.Button(label=_t("v.apply"))
+                br.get_style_context().add_class("vesper-menu-item")
+                br.connect("clicked", lambda _w, n=name, c=rot_combo:
+                           _apply(["rotate", n, c.get_active_id() or "normal"]))
+                rr.pack_start(br, False, False, 0)
+                oc.pack_start(rr, False, False, 0)
+
                 if len(outs) >= 2:
                     bo = Gtk.Button(label=_t("v.use_only_this"))
                     bo.get_style_context().add_class("vesper-menu-item")

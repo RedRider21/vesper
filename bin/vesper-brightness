@@ -13,6 +13,12 @@
 # Uso: vesper-brightness up|down|set <0.1..1.5 | 0..100%> ; passo default 10%.
 # Pensato per i tasti Fn del portatile (XF86MonBrightness*) e per un pulsante.
 
+# Gli strumenti di sistema stampano messaggi TRADOTTI: qui se ne legge
+# l'output, quindi serve la lingua neutra o il parsing non trova nulla.
+LC_ALL=C
+LANG=C
+export LC_ALL LANG
+
 STEP="${2:-10}"                       # percentuale (hw) o *100 (sw)
 STATE_DIR="$HOME/.config/vesper"
 STATE="$STATE_DIR/brightness"

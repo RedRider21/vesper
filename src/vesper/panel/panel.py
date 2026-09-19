@@ -20,6 +20,7 @@ import os
 import re
 import shlex
 import subprocess
+import sys
 import threading
 import time
 
@@ -131,6 +132,46 @@ _DISK_RE = re.compile(r'^(sd[a-z]+|vd[a-z]+|hd[a-z]+|xvd[a-z]+|'
 # file manager (vesper-files --desktop) e i popup del pannello. Il file manager
 # in modalita' finestra ha come titolo il nome della cartella, quindi resta.
 _SKIP_TITLES = {"desktop", "vesper-desktop", "", "vesper-popup"}
+
+
+def _set_x_cardinals(gdk_window, nome: str, valori) -> None:
+    """Scrive una proprietà X di tipo CARDINAL (32 bit) sulla finestra.
+
+    Serve per _NET_WM_STRUT / _NET_WM_STRUT_PARTIAL, con cui il pannello
+    dichiara al gestore finestre lo spazio da NON coprire. PyGObject non
+    espone più `Gdk.property_change`, quindi si chiama Xlib direttamente con
+    ctypes: libX11 è presente ovunque giri X, nessuna dipendenza nuova.
+    """
+    import ctypes
+
+    from gi.repository import GdkX11                       # noqa: PLC0415
+
+    xid = GdkX11.X11Window.get_xid(gdk_window)
+    xlib = ctypes.CDLL("libX11.so.6")
+    xlib.XOpenDisplay.restype = ctypes.c_void_p
+    xlib.XOpenDisplay.argtypes = [ctypes.c_char_p]
+    xlib.XInternAtom.restype = ctypes.c_ulong
+    xlib.XInternAtom.argtypes = [ctypes.c_void_p, ctypes.c_char_p, ctypes.c_int]
+    xlib.XChangeProperty.argtypes = [
+        ctypes.c_void_p, ctypes.c_ulong, ctypes.c_ulong, ctypes.c_ulong,
+        ctypes.c_int, ctypes.c_int, ctypes.POINTER(ctypes.c_ubyte), ctypes.c_int]
+    xlib.XFlush.argtypes = [ctypes.c_void_p]
+    xlib.XCloseDisplay.argtypes = [ctypes.c_void_p]
+
+    dpy = xlib.XOpenDisplay(None)
+    if not dpy:
+        raise RuntimeError("nessun display X")
+    try:
+        prop = xlib.XInternAtom(dpy, nome.encode(), False)
+        cardinal = xlib.XInternAtom(dpy, b"CARDINAL", False)
+        # formato 32 = array di `long` per Xlib (non di uint32)
+        dati = (ctypes.c_long * len(valori))(*valori)
+        xlib.XChangeProperty(dpy, xid, prop, cardinal, 32, 0,  # 0 = Replace
+                             ctypes.cast(dati, ctypes.POINTER(ctypes.c_ubyte)),
+                             len(valori))
+        xlib.XFlush(dpy)
+    finally:
+        xlib.XCloseDisplay(dpy)
 
 
 def _xid_int(wid):
@@ -671,6 +712,54 @@ class Panel(Gtk.Window):
             self.move(geo.x, geo.y)
         else:
             self.move(geo.x, geo.y + geo.height - PANEL_HEIGHT)
+        self._set_struts(geo)
+
+    def _set_struts(self, geo=None):
+        """Dichiara al gestore finestre lo spazio occupato dalla barra
+        (_NET_WM_STRUT e _NET_WM_STRUT_PARTIAL).
+
+        Senza questa dichiarazione le finestre MASSIMIZZATE finiscono SOTTO il
+        pannello e il loro bordo inferiore non si vede. Prima ci si affidava ai
+        <margins> di rc.xml, che però valgono solo per Openbox: con marco o
+        metacity (che Vesper usa per le decorazioni di Mint) non hanno alcun
+        effetto. Gli strut invece li capiscono tutti i gestori finestre
+        conformi a EWMH, e seguono la geometria REALE della barra."""
+        win = self.get_window()
+        if win is None:
+            return                          # non ancora realizzata: al realize
+        if geo is None:
+            geo = getattr(self, "_geo", None)
+            if geo is None:
+                return
+        scr = self.get_screen()
+        try:
+            schermo_h = scr.get_height()
+            schermo_w = scr.get_width()
+        except Exception:                    # noqa: BLE001
+            return
+        alto = self.position == "top"
+        # Quanto togliere al bordo: l'altezza della barra PIÙ la distanza fra
+        # il bordo del monitor e il bordo dello schermo (in multi-monitor la
+        # barra non sta sul bordo dello schermo, e lo strut si misura da lì).
+        if alto:
+            top = geo.y + PANEL_HEIGHT
+            bottom = 0
+        else:
+            top = 0
+            bottom = schermo_h - (geo.y + geo.height) + PANEL_HEIGHT
+        strut = [0, 0, max(0, top), max(0, bottom)]
+        # la parte parziale dice anche DA DOVE A DOVE, così su più monitor lo
+        # spazio si riserva solo sulla porzione coperta davvero dalla barra
+        x1, x2 = geo.x, min(schermo_w, geo.x + geo.width) - 1
+        parziale = strut + [0, 0, 0, 0] + ([x1, x2] if alto else [0, 0]) \
+            + ([0, 0] if alto else [x1, x2])
+        # PyGObject non espone più Gdk.property_change, quindi la proprietà
+        # si scrive con Xlib via ctypes: libX11 c'è sempre dove gira X.
+        try:
+            _set_x_cardinals(win, "_NET_WM_STRUT", strut)
+            _set_x_cardinals(win, "_NET_WM_STRUT_PARTIAL", parziale)
+        except Exception as e:               # noqa: BLE001
+            print("[vesper] spazio riservato non dichiarato:", e, file=sys.stderr)
 
     def _center_dialog(self, d):
         """Centra un dialogo sul MONITOR di questo pannello.
@@ -712,9 +801,10 @@ class Panel(Gtk.Window):
         return False
 
     def _on_realize(self, _w):
-        # Lo spazio e' riservato dal margine di Openbox (rc.xml), aggiornato
-        # da panelcfg.move_panel quando si cambia posizione.
+        # Lo spazio riservato si dichiara con gli strut EWMH (vedi
+        # _set_struts): vale per qualunque gestore finestre, non solo Openbox.
         self._place()
+        self._set_struts()
 
     # --- popup come finestre toplevel keep_above (i Gtk.Popover su Openbox
     #     senza compositor finivano "sotto" lo sfondo) ---
@@ -2320,6 +2410,16 @@ def _reposition_panels():
 
 
 def run():
+    # I <margins> di rc.xml non servono più: lo spazio lo riservano gli strut
+    # EWMH (vedi Panel._set_struts). Azzerarli qui sistema anche le
+    # configurazioni create dalle versioni precedenti, dove lo spazio veniva
+    # riservato due volte.
+    try:
+        if panelcfg.clear_openbox_margins():
+            panelcfg.openbox_reconfigure()
+    except Exception:                        # noqa: BLE001
+        pass
+
     # UNA barra per monitor: cosi' bar + menu compaiono su OGNI schermo (interno
     # e esterno). Le barre reagiscono ai cambi schermo (monitors-changed /
     # size-changed / refresh di vesper-screens).

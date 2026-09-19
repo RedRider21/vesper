@@ -99,19 +99,36 @@ def set_position(pos: str) -> None:
     set_config(position=pos)
 
 
-def apply_openbox_margin(pos: str, height: int | None = None) -> None:
-    """Riserva l'altezza del pannello sul lato giusto nei <margins> di rc.xml."""
+def clear_openbox_margins() -> bool:
+    """Azzera i <margins> in rc.xml. Ritorna True se ha dovuto cambiarli.
+
+    Lo spazio per la barra NON si riserva più con i margini di Openbox ma con
+    gli strut EWMH dichiarati dal pannello (vedi panel._set_struts): funzionano
+    con qualunque gestore finestre e seguono la geometria vera della barra.
+    Se restassero anche i margini, lo spazio verrebbe riservato DUE volte e le
+    finestre massimizzate resterebbero corte del doppio."""
     try:
         txt = RC_XML.read_text()
     except OSError:
-        return
-    h = height if height is not None else get_height()
-    top = h if pos == "top" else 0
-    bottom = h if pos == "bottom" else 0
-    txt = re.sub(r"<top>\d+</top>", "<top>%d</top>" % top, txt, count=1)
-    txt = re.sub(r"<bottom>\d+</bottom>", "<bottom>%d</bottom>" % bottom,
-                 txt, count=1)
-    RC_XML.write_text(txt)
+        return False
+    nuovo = txt
+    for lato in ("top", "bottom", "left", "right"):
+        nuovo = re.sub(r"<%s>\d+</%s>" % (lato, lato),
+                       "<%s>0</%s>" % (lato, lato), nuovo, count=1)
+    if nuovo == txt:
+        return False
+    try:
+        RC_XML.write_text(nuovo)
+    except OSError:
+        return False
+    return True
+
+
+def apply_openbox_margin(pos: str, height: int | None = None) -> None:
+    """Compatibilità: i margini non servono più (li sostituiscono gli strut),
+    quindi qui si azzerano e basta."""
+    _ = pos, height
+    clear_openbox_margins()
 
 
 # ---- Desktop virtuali (workspaces) --------------------------------------

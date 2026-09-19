@@ -16,6 +16,12 @@
 #
 # Uso: vesper-audio-unmute [passate]   (default 4 passate, ~6s)
 
+# Gli strumenti di sistema stampano messaggi TRADOTTI: qui se ne legge
+# l'output, quindi serve la lingua neutra o il parsing non trova nulla.
+LC_ALL=C
+LANG=C
+export LC_ALL LANG
+
 _wp_unmute() {
   command -v wpctl >/dev/null 2>&1 || return 0
   wpctl set-mute   @DEFAULT_AUDIO_SINK@ 0    2>/dev/null

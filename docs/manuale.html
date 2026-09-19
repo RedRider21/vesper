@@ -190,9 +190,32 @@ vesper-wm auto       # lascia decidere a Vesper (predefinito)</pre>
     <tr><td><kbd>Super</kbd>+<kbd>Stamp</kbd></td><td>Cattura di un'area</td></tr>
   </table>
   <p class="intro">
-    Si modificano dal Centro di Controllo → <em>Tasti rapidi</em>: l'editor
-    riscrive la configurazione del gestore finestre conservando i commenti.
+    Si modificano dal Centro di Controllo → <em>Tasti rapidi</em>. Vesper
+    scrive dove le cerca il gestore finestre in uso: nel proprio
+    <code>~/.config/vesper/openbox-rc.xml</code> con Openbox (conservando
+    commenti e formattazione), oppure nelle impostazioni di marco/metacity
+    quando la sessione usa le decorazioni di Mint (lì i posti per i comandi
+    sono dodici, è un limite loro). <code>vesper-keys backend</code> dice
+    quale dei due è attivo.
   </p>
+
+  <h3>Nell'editor di testo</h3>
+  <p class="intro">
+    <code>vesper-editor</code> ha le sue, tutte elencate dentro il programma
+    con <kbd>Ctrl</kbd>+<kbd>Maiusc</kbd>+<kbd>H</kbd>.
+  </p>
+  <table>
+    <tr><th>Tasti</th><th>Azione</th></tr>
+    <tr><td><kbd>Ctrl</kbd>+<kbd>N</kbd> / <kbd>O</kbd> / <kbd>S</kbd></td><td>nuovo, apri, salva</td></tr>
+    <tr><td><kbd>Ctrl</kbd>+<kbd>W</kbd> / <kbd>Q</kbd></td><td>chiudi la scheda, esci</td></tr>
+    <tr><td><kbd>Ctrl</kbd>+<kbd>F</kbd> / <kbd>H</kbd>, <kbd>F3</kbd></td><td>trova, sostituisci, occorrenza successiva</td></tr>
+    <tr><td><kbd>Ctrl</kbd>+<kbd>I</kbd></td><td>vai a riga</td></tr>
+    <tr><td><kbd>Ctrl</kbd>+<kbd>D</kbd> / <kbd>Ctrl</kbd>+<kbd>Maiusc</kbd>+<kbd>D</kbd></td><td>elimina, duplica la riga</td></tr>
+    <tr><td><kbd>Alt</kbd>+<kbd>Su</kbd> / <kbd>Giù</kbd></td><td>sposta la riga</td></tr>
+    <tr><td><kbd>Ctrl</kbd>+<kbd>/</kbd></td><td>commenta o decommenta</td></tr>
+    <tr><td><kbd>Ctrl</kbd>+<kbd>+</kbd> / <kbd>-</kbd> / <kbd>0</kbd></td><td>dimensione del testo</td></tr>
+    <tr><td><kbd>Ctrl</kbd>+<kbd>PagSu</kbd> / <kbd>PagGiù</kbd>, <kbd>Alt</kbd>+<kbd>1…9</kbd></td><td>cambia scheda</td></tr>
+  </table>
 </section>
 
 <section id="comandi">
@@ -209,6 +232,11 @@ vesper-wm auto       # lascia decidere a Vesper (predefinito)</pre>
     <tr><td><code>vesper-lang</code></td><td>lingua dell'interfaccia</td></tr>
     <tr><td><code>vesper-screensaver</code></td><td>salvaschermo e blocco schermo</td></tr>
     <tr><td><code>vesper-logout</code></td><td>dialogo di fine sessione</td></tr>
+    <tr><td><code>vesper-editor [+riga] [file…]</code></td><td>editor di testo con colorazione della sintassi</td></tr>
+    <tr><td><code>vesper-player</code>, <code>vesper-video</code></td><td>lettore audio e riproduttore video</td></tr>
+    <tr><td><code>vesper-recorder</code></td><td>registratore vocale (salva in ~/Musica/Registrazioni)</td></tr>
+    <tr><td><code>vesper-disks</code></td><td>dischi e chiavette: elenco, montaggio, smontaggio</td></tr>
+    <tr><td><code>vesper-keys</code></td><td>scorciatoie del desktop (usato dal Centro di Controllo)</td></tr>
     <tr><td><code>vesper-screenshot</code>, <code>vesper-clipboard</code>, <code>vesper-nightlight</code>, <code>vesper-screens</code>, <code>vesper-audio</code>, <code>vesper-wifi</code>, <code>vesper-bluetooth</code>, <code>vesper-battery</code>, <code>vesper-brightness</code></td><td>utilità richiamate dal pannello e dalle scorciatoie</td></tr>
   </table>
 </section>

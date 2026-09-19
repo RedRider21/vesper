@@ -784,10 +784,84 @@ def _priv():
 
 
 
+# Nomi GDK dei soli modificatori: premerli da soli non fa una scorciatoia.
+_OB_MOD_SKIP = ("Control_L", "Control_R", "Alt_L", "Alt_R", "Shift_L",
+                "Shift_R", "Super_L", "Super_R", "Meta_L", "Meta_R",
+                "ISO_Level3_Shift", "Caps_Lock", "Num_Lock")
+
+
+def _ob_key_from_event(ev):
+    """Da un evento tastiera GDK alla stringa in sintassi Openbox ('W-n',
+    'C-A-t'). None se e' premuto solo un modificatore. La sintassi Openbox e'
+    quella "ufficiale" di Vesper: con marco la traduce vesper-keys."""
+    name = Gdk.keyval_name(ev.keyval)
+    if name in _OB_MOD_SKIP:
+        return None
+    m = ev.state
+    parts = []
+    if m & Gdk.ModifierType.CONTROL_MASK:
+        parts.append("C")
+    if m & Gdk.ModifierType.MOD1_MASK:                 # Alt
+        parts.append("A")
+    if m & Gdk.ModifierType.SHIFT_MASK:
+        parts.append("S")
+    if (m & Gdk.ModifierType.SUPER_MASK) or (m & Gdk.ModifierType.MOD4_MASK):
+        parts.append("W")                              # Super / tasto Windows
+    if len(name) == 1 and name.isalpha():
+        name = name.lower()                            # 'S-n', non 'S-N'
+    return "-".join(parts + [name])
+
+
+def _capture_key(parent):
+    """Dialogo «premi la combinazione» -> stringa Openbox o None."""
+    dlg = Gtk.Dialog(title=_t("v.new_combo"), transient_for=parent, modal=True)
+    dlg.add_button(_t("v.cancel"), Gtk.ResponseType.CANCEL)
+    lab = Gtk.Label(label=_t("v.press_combo"))
+    lab.set_line_wrap(True)
+    lab.set_margin_top(24); lab.set_margin_bottom(24)
+    lab.set_margin_start(28); lab.set_margin_end(28)
+    dlg.get_content_area().add(lab)
+    res = {"key": None}
+
+    def on_key(_w, ev):
+        if ev.keyval == Gdk.KEY_Escape:
+            dlg.response(Gtk.ResponseType.CANCEL)
+            return True
+        k = _ob_key_from_event(ev)
+        if k:
+            res["key"] = k
+            dlg.response(Gtk.ResponseType.OK)
+        return True
+    dlg.connect("key-press-event", on_key)
+    dlg.show_all()
+    dlg.run()
+    dlg.destroy()
+    return res["key"]
+
+
+def _ask_text(parent, title, initial=""):
+    """Dialogo con una sola riga di testo -> il testo, o None se si annulla."""
+    dlg = Gtk.Dialog(title=title, transient_for=parent, modal=True)
+    dlg.add_button(_t("v.cancel"), Gtk.ResponseType.CANCEL)
+    dlg.add_button(_t("v.ok"), Gtk.ResponseType.OK)
+    ent = Gtk.Entry(); ent.set_text(initial); ent.set_activates_default(True)
+    ent.set_width_chars(40)
+    ent.set_margin_top(14); ent.set_margin_bottom(14)
+    ent.set_margin_start(16); ent.set_margin_end(16)
+    dlg.get_content_area().add(ent)
+    dlg.set_default_response(Gtk.ResponseType.OK)
+    dlg.show_all()
+    resp = dlg.run()
+    txt = ent.get_text().strip()
+    dlg.destroy()
+    return txt if resp == Gtk.ResponseType.OK and txt else None
+
+
 def open_hotkeys(_btn=None):
     win, body = panel_window(_t("v.hotkeys.title"), 620, 560)
 
-    intro = Gtk.Label(label=_t("v.hk_intro"))
+    dove = run_capture(["vesper-keys", "backend"], timeout=6).strip()
+    intro = Gtk.Label(label=_t("v.hk_intro") + (("\n" + dove) if dove else ""))
     intro.set_xalign(0); intro.set_line_wrap(True)
     intro.get_style_context().add_class("vesper-val")
     body.pack_start(intro, False, False, 0)

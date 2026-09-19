@@ -87,6 +87,10 @@ comando giusto per Debian/Ubuntu, Fedora, Arch e Alpine.
 | `vesper-profile` | preset di aspetto: accento, sfondo, icone, stile finestre |
 | `vesper-screensaver` | salvaschermo animato + blocco schermo con password |
 | `vesper-logout` | dialogo di fine sessione (blocca/esci/riavvia/spegni) |
+| `vesper-editor` | editor di testo: schede, colorazione della sintassi, cerca/sostituisci, stampa |
+| `vesper-player`, `vesper-video` | lettore audio (playlist) e riproduttore video |
+| `vesper-recorder` | registratore vocale |
+| `vesper-disks` | dischi e chiavette: elenco, montaggio, smontaggio |
 | altri `vesper-*` | audio, batteria, bluetooth, luminosità, appunti, data/ora, scorciatoie, lingua, luce blu, schermi, schermate, sfondo, terminale, wifi |
 
 Tutti i comandi trovano da soli il pacchetto Python e i dati a partire da dove

@@ -1,40 +1,119 @@
-#!/usr/bin/env python3
+#!/bin/sh
 # SPDX-License-Identifier: AGPL-3.0-or-later
 # Copyright (C) 2026 Daniele Deplano (RedRider21). Parte di Vesper.
-# vesper-keys - gestione delle scorciatoie da tastiera di Openbox (rc.xml).
+# vesper-keys - scorciatoie da tastiera del desktop ("esegui comando").
 #
-# Modifica SOLO le scorciatoie "Esegui comando" (keybind -> action Execute) del
-# file ~/.config/openbox/rc.xml, con manipolazione TESTUALE mirata: preserva
-# commenti, formattazione e le altre keybind (cambio desktop, ecc.) che una
-# riserializzazione XML distruggerebbe. Dopo ogni modifica fa
-# `openbox --reconfigure` (applica al volo, senza riavviare la sessione).
+# Vesper puo' girare con Openbox oppure con marco/metacity (decorazioni Mint),
+# e i due tengono le scorciatoie in posti diversi. Qui c'e' un comando solo con
+# due backend, scelti in base al gestore finestre in uso:
 #
-# NB (live): su una live in RAM le modifiche a ~/.config valgono per la sessione;
-# persistono al riavvio solo con la persistenza dati (NXSDATA) su ~/.config.
+#   openbox           <keybind key="..."><action name="Execute">  dentro il
+#                     rc.xml DI VESPER (~/.config/vesper/openbox-rc.xml, che la
+#                     sessione passa a Openbox con --config-file; il percorso
+#                     arriva da VESPER_RC_XML). Modifica TESTUALE mirata:
+#                     conserva commenti, formattazione e le altre keybind
+#                     (cambio desktop, volume...) che una riserializzazione XML
+#                     distruggerebbe. Poi `openbox --reconfigure`.
+#   marco/metacity    gsettings: org.mate.Marco.keybinding-commands command-N
+#                     + org.mate.Marco.global-keybindings run-command-N
+#                     (12 posti, e' il limite di marco). Si applica subito.
+#
+# I tasti si scrivono SEMPRE in sintassi Openbox (W-c, C-A-Left, Print): con
+# marco vengono tradotti in <Mod4>c e ritradotti in lettura, cosi' il Centro di
+# Controllo parla una lingua sola.
 #
 # Uso:
 #   vesper-keys list                     elenca: TASTO<TAB>COMANDO
 #   vesper-keys add   <tasto> <comando…> aggiunge una scorciatoia
 #   vesper-keys set   <vecchio> <nuovo> <comando…>  modifica tasto e/o comando
 #   vesper-keys remove <tasto>           rimuove
-#   vesper-keys reconfigure              riapplica la config di Openbox
+#   vesper-keys reconfigure              riapplica la configurazione
+#   vesper-keys backend                  dice quale backend e' in uso e dove scrive
+# --- ambiente comune (pacchetto Python, dati, interprete) ---
+_self=$(readlink -f "$0" 2>/dev/null || echo "$0"); _d=$(dirname "$_self")
+for _e in "$_d/env.sh" "$(dirname "$_d")/lib/vesper/env.sh" \
+          /usr/local/lib/vesper/env.sh /usr/lib/vesper/env.sh; do
+  [ -r "$_e" ] && { . "$_e"; break; }
+done
+[ -n "${VESPER_PY:-}" ] || { echo "vesper-keys: python3 non disponibile" >&2; exit 1; }
+
+exec "$VESPER_PY" - "$@" <<'PY'
 import os
 import re
 import subprocess
 import sys
+from pathlib import Path
 
-RC = os.path.expanduser("~/.config/openbox/rc.xml")
+# --- dove scrive il backend Openbox ---------------------------------------
+# 1) VESPER_RC_XML (esportata da vesper-session), 2) il rc.xml di Vesper,
+# 3) quello di Openbox "nudo" come ultima spiaggia.
+def _rc_path() -> Path:
+    env = os.environ.get("VESPER_RC_XML")
+    if env:
+        return Path(env)
+    conf = Path(os.environ.get("VESPER_CONFIG_HOME",
+                               os.path.expanduser("~/.config/vesper")))
+    nostro = conf / "openbox-rc.xml"
+    if nostro.exists():
+        return nostro
+    return Path(os.path.expanduser("~/.config/openbox/rc.xml"))
+
+
+RC = _rc_path()
 BIND_RE = re.compile(
     r'<keybind key="([^"]+)">\s*<action name="Execute">\s*'
     r'<command>(.*?)</command>\s*</action>\s*</keybind>', re.S)
 
+MARCO_CMD = "org.mate.Marco.keybinding-commands"
+MARCO_BIND = "org.mate.Marco.global-keybindings"
+MARCO_POSTI = 12
 
-def _read():
+# Openbox -> gsettings: C=Control, A=Alt, S=Shift, W=Super/Windows.
+MOD_OB_A_GS = {"C": "<Control>", "A": "<Alt>", "S": "<Shift>", "W": "<Mod4>"}
+MOD_GS_A_OB = {"control": "C", "primary": "C", "ctrl": "C", "alt": "A",
+               "mod1": "A", "shift": "S", "super": "W", "mod4": "W"}
+
+
+def _backend() -> str:
+    """'openbox' o 'marco' (marco vale anche per metacity: stessi schemi no,
+    ma metacity moderno non ha piu' i comandi -> lo diciamo a chi chiama)."""
+    wm = os.environ.get("VESPER_WM_FORZATO")
+    if not wm:
+        try:
+            from vesper.profiles import model
+            wm = model.resolve_wm()
+        except Exception:                                 # noqa: BLE001
+            wm = "openbox"
+    return "marco" if wm in ("marco", "metacity") else "openbox"
+
+
+# ---------------------------------------------------------------- traduzioni
+def ob_a_gs(tasto: str) -> str:
+    """'W-c' -> '<Mod4>c'; 'Print' -> 'Print'."""
+    pezzi = tasto.split("-")
+    tasto_finale = pezzi[-1]
+    mods = "".join(MOD_OB_A_GS.get(p, "") for p in pezzi[:-1])
+    return mods + tasto_finale
+
+
+def gs_a_ob(acc: str) -> str:
+    """'<Mod4>c' -> 'W-c'. Ordine dei modificatori come in rc.xml: C, A, S, W."""
+    mods = [m.lower() for m in re.findall(r"<([^>]+)>", acc)]
+    tasto = re.sub(r"<[^>]+>", "", acc)
+    ordine = []
+    for sigla in ("C", "A", "S", "W"):
+        if sigla in [MOD_GS_A_OB.get(m) for m in mods]:
+            ordine.append(sigla)
+    return "-".join(ordine + [tasto])
+
+
+# ---------------------------------------------------------------- Openbox
+def _read() -> str:
     with open(RC, encoding="utf-8") as f:
         return f.read()
 
 
-def _write(s):
+def _write(s: str) -> None:
     with open(RC, "w", encoding="utf-8") as f:
         f.write(s)
 
@@ -57,68 +136,151 @@ def _find(txt, key):
 
 
 def _reconfigure():
-    subprocess.run(["openbox", "--reconfigure"],
-                   stdout=subprocess.DEVNULL, stderr=subprocess.DEVNULL)
+    # se Openbox non c'e' (o non sta girando) la modifica resta scritta e vale
+    # al prossimo avvio: non e' un errore.
+    try:
+        subprocess.run(["openbox", "--reconfigure"],
+                       stdout=subprocess.DEVNULL, stderr=subprocess.DEVNULL)
+    except OSError:
+        pass
 
 
-def cmd_list():
+def ob_list():
+    if not RC.exists():
+        sys.exit("vesper-keys: rc.xml non trovato (%s)." % RC)
     for m in BIND_RE.finditer(_read()):
         print(_unesc(m.group(1)) + "\t" + _unesc(m.group(2)))
 
 
-def cmd_add(key, command):
+def ob_add(key, command):
     txt = _read()
     if _find(txt, key):
-        sys.exit(f"vesper-keys: la scorciatoia '{key}' esiste gia'.")
-    line = (f'  <keybind key="{_esc(key)}"><action name="Execute">'
-            f'<command>{_esc(command)}</command></action></keybind>\n')
+        sys.exit("vesper-keys: la scorciatoia '%s' esiste gia'." % key)
+    line = ('  <keybind key="%s"><action name="Execute">'
+            '<command>%s</command></action></keybind>\n'
+            % (_esc(key), _esc(command)))
     if "</keyboard>" not in txt:
         sys.exit("vesper-keys: sezione <keyboard> non trovata in rc.xml.")
     _write(txt.replace("</keyboard>", line + "</keyboard>", 1))
     _reconfigure()
 
 
-def cmd_set(oldkey, newkey, command):
+def ob_set(oldkey, newkey, command):
     txt = _read()
     m = _find(txt, oldkey)
     if not m:
-        sys.exit(f"vesper-keys: scorciatoia '{oldkey}' non trovata.")
-    new = (f'<keybind key="{_esc(newkey)}"><action name="Execute">'
-           f'<command>{_esc(command)}</command></action></keybind>')
+        sys.exit("vesper-keys: scorciatoia '%s' non trovata." % oldkey)
+    new = ('<keybind key="%s"><action name="Execute">'
+           '<command>%s</command></action></keybind>'
+           % (_esc(newkey), _esc(command)))
     _write(txt[:m.start()] + new + txt[m.end():])
     _reconfigure()
 
 
-def cmd_remove(key):
+def ob_remove(key):
     txt = _read()
     m = _find(txt, key)
     if not m:
-        sys.exit(f"vesper-keys: scorciatoia '{key}' non trovata.")
-    ls = txt.rfind("\n", 0, m.start()) + 1        # inizio riga
+        sys.exit("vesper-keys: scorciatoia '%s' non trovata." % key)
+    ls = txt.rfind("\n", 0, m.start()) + 1          # inizio riga
     le = txt.find("\n", m.end())
-    le = le + 1 if le != -1 else len(txt)          # includi il newline
+    le = le + 1 if le != -1 else len(txt)           # includi il newline
     _write(txt[:ls] + txt[le:])
     _reconfigure()
 
 
+# ---------------------------------------------------------------- marco
+def _gs_get(schema, chiave) -> str:
+    out = subprocess.run(["gsettings", "get", schema, chiave],
+                         capture_output=True, text=True).stdout.strip()
+    return out[1:-1] if len(out) > 1 and out[0] == out[-1] == "'" else out
+
+
+def _gs_set(schema, chiave, valore) -> None:
+    subprocess.run(["gsettings", "set", schema, chiave, valore],
+                   stdout=subprocess.DEVNULL, stderr=subprocess.DEVNULL)
+
+
+def _marco_posti():
+    """Scorre i 12 posti: (numero, tasto openbox o '', comando o '')."""
+    for n in range(1, MARCO_POSTI + 1):
+        acc = _gs_get(MARCO_BIND, "run-command-%d" % n)
+        cmd = _gs_get(MARCO_CMD, "command-%d" % n)
+        tasto = "" if acc in ("", "disabled", "''") else gs_a_ob(acc)
+        yield n, tasto, ("" if cmd.strip() in ("", "''") else cmd)
+
+
+def marco_list():
+    for _n, tasto, cmd in _marco_posti():
+        if tasto and cmd:
+            print(tasto + "\t" + cmd)
+
+
+def marco_add(key, command):
+    libero = None
+    for n, tasto, cmd in _marco_posti():
+        if tasto == key:
+            sys.exit("vesper-keys: la scorciatoia '%s' esiste gia'." % key)
+        if libero is None and not tasto and not cmd:
+            libero = n
+    if libero is None:
+        sys.exit("vesper-keys: marco tiene al massimo %d scorciatoie "
+                 "«esegui comando»: rimuovine una." % MARCO_POSTI)
+    _gs_set(MARCO_CMD, "command-%d" % libero, command)
+    _gs_set(MARCO_BIND, "run-command-%d" % libero, ob_a_gs(key))
+
+
+def marco_set(oldkey, newkey, command):
+    for n, tasto, _cmd in _marco_posti():
+        if tasto == oldkey:
+            _gs_set(MARCO_CMD, "command-%d" % n, command)
+            _gs_set(MARCO_BIND, "run-command-%d" % n, ob_a_gs(newkey))
+            return
+    sys.exit("vesper-keys: scorciatoia '%s' non trovata." % oldkey)
+
+
+def marco_remove(key):
+    for n, tasto, _cmd in _marco_posti():
+        if tasto == key:
+            _gs_set(MARCO_BIND, "run-command-%d" % n, "disabled")
+            _gs_set(MARCO_CMD, "command-%d" % n, "")
+            return
+    sys.exit("vesper-keys: scorciatoia '%s' non trovata." % key)
+
+
+# ---------------------------------------------------------------- dispatch
 def main():
     a = sys.argv[1:]
+    marco = _backend() == "marco"
+    if a and a[0] == "backend":
+        if marco:
+            print("marco/metacity - gsettings %s (max %d)"
+                  % (MARCO_BIND, MARCO_POSTI))
+        else:
+            casa = os.path.expanduser("~")
+            rc = str(RC)
+            print("openbox - %s" % (("~" + rc[len(casa):])
+                                    if rc.startswith(casa + os.sep) else rc))
+        return
     if not a or a[0] == "list":
-        cmd_list()
+        (marco_list if marco else ob_list)()
     elif a[0] == "add" and len(a) >= 3:
-        cmd_add(a[1], " ".join(a[2:]))
+        (marco_add if marco else ob_add)(a[1], " ".join(a[2:]))
     elif a[0] == "set" and len(a) >= 4:
-        cmd_set(a[1], a[2], " ".join(a[3:]))
+        (marco_set if marco else ob_set)(a[1], a[2], " ".join(a[3:]))
     elif a[0] == "remove" and len(a) == 2:
-        cmd_remove(a[1])
+        (marco_remove if marco else ob_remove)(a[1])
     elif a[0] == "reconfigure":
-        _reconfigure()
+        if not marco:
+            _reconfigure()                   # con marco si applica da solo
     else:
         sys.stderr.write(
             "uso: vesper-keys list | add <tasto> <comando> | "
-            "set <vecchio> <nuovo> <comando> | remove <tasto> | reconfigure\n")
+            "set <vecchio> <nuovo> <comando> | remove <tasto> | "
+            "reconfigure | backend\n")
         sys.exit(2)
 
 
 if __name__ == "__main__":
     main()
+PY

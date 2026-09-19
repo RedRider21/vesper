@@ -97,7 +97,9 @@ button.tema:hover { border-color: var(--accent); color: var(--accent); }
   background: var(--accent); color: #04121a; font-weight: 650;
   border: 1px solid transparent;
 }
-html[data-tema="scuro"] .bottone { color: #04121a; }
+/* NB: niente regole tipo `html[data-tema="scuro"] .bottone`: sarebbero più
+   specifiche di `.bottone.secondario` e imporrebbero il testo scuro anche ai
+   bottoni secondari, che hanno fondo scuro (testo invisibile). */
 .bottone:hover { text-decoration: none; filter: brightness(1.08); }
 .bottone.secondario {
   background: var(--fondo-2); color: var(--testo); border-color: var(--bordo);

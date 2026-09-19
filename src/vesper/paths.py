@@ -72,22 +72,33 @@ def ensure_cache() -> Path:
 
 # ---- dati installati (sola lettura) ----------------------------------------
 
+def _ancestors() -> list[Path]:
+    """Cartelle candidate a essere il "prefisso" o la radice del repo, salendo
+    da questo file. Due livelli bastano per entrambi i layout: installato
+    (<prefisso>/lib/vesper/vesper) e sorgenti (<repo>/src/vesper)."""
+    here = Path(__file__).resolve()
+    return [here.parents[2], here.parents[3]]
+
+
 def _data_dirs() -> list[Path]:
     env = os.environ.get("VESPER_DATA_DIRS")
     if env:
         return [Path(p) for p in env.split(os.pathsep) if p]
     dirs = [STATE_HOME]
-    # Installazione in un prefisso qualunque: se il pacchetto sta in
-    # <prefisso>/lib/vesper/vesper, i dati stanno in <prefisso>/share/vesper.
-    here = Path(__file__).resolve()
-    prefix_share = here.parent.parent.parent / "share" / APP
-    if prefix_share.is_dir():
-        dirs.append(prefix_share)
+    # Il pacchetto può stare in due layout:
+    #   installato: <prefisso>/lib/vesper/vesper/paths.py -> dati in
+    #               <prefisso>/share/vesper
+    #   dai sorgenti: <repo>/src/vesper/paths.py -> dati in <repo>/data
+    # Non indoviniamo il livello: proviamo gli antenati e teniamo ciò che c'è.
+    for base in _ancestors():
+        cand = base / "share" / APP
+        if cand.is_dir() and cand not in dirs:
+            dirs.append(cand)
     dirs += [Path("/usr/local/share") / APP, Path("/usr/share") / APP]
-    # Avvio dal repo dei sorgenti: src/vesper/paths.py -> <repo>/data
-    repo_data = here.parent.parent.parent / "data"
-    if repo_data.is_dir():
-        dirs.append(repo_data)
+    for base in _ancestors():
+        cand = base / "data"
+        if cand.is_dir() and cand not in dirs:
+            dirs.append(cand)
     # niente duplicati, ordine preservato
     seen, out = set(), []
     for d in dirs:
@@ -107,6 +118,25 @@ def find_data(*parts: str) -> Path | None:
         if p.exists():
             return p
     return None
+
+
+def icon_dirs() -> list[Path]:
+    """Cartelle dove cercare le icone di Vesper (il marchio).
+
+    Installato in /usr o /usr/local il marchio sta in share/icons/hicolor, che
+    GTK conosce già. In un prefisso NON standard (o avviando dai sorgenti) no:
+    qui si ricava share/icons dal punto in cui vive il pacchetto, così il logo
+    si trova comunque. Vedi vesper.common.install_icon_paths()."""
+    out = []
+    for base in _ancestors():
+        cand = base / "share" / "icons"
+        if cand.is_dir() and cand not in out:
+            out.append(cand)
+    for d in DATA_DIRS:
+        p = d / "icons"
+        if p.is_dir() and p not in out:
+            out.append(p)
+    return out
 
 
 def data_dirs(*parts: str) -> list[Path]:

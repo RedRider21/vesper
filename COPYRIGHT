@@ -1,0 +1,37 @@
+Vesper
+Copyright (C) 2026 Daniele Deplano (RedRider21)
+
+Il codice sorgente ORIGINALE di Vesper (in particolare: src/vesper/, bin/,
+tools/, gli sfondi, il marchio, i temi originali e i dati in data/) è software
+libero: puoi ridistribuirlo e/o modificarlo secondo i termini della GNU Affero
+General Public License, versione 3 o (a tua scelta) una versione successiva,
+come pubblicata dalla Free Software Foundation.
+
+Il testo completo della licenza è nel file LICENSE.
+Identificatore SPDX:  AGPL-3.0-or-later
+
+Doppia licenza: il titolare, che detiene il 100% dei diritti sul codice
+originale, rende disponibile in alternativa all'AGPLv3 una LICENZA COMMERCIALE
+per usi che non possono o non intendono rispettare gli obblighi di copyleft.
+Per informazioni: Daniele Deplano (RedRider21) <deplano.d@gmail.com>.
+
+Questo programma è distribuito nella speranza che sia utile, ma SENZA ALCUNA
+GARANZIA; senza neppure la garanzia implicita di COMMERCIABILITÀ o IDONEITÀ PER
+UN PARTICOLARE SCOPO. Vedi la GNU Affero General Public License per maggiori
+dettagli.
+
+--------------------------------------------------------------------------------
+Componenti di terze parti
+
+Vesper gira su Openbox, GTK3 e Python e include alcuni temi finestre di terzi.
+Ciascun componente resta soggetto alla PROPRIA licenza e al proprio copyright:
+la licenza qui sopra si applica esclusivamente al codice originale di Vesper.
+L'elenco è in THIRD-PARTY.md.
+
+--------------------------------------------------------------------------------
+Marchi
+
+Il nome «Vesper», il marchio (la stella della sera) e l'identità visiva sono di
+Daniele Deplano (RedRider21). Il software è libero secondo l'AGPLv3; l'uso del
+nome e del marchio per versioni derivate o per prodotti di terzi va concordato
+con il titolare, per non ingenerare confusione sull'origine.

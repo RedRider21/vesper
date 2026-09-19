@@ -343,7 +343,7 @@ def install_icon_paths() -> None:
         return
     if theme is None:
         return
-    for d in paths.data_dirs("icons"):
+    for d in paths.icon_dirs():
         try:
             theme.append_search_path(str(d))
         except Exception:                # noqa: BLE001

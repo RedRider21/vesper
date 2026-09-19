@@ -1,0 +1,27 @@
+#!/bin/sh
+# SPDX-License-Identifier: AGPL-3.0-or-later
+# Copyright (C) 2026 Daniele Deplano (RedRider21). Parte di Vesper.
+# vesper-launcherd - servizio di avvio "caldo" delle finestre di Vesper.
+#
+#   vesper-launcherd              avvia il servizio (lo fa la sessione)
+#   vesper-launcherd --status     dice se e' in ascolto
+#   vesper-launcherd --stop       lo ferma
+#   vesper-launcherd --no-prewarm non precarica i moduli a riposo
+#
+# Tiene GTK e i moduli del desktop gia' importati e apre le finestre dentro di
+# se': senza, ogni comando ripaga il costo degli import. Se non gira, i comandi
+# `vesper-*` partono nel modo normale: non e' mai una dipendenza.
+# --- ambiente comune (pacchetto Python, dati, interprete) ---
+_self=$(readlink -f "$0" 2>/dev/null || echo "$0"); _d=$(dirname "$_self")
+for _e in "$_d/env.sh" "$(dirname "$_d")/lib/vesper/env.sh" \
+          /usr/local/lib/vesper/env.sh /usr/lib/vesper/env.sh; do
+  [ -r "$_e" ] && { . "$_e"; break; }
+done
+[ -n "${VESPER_PY:-}" ] || { echo "vesper-launcherd: python3 non disponibile" >&2; exit 1; }
+LOG="${XDG_CACHE_HOME:-$HOME/.cache}/vesper"
+mkdir -p "$LOG" 2>/dev/null
+case "${1:-}" in
+  --status|--stop|-h|--help)
+    exec "$VESPER_PY" -m vesper.launcher.service "$@" ;;
+esac
+exec "$VESPER_PY" -m vesper.launcher.service "$@" >>"$LOG/launcherd.log" 2>&1

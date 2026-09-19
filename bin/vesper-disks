@@ -11,4 +11,9 @@ for _e in "$_d/env.sh" "$(dirname "$_d")/lib/vesper/env.sh" \
   [ -r "$_e" ] && { . "$_e"; break; }
 done
 [ -n "${VESPER_PY:-}" ] || { echo "vesper-disks: python3 non disponibile" >&2; exit 1; }
+# Avvio "caldo": se il servizio gira, apre lui la finestra (niente re-import).
+# Se non c'e' o non risponde, si prosegue con l'avvio normale qui sotto.
+if command -v vesper-launch >/dev/null 2>&1; then
+  vesper-launch disks && exit 0
+fi
 exec "$VESPER_PY" -m vesper.disks "$@"

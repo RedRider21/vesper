@@ -85,6 +85,11 @@ command -v vesper-panel >/dev/null 2>&1 && vesper-panel &
 # Servizi di corredo, tutti best-effort: se mancano, la sessione parte comunque.
 command -v vesper-audio-unmute >/dev/null 2>&1 && (sleep 2; vesper-audio-unmute) &
 command -v vesper-clipboard >/dev/null 2>&1 && (sleep 1; vesper-clipboard daemon) &
+# Avvio "caldo": un processo che tiene GTK e i moduli gia' importati, cosi' le
+# finestre di Vesper si aprono senza ripagare gli import. Parte per ultimo
+# (dopo pannello e desktop) e se manca non cambia nulla: i comandi ripiegano
+# sull'avvio normale.
+command -v vesper-launcherd >/dev/null 2>&1 && (sleep 3; vesper-launcherd) &
 command -v vesper-nightlight >/dev/null 2>&1 && (sleep 2; vesper-nightlight restore) &
 # Demone notifiche: senza, notify-send è un no-op. Si prende il primo presente.
 for n in dunst mako xfce4-notifyd; do

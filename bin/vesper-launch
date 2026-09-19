@@ -1,0 +1,19 @@
+#!/bin/sh
+# SPDX-License-Identifier: AGPL-3.0-or-later
+# Copyright (C) 2026 Daniele Deplano (RedRider21). Parte di Vesper.
+# vesper-launch <cc|profile|files|disks> [argomenti]
+#
+# Chiede al servizio vesper-launcherd di aprire una finestra gia' "calda".
+# Esce 0 se il servizio l'ha presa in carico, 1 se non c'e': in quel caso e' il
+# comando chiamante a proseguire con l'avvio normale.
+#
+# Volutamente striminzito: niente GTK, solo un socket, cosi' costa pochi ms.
+_self=$(readlink -f "$0" 2>/dev/null || echo "$0"); _d=$(dirname "$_self")
+for _e in "$_d/env.sh" "$(dirname "$_d")/lib/vesper/env.sh" \
+          /usr/local/lib/vesper/env.sh /usr/lib/vesper/env.sh; do
+  [ -r "$_e" ] && { . "$_e"; break; }
+done
+[ -n "${VESPER_PY:-}" ] || exit 1
+exec "$VESPER_PY" -c 'import sys
+from vesper.launcher.client import chiedi
+sys.exit(0 if chiedi(*sys.argv[1:]) else 1)' "$@"

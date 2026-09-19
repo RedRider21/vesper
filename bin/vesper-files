@@ -11,4 +11,13 @@ for _e in "$_d/env.sh" "$(dirname "$_d")/lib/vesper/env.sh" \
   [ -r "$_e" ] && { . "$_e"; break; }
 done
 [ -n "${VESPER_PY:-}" ] || { echo "vesper-files: python3 non disponibile" >&2; exit 1; }
+# Avvio "caldo": se il servizio gira, apre lui la FINESTRA (niente re-import).
+# Il desktop (--desktop) resta un processo suo: disegna sfondo e icone e deve
+# vivere quanto la sessione. Se il servizio non c'e', si prosegue qui sotto.
+case "${1:-}" in
+  --desktop) ;;
+  *) if command -v vesper-launch >/dev/null 2>&1; then
+       vesper-launch files "$@" && exit 0
+     fi ;;
+esac
 exec "$VESPER_PY" -m vesper.filemanager "$@"

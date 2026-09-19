@@ -1,0 +1,10 @@
+[Desktop Entry]
+Type=Application
+Name=Registratore vocale
+Comment=Registra dal microfono
+Exec=vesper-recorder %F
+TryExec=vesper-recorder
+Icon=audio-input-microphone
+Terminal=false
+Categories=AudioVideo;Audio;Recorder;
+StartupNotify=true

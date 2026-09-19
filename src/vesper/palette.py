@@ -86,6 +86,10 @@ LIGHT = {
 }
 
 _HEX = re.compile(r"#[0-9a-fA-F]{6}")
+# rgb(10,18,32) / rgba(10,18,32,0.68): i CSS generati (stile finestre) usano
+# anche questa forma, che #-only non intercetterebbe.
+_RGB = re.compile(r"\brgba?\(\s*(\d{1,3})\s*,\s*(\d{1,3})\s*,\s*(\d{1,3})\s*"
+                  r"(,\s*[0-9.]+\s*)?\)")
 
 
 def to_light(css: str) -> str:
@@ -94,6 +98,26 @@ def to_light(css: str) -> str:
     def sub(m):
         return LIGHT.get(m.group(0).lower(), m.group(0))
     return _HEX.sub(sub, css)
+
+
+def to_light_css(css: str) -> str:
+    """Come `to_light`, ma traduce anche i colori scritti in rgb()/rgba().
+
+    Serve ai CSS generati (stile finestre): scritti col fondo scuro fisso,
+    in modalità chiara resterebbero scuri e le finestre uscirebbero con testo
+    scuro su fondo scuro.
+    """
+    def sub_rgb(m):
+        esa = "#%02x%02x%02x" % tuple(min(255, int(m.group(i))) for i in (1, 2, 3))
+        nuovo = LIGHT.get(esa)
+        if nuovo is None:
+            return m.group(0)
+        r, g, b = (int(nuovo[i:i + 2], 16) for i in (1, 3, 5))
+        alfa = (m.group(4) or "").strip()
+        if alfa:
+            return "rgba(%d,%d,%d,%s)" % (r, g, b, alfa.lstrip(",").strip())
+        return "rgb(%d,%d,%d)" % (r, g, b)
+    return _RGB.sub(sub_rgb, to_light(css))
 
 
 def get_mode() -> str:

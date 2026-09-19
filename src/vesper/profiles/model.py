@@ -870,7 +870,10 @@ def _maybe_light(css: str, key: str | None = None) -> str:
     try:
         from vesper import palette
         if palette.is_light(preset_data(key).get("light")):
-            return palette.to_light(css)
+            # to_light_css e non to_light: lo stile finestre scrive i fondi
+            # anche come rgba(10,18,32,0.68), che la sola mappa esadecimale
+            # lascerebbe scuri (finestre nere col testo scuro in tema chiaro).
+            return palette.to_light_css(css)
     except Exception:                    # noqa: BLE001
         pass
     return css

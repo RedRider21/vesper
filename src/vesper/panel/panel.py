@@ -1110,6 +1110,18 @@ class Panel(Gtk.Window):
              ["vesper-terminal"], None, None),
             ("system-file-manager-symbolic", _t("app.files"),
              ["vesper-files"], None, None),
+            ("accessories-text-editor-symbolic", _t("app.editor"),
+             ["vesper-editor"], None, None),
+            (None, None, None, None, None),
+            # --- strumenti di Vesper ---
+            ("multimedia-player-symbolic", _t("app.player"),
+             ["vesper-player"], None, None),
+            ("video-x-generic-symbolic", _t("app.video"),
+             ["vesper-video"], None, None),
+            ("audio-input-microphone-symbolic", _t("app.recorder"),
+             ["vesper-recorder"], None, None),
+            ("drive-harddisk-symbolic", _t("app.disks"),
+             ["vesper-disks"], None, None),
             (None, None, None, None, None),
             # Utilità di sessione, comode a portata di menu.
             ("system-lock-screen-symbolic", _t("menu.lock"),

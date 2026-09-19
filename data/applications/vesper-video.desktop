@@ -1,0 +1,10 @@
+[Desktop Entry]
+Type=Application
+Name=Visualizzatore video
+Comment=Riproduce file video
+Exec=vesper-video %F
+TryExec=vesper-video
+Icon=video-x-generic
+Terminal=false
+Categories=AudioVideo;Video;Player;
+StartupNotify=true

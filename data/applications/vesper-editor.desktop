@@ -1,0 +1,10 @@
+[Desktop Entry]
+Type=Application
+Name=Editor di testo
+Comment=Editor con colorazione della sintassi
+Exec=vesper-editor %F
+TryExec=vesper-editor
+Icon=accessories-text-editor
+Terminal=false
+Categories=Utility;TextEditor;Development;
+StartupNotify=true

@@ -58,7 +58,8 @@ COMANDI="vesper-session vesper-panel vesper-panel-restart vesper-control-center
          vesper-brightness vesper-clipboard vesper-datetime vesper-keys
          vesper-netinfo vesper-nightlight vesper-prompt vesper-screens
          vesper-screensaver vesper-screensaver-idle vesper-screenshot
-         vesper-wifi vesper-wm"
+         vesper-wifi vesper-wm
+         vesper-player vesper-recorder vesper-video vesper-disks vesper-editor"
 
 if [ "$ACTION" = uninstall ]; then
   echo "Disinstallo Vesper da $PREFIX"
@@ -110,7 +111,7 @@ for c in $COMANDI; do
 done
 
 # --- dati ------------------------------------------------------------------
-for d in backgrounds panel-themes skel; do
+for d in backgrounds panel-themes sourceview-styles skel; do
   [ -d "$SRC/data/$d" ] || continue
   rm -rf "$SHARE/$d"
   mkdir -p "$SHARE/$d"

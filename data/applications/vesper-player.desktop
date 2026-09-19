@@ -1,0 +1,10 @@
+[Desktop Entry]
+Type=Application
+Name=Lettore audio
+Comment=Riproduce musica e file audio
+Exec=vesper-player %F
+TryExec=vesper-player
+Icon=multimedia-player
+Terminal=false
+Categories=AudioVideo;Audio;Player;
+StartupNotify=true

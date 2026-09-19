@@ -1,0 +1,10 @@
+[Desktop Entry]
+Type=Application
+Name=Dischi
+Comment=Elenca, monta e smonta dischi e chiavette
+Exec=vesper-disks
+TryExec=vesper-disks
+Icon=drive-harddisk
+Terminal=false
+Categories=System;Filesystem;
+StartupNotify=true

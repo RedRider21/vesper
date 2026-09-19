@@ -299,7 +299,10 @@ iconview:selected, iconview .cell:selected, .view:selected,
 treeview.view:selected, list row:selected {
   background-color: #00334a; color: #00e5ff;
 }
-iconview .cell { padding: 4px; border-radius: 6px; }
+/* NIENTE padding sulle celle della vista a icone: GTK3 non lo conta nel
+   calcolo dell'altezza della voce e le etichette finiscono TAGLIATE a meta'.
+   La spaziatura si mette sul widget (set_item_padding), non qui.
+   NB: questo e' dentro una stringa BYTES, quindi niente lettere accentate. */
 scrolledwindow, scrolledwindow > viewport { background-color: #050a14; }
 /* Barra dei luoghi: leggermente staccata dal contenuto */
 list.vesper-places, list.vesper-places row { background-color: #070f1a; }
@@ -307,6 +310,8 @@ list.vesper-places, list.vesper-places row { background-color: #070f1a; }
 
 _css_done = False
 _icon_paths_done = False
+_base_prov = [None]          # provider del tema base, per scambiarlo a caldo
+_uimode_mon = None
 
 
 # Accent del preset attivo: CSS opzionale generato da vesper.profiles
@@ -351,20 +356,35 @@ def install_icon_paths() -> None:
     _icon_paths_done = True
 
 
+def base_css() -> bytes:
+    """Il tema base nella variante giusta: scura (com'è scritto) o chiara
+    (tradotta da vesper.palette). La scelta la fa il preset attivo, o la
+    forza l'utente da ~/.config/vesper/ui-mode."""
+    try:
+        from vesper import palette
+        if palette.is_light():
+            return palette.to_light(CSS.decode()).encode()
+    except Exception:                    # noqa: BLE001
+        pass
+    return CSS
+
+
 def apply_css() -> None:
     global _css_done
     if _css_done:
         return
     install_icon_paths()
+    _install_uimode_monitor()
     prov = Gtk.CssProvider()
     # Difensivo: un errore nel CSS NON deve mai far crashare il pannello/le app
     # (in GTK3 load_from_data SOLLEVA su CSS non valido). Se fallisce, l'app
     # resta funzionante col tema GTK di default.
     try:
-        prov.load_from_data(CSS)
+        prov.load_from_data(base_css())
         Gtk.StyleContext.add_provider_for_screen(
             Gdk.Screen.get_default(), prov,
             Gtk.STYLE_PROVIDER_PRIORITY_APPLICATION)
+        _base_prov[0] = prov
     except Exception:                    # noqa: BLE001
         import sys
         print("[vesper] CSS non applicato (parse error):", sys.exc_info()[1],
@@ -385,6 +405,62 @@ def apply_css() -> None:
     apply_panel_theme_live()
     _install_paneltheme_monitor()
     _css_done = True
+
+
+def apply_base_css_live() -> None:
+    """Riscambia il tema base chiaro/scuro senza riavviare nulla: serve quando
+    si passa a un preset chiaro (o si forza la modalità) mentre le finestre
+    sono già aperte."""
+    scr = Gdk.Screen.get_default()
+    if scr is None:
+        return
+    prov = Gtk.CssProvider()
+    try:
+        prov.load_from_data(base_css())
+    except Exception:                    # noqa: BLE001
+        return
+    if _base_prov[0] is not None:
+        try:
+            Gtk.StyleContext.remove_provider_for_screen(scr, _base_prov[0])
+        except Exception:                # noqa: BLE001
+            pass
+    Gtk.StyleContext.add_provider_for_screen(
+        scr, prov, Gtk.STYLE_PROVIDER_PRIORITY_APPLICATION)
+    _base_prov[0] = prov
+    _reset_widgets_kick()
+    try:
+        GLib.idle_add(_reset_widgets_kick)
+    except Exception:                    # noqa: BLE001
+        pass
+
+
+def _install_uimode_monitor() -> None:
+    """Sorveglia la scelta chiaro/scuro e il preset attivo: cambiandoli, ogni
+    processo GTK di Vesper si ridisegna da solo."""
+    global _uimode_mon
+    if _uimode_mon is not None:
+        return
+    _uimode_mon = []
+    for target in (paths.config("ui-mode"), paths.PROFILE_CONF):
+        try:
+            mon = Gio.File.new_for_path(str(target)).monitor_file(
+                Gio.FileMonitorFlags.NONE, None)
+        except Exception:                # noqa: BLE001
+            continue
+        if mon is None:
+            continue
+
+        def changed(_m, _f, _o, etype):
+            if etype in (Gio.FileMonitorEvent.CHANGED,
+                         Gio.FileMonitorEvent.CHANGES_DONE_HINT,
+                         Gio.FileMonitorEvent.CREATED,
+                         Gio.FileMonitorEvent.MOVED):
+                try:
+                    GLib.idle_add(apply_base_css_live)
+                except Exception:        # noqa: BLE001
+                    pass
+        mon.connect("changed", changed)
+        _uimode_mon.append(mon)
 
 
 def apply_panel_theme_live() -> None:

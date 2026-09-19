@@ -44,7 +44,8 @@ DEFAULT_WALLPAPER_MODE = "stretch"
 RC_XML = Path(os.environ.get(
     "VESPER_RC_XML", str(HOME / ".config" / "openbox" / "rc.xml")))
 # Famiglia del tema finestre COORDINATA col preset (~/.config/vesper/theme):
-#   core  -> Vesper-Core (scuro fisso, NON segue il preset) [default]
+#   core  -> Vesper-Core-<preset> (il predefinito: barra del titolo piatta,
+#            pulsanti completi a destra, filetto d'accento del preset)
 #   retro -> Vesper-Retro-<preset> (flat chiaro)
 #   cards -> Vesper-Cards-<preset> (stile "scheda", header colorato)
 #   raw:<nome> -> un qualsiasi tema Openbox installato, fisso (non coordinato)
@@ -306,7 +307,7 @@ scale highlight {{ background-color: {ac}; }}
 scale slider {{ background-color: {ac}; border-color: {ac}; }}
 """
     paths.ensure_config()
-    ACCENT_CSS.write_text(css)
+    ACCENT_CSS.write_text(_maybe_light(css, key))
     # rigenera anche lo stile finestre (usa lo stesso accent del preset)
     write_window_style_css(key=key)
 
@@ -486,7 +487,7 @@ progressbar > trough {{ background-color: #1a2d3a; border-radius: 999px; }}
 progressbar > trough > progress {{ border-radius: 999px; background-color: {ac}; }}
 """
     paths.ensure_config()
-    WINDOW_STYLE_CSS.write_text(css)
+    WINDOW_STYLE_CSS.write_text(_maybe_light(css, key))
 
 
 def _mix(fg: str, bg: str, frac: float) -> str:
@@ -575,12 +576,10 @@ def resolve_ob_theme(family: str | None = None, key: str | None = None) -> str:
     if family.startswith("raw:"):
         name = family[4:].strip()
         return name if _theme_installed(name) else FALLBACK_OB_THEME
-    if family == "retro":
-        cand = f"{THEME_PREFIX}-Retro-{key}"
-    elif family == "cards":
-        cand = f"{THEME_PREFIX}-Cards-{key}"
-    else:
+    fam_suffix = {"core": "Core", "retro": "Retro", "cards": "Cards"}.get(family)
+    if fam_suffix is None:
         return FALLBACK_OB_THEME
+    cand = f"{THEME_PREFIX}-{fam_suffix}-{key}"
     if not _theme_installed(cand):
         base = cand.rsplit("-", 1)[0] + "-base"
         cand = base if _theme_installed(base) else FALLBACK_OB_THEME
@@ -651,7 +650,7 @@ def _manage_picom(enable: bool) -> None:
 def set_window_theme(key: str | None = None, reconfigure: bool = True) -> None:
     """Applica il tema finestre Openbox COORDINATO col preset.
     La famiglia scelta (~/.config/vesper/theme) decide QUALE tema statico usare:
-    'core' = scuro fisso; 'retro'/'cards' = Vesper-<Fam>-<preset>, cosi' la
+    tutte e tre sono coordinate: Vesper-<Fam>-<preset>, cosi' la
     decorazione segue il colore del preset restando un file STATICO e curato
     (nessuna generazione a runtime: e' fragile e non deterministica). Per
     'cards' (stile macOS) sposta anche i pulsanti a SINISTRA (titleLayout) e
@@ -765,6 +764,98 @@ def _replace_line(path: Path, prefix: str, newline: str) -> None:
     _os.replace(str(tmp), str(path))
 
 
+def _maybe_light(css: str, key: str | None = None) -> str:
+    """Traduce il CSS nella variante chiara se il preset (o la scelta
+    dell'utente) vuole l'interfaccia chiara. Vedi vesper.palette."""
+    try:
+        from vesper import palette
+        if palette.is_light(preset_data(key).get("light")):
+            return palette.to_light(css)
+    except Exception:                    # noqa: BLE001
+        pass
+    return css
+
+
+# ---- tema GTK coordinato col preset ---------------------------------------
+# Il tema GTK decide il FONDO e i colori DENTRO le finestre delle applicazioni:
+# senza, cambiando preset cambiavano barra e icone ma le finestre restavano
+# del colore di prima. Come per le icone, ogni preset elenca i temi del proprio
+# colore (le varianti Mint-Y e simili) e si usa il primo installato.
+GTK_THEME_CONF = CONF_DIR / "gtk-theme"
+GTK_FALLBACK = ["Mint-Y-Dark", "Mint-Y", "Adwaita-dark", "Adwaita"]
+
+
+def gtk_candidates(key: str | None = None) -> list[str]:
+    cands = list(preset_data(key).get("gtk_themes") or [])
+    return cands + [t for t in GTK_FALLBACK if t not in cands]
+
+
+def _gtk_theme_installed(name: str) -> bool:
+    for d in (HOME / ".themes", HOME / ".local" / "share" / "themes",
+              Path("/usr/share/themes"), Path("/usr/local/share/themes")):
+        t = d / name
+        if (t / "gtk-3.0" / "gtk.css").is_file() or (t / "gtk-2.0" / "gtkrc").is_file():
+            return True
+    return False
+
+
+def get_gtk_choice() -> str:
+    """'auto' (segue il preset) o il nome del tema GTK scelto a mano."""
+    try:
+        v = GTK_THEME_CONF.read_text().strip()
+        return v or "auto"
+    except OSError:
+        return "auto"
+
+
+def set_gtk_choice(name: str, key: str | None = None) -> str:
+    paths.ensure_config()
+    GTK_THEME_CONF.write_text((name or "auto").strip() + "\n")
+    return set_gtk_theme(key)
+
+
+def gtk_theme_name(key: str | None = None) -> str:
+    """Tema GTK da usare: la scelta manuale, altrimenti il primo tema del
+    colore del preset che risulti installato."""
+    fixed = get_gtk_choice()
+    if fixed != "auto":
+        return fixed
+    for name in gtk_candidates(key):
+        if _gtk_theme_installed(name):
+            return name
+    return current_gtk_theme()
+
+
+def current_gtk_theme() -> str:
+    try:
+        for ln in (HOME / ".config" / "gtk-3.0" / "settings.ini").read_text().splitlines():
+            if ln.strip().startswith("gtk-theme-name"):
+                return ln.split("=", 1)[1].strip()
+    except (OSError, IndexError):
+        pass
+    return "Adwaita"
+
+
+def set_gtk_theme(key: str | None = None) -> str:
+    """Applica il tema GTK del preset a GTK3 e GTK2. Se non è installato non
+    si tocca la scelta dell'utente."""
+    theme = gtk_theme_name(key)
+    if not _gtk_theme_installed(theme):
+        return current_gtk_theme()
+    gtk3_set("gtk-theme-name", theme)
+    _replace_line(HOME / ".gtkrc-2.0",
+                  "gtk-theme-name", 'gtk-theme-name="%s"' % theme)
+    # Le preferenze scuro/chiaro di GTK seguono il preset: le app che le
+    # leggono (molte GTK3/GTK4) si adeguano senza altri passaggi.
+    try:
+        from vesper import palette
+        gtk3_set("gtk-application-prefer-dark-theme",
+                 "false" if palette.is_light(preset_data(key).get("light")) else "true")
+    except Exception:                    # noqa: BLE001
+        pass
+    return theme
+
+
 def gtk3_set(key: str, value: str) -> None:
     """Scrive una chiave in ~/.config/gtk-3.0/settings.ini.
 
@@ -850,6 +941,7 @@ def activate_preset(key: str, log=print) -> bool:
         return False
     set_current(key)
     set_icon_theme(key)
+    set_gtk_theme(key)
     set_wallpaper(wallpaper_path(key), remember=False)
     write_accent_css(key)
     set_window_theme(key)
@@ -861,6 +953,7 @@ def apply_current() -> dict:
     key = current_preset()
     ensure_themes_visible()
     set_icon_theme(key)
+    set_gtk_theme(key)
     set_wallpaper(wallpaper_path(key), remember=False)
     write_accent_css(key)
     set_window_theme(key)

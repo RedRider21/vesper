@@ -258,18 +258,32 @@ class Desktop(Gtk.Window):
         return False
 
     def _default_desktop_dir(self):
-        # XDG: la cartella del desktop può avere nomi diversi per lingua.
+        """Cartella del desktop. XDG la dichiara in ~/.config/user-dirs.dirs,
+        ma quel file può mancare (home nuova, o creata da un altro sistema): in
+        quel caso GLib risponde comunque "$HOME/Desktop", che potrebbe NON
+        esistere mentre esiste la cartella nella lingua dell'utente. Quindi:
+        prima la scelta XDG SE esiste davvero, poi i nomi tradotti più comuni,
+        infine si crea quella XDG (un desktop senza cartella non serve)."""
+        xdg = None
         try:
             p = GLib.get_user_special_dir(GLib.UserDirectory.DIRECTORY_DESKTOP)
             if p:
-                return Path(p)
+                xdg = Path(p)
+                if xdg.is_dir():
+                    return xdg
         except Exception:                  # noqa: BLE001
             pass
-        for name in ("Scrivania", "Desktop"):
+        for name in ("Scrivania", "Desktop", "Bureau", "Escritorio",
+                     "Schreibtisch", "Área de Trabalho"):
             p = paths.HOME / name
             if p.is_dir():
                 return p
-        return paths.HOME / "Desktop"
+        target = xdg or (paths.HOME / "Desktop")
+        try:
+            target.mkdir(parents=True, exist_ok=True)
+        except OSError:
+            pass
+        return target
 
     # -- sfondo ------------------------------------------------------------
     def reload_wallpaper(self):

@@ -1,0 +1,97 @@
+# Vesper-Core - tema finestre predefinito. Generato da
+# tools/make-openbox-themes.py (#ff5a8a = colore del preset, #b74063 =
+# variante scura). NON modificare i temi generati: si cambia QUESTO template e
+# si rigenera con  python3 tools/make-openbox-themes.py
+#
+# Look: barra del titolo PIATTA e compatta come nei desktop moderni (Mint,
+# GNOME), titolo centrato, tre pulsanti completi a destra (minimizza,
+# massimizza, chiudi) che si illuminano al passaggio del mouse; il chiudi
+# diventa rosso. Cornice sottile, filetto d'accento sotto la barra della
+# finestra attiva. Le maschere dei pulsanti sono glifi pieni generati da
+# tools/make-button-masks.py: sono 12px e la barra è alta abbastanza da
+# contenerli interi (maschere troppo grandi Openbox le RITAGLIA, e i pulsanti
+# si vedono "a spicchi").
+
+# --- Geometria: barra del titolo alta ~30px, cornice sottile ----------------
+padding.width: 9
+padding.height: 8
+border.width: 1
+window.client.padding.width: 0
+window.client.padding.height: 0
+window.handle.width: 0
+
+# --- Cornice ----------------------------------------------------------------
+window.active.border.color: #b74063
+window.inactive.border.color: #16222c
+
+# --- Barra del titolo: piatta, con filetto d'accento sotto l'attiva ---------
+window.active.title.bg: flat solid
+window.active.title.bg.color: #0d1a24
+window.inactive.title.bg: flat solid
+window.inactive.title.bg.color: #0a141c
+window.active.title.separator.color: #ff5a8a
+window.inactive.title.separator.color: #16222c
+
+# --- Testo del titolo: centrato, chiaro sull'attiva -------------------------
+window.active.label.bg: parentrelative
+window.inactive.label.bg: parentrelative
+window.active.label.text.color: #eaf7ff
+window.inactive.label.text.color: #5a8a9a
+window.label.text.justify: center
+window.active.label.text.font:shadow=n
+window.inactive.label.text.font:shadow=n
+
+# --- Pulsanti: glifi completi, sfondo solo all'hover ------------------------
+window.active.button.unpressed.bg: parentrelative
+window.inactive.button.unpressed.bg: parentrelative
+window.active.button.disabled.bg: parentrelative
+window.inactive.button.disabled.bg: parentrelative
+window.active.button.hover.bg: flat solid
+window.active.button.hover.bg.color: #17303f
+window.active.button.pressed.bg: flat solid
+window.active.button.pressed.bg.color: #b74063
+
+window.active.button.unpressed.image.color: #c8f5ff
+window.inactive.button.unpressed.image.color: #45606e
+window.active.button.hover.image.color: #ff5a8a
+window.inactive.button.hover.image.color: #c8f5ff
+window.active.button.pressed.image.color: #ffffff
+window.active.button.disabled.image.color: #2a4452
+window.inactive.button.disabled.image.color: #223440
+
+# Il pulsante CHIUDI si accende di rosso sotto il mouse, come ci si aspetta.
+window.active.button.close.hover.bg: flat solid
+window.active.button.close.hover.bg.color: #7a2038
+window.active.button.close.hover.image.color: #ffe6ec
+window.active.button.close.pressed.bg: flat solid
+window.active.button.close.pressed.bg.color: #ff5a8a
+window.active.button.close.pressed.image.color: #22040c
+
+# --- Menu del window manager -----------------------------------------------
+menu.border.width: 1
+menu.border.color: #17293a
+menu.title.bg: flat solid
+menu.title.bg.color: #0d1a24
+menu.title.text.color: #ff5a8a
+menu.title.text.justify: center
+menu.items.bg: flat solid
+menu.items.bg.color: #0a1a26
+menu.items.text.color: #c8f5ff
+menu.items.disabled.text.color: #45606e
+menu.items.active.bg: flat solid
+menu.items.active.bg.color: #b74063
+menu.items.active.text.color: #eaf7ff
+menu.separator.color: #17293a
+menu.separator.width: 1
+menu.overlap.x: -2
+
+# --- OSD (indicatori a schermo) --------------------------------------------
+osd.border.width: 1
+osd.border.color: #17293a
+osd.bg: flat solid
+osd.bg.color: #0a1a26
+osd.label.text.color: #ff5a8a
+osd.hilight.bg: flat solid
+osd.hilight.bg.color: #ff5a8a
+osd.unhilight.bg: flat solid
+osd.unhilight.bg.color: #1a3a52

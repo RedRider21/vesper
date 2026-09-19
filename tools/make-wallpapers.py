@@ -41,41 +41,59 @@ DEST = os.path.join(ROOT, "data", "backgrounds")
 DEFAULT_PRESET = "cyan"
 
 PALETTE = {
-    # id:        (accent,    fondo,      nome,          descrizione,
-    #             [temi icone in ordine di preferenza])
+    # id: (accent, fondo, nome, descrizione, [temi icone], [temi GTK], chiaro)
     "cyan":    ("#00e5ff", "#020611", "Cyan", "Blu notte con accento cyan: il colore di Vesper.",
-                ["Mint-Y-Cyan", "Mint-Y-Aqua", "Mint-L-Aqua", "Mint-X-Aqua"]),
+                ["Mint-Y-Cyan", "Mint-Y-Aqua", "Mint-L-Aqua", "Mint-X-Aqua"],
+                ["Mint-Y-Dark-Aqua", "Mint-L-Dark-Aqua", "Mint-Y-Dark"], False),
     "acqua":   ("#2ad1c5", "#02100f", "Acquamarina", "Verde-azzurro tenue, riposante.",
-                ["Mint-Y-Aqua", "Mint-Y-Teal", "Mint-L-Teal", "Mint-X-Teal"]),
+                ["Mint-Y-Aqua", "Mint-Y-Teal", "Mint-L-Teal", "Mint-X-Teal"],
+                ["Mint-Y-Dark-Teal", "Mint-L-Dark-Teal", "Mint-Y-Dark"], False),
     "verde":   ("#23d18b", "#02100a", "Verde", "Verde smeraldo su fondo scuro.",
-                ["Mint-Y", "Mint-L", "Mint-X"]),
+                ["Mint-Y", "Mint-L", "Mint-X"],
+                ["Mint-Y-Dark", "Mint-L-Dark", "Adwaita-dark"], False),
     "lime":    ("#b8ff3b", "#060c02", "Lime", "Verde acido, molto contrastato.",
-                ["Mint-Y", "Mint-L", "Mint-X"]),
+                ["Mint-Y", "Mint-L", "Mint-X"],
+                ["Mint-Y-Dark", "Mint-L-Dark", "Adwaita-dark"], False),
     "giallo":  ("#ffe14b", "#0d0c02", "Giallo", "Giallo caldo, alta visibilità.",
-                ["Mint-Y-Yellow", "Mint-L-Yellow", "Mint-X-Yellow", "Mint-Y-Sand"]),
+                ["Mint-Y-Yellow", "Mint-L-Yellow", "Mint-X-Yellow", "Mint-Y-Sand"],
+                ["Mint-Y-Dark-Sand", "Mint-L-Dark-Sand", "Mint-Y-Dark"], False),
     "ambra":   ("#ffb000", "#0f0902", "Ambra", "Ambra da terminale d'altri tempi.",
-                ["Mint-Y-Sand", "Mint-L-Sand", "Mint-X-Sand", "Mint-Y-Orange"]),
+                ["Mint-Y-Sand", "Mint-L-Sand", "Mint-X-Sand", "Mint-Y-Orange"],
+                ["Mint-Y-Dark-Sand", "Mint-L-Dark-Sand", "Mint-Y-Dark"], False),
     "arancio": ("#ff8a3b", "#0f0602", "Arancio", "Arancio tramonto, caldo.",
-                ["Mint-Y-Orange", "Mint-L-Orange", "Mint-X-Orange"]),
+                ["Mint-Y-Orange", "Mint-L-Orange", "Mint-X-Orange"],
+                ["Mint-Y-Dark-Orange", "Mint-L-Dark-Orange", "Mint-Y-Dark"], False),
     "rosso":   ("#ff3b5c", "#0c0205", "Rosso", "Rosso acceso su nero.",
-                ["Mint-Y-Red", "Mint-L-Red", "Mint-X-Red"]),
+                ["Mint-Y-Red", "Mint-L-Red", "Mint-X-Red"],
+                ["Mint-Y-Dark-Red", "Mint-L-Dark-Red", "Mint-Y-Dark"], False),
     "rosa":    ("#ff5a8a", "#0f0309", "Rosa", "Rosa intenso, tono serale.",
-                ["Mint-Y-Pink", "Mint-L-Pink", "Mint-X-Pink"]),
+                ["Mint-Y-Pink", "Mint-L-Pink", "Mint-X-Pink"],
+                ["Mint-Y-Dark-Pink", "Mint-L-Dark-Pink", "Mint-Y-Dark"], False),
     "magenta": ("#ff5ad0", "#0f0310", "Magenta", "Magenta vivido, stile neon.",
-                ["Mint-Y-Pink", "Mint-Y-Purple", "Mint-L-Pink", "Mint-X-Pink"]),
+                ["Mint-Y-Pink", "Mint-Y-Purple", "Mint-L-Pink", "Mint-X-Pink"],
+                ["Mint-Y-Dark-Pink", "Mint-Y-Dark-Purple", "Mint-Y-Dark"], False),
     "viola":   ("#a06bff", "#070310", "Viola", "Viola crepuscolo.",
-                ["Mint-Y-Purple", "Mint-L-Purple", "Mint-X-Purple"]),
+                ["Mint-Y-Purple", "Mint-L-Purple", "Mint-X-Purple"],
+                ["Mint-Y-Dark-Purple", "Mint-L-Dark-Purple", "Mint-Y-Dark"], False),
     "indaco":  ("#6366f1", "#04030f", "Indaco", "Indaco profondo, sobrio.",
-                ["Mint-Y-Navy", "Mint-Y-Blue", "Mint-L-Blue", "Mint-X-Blue"]),
+                ["Mint-Y-Navy", "Mint-Y-Blue", "Mint-L-Blue", "Mint-X-Blue"],
+                ["Mint-Y-Dark-Blue", "Mint-L-Dark-Blue", "Mint-Y-Dark"], False),
     "blu":     ("#3b82f6", "#02060f", "Blu", "Blu pieno, classico.",
-                ["Mint-Y-Blue", "Mint-L-Blue", "Mint-X-Blue"]),
+                ["Mint-Y-Blue", "Mint-L-Blue", "Mint-X-Blue"],
+                ["Mint-Y-Dark-Blue", "Mint-L-Dark-Blue", "Mint-Y-Dark"], False),
     "argento": ("#b8c6d0", "#05080c", "Argento", "Grigio argento: senza dominante di colore.",
-                ["Mint-Y-Grey", "Mint-L-Grey", "Mint-X-Grey"]),
+                ["Mint-Y-Grey", "Mint-L-Grey", "Mint-X-Grey"],
+                ["Mint-Y-Dark-Grey", "Mint-L-Dark-Grey", "Mint-Y-Dark"], False),
+    # --- preset CHIARO: sfondo bianco, interfaccia chiara ---
+    "bianco":  ("#1a73e8", "#eef3f8", "Bianco", "Chiaro: sfondo bianco e interfaccia chiara.",
+                ["Mint-Y-Blue", "Mint-Y", "Mint-L-Blue", "Mint-X-Blue"],
+                ["Mint-Y-Blue", "Mint-Y", "Mint-L-Blue", "Adwaita"], True),
 }
 
 # Ripieghi comuni in coda a ogni catena: temi quasi sempre presenti, così un
 # preset ha SEMPRE un set di icone completo anche su una distro spoglia.
 ICON_FALLBACK = ["Mint-Y", "Papirus", "Adwaita", "gnome", "hicolor"]
+GTK_FALLBACK = ["Mint-Y-Dark", "Mint-Y", "Adwaita-dark", "Adwaita"]
 
 
 def hx(c: str) -> tuple[int, int, int]:
@@ -113,6 +131,20 @@ def background(accent, deep, focal, w, h):
     img = far[None, None, :] + (near - far)[None, None, :] * glow[..., None]
     vig = 1 - 0.55 * (d ** 2)                  # vignette ai bordi
     img *= vig[..., None]
+    return Image.fromarray(np.clip(img, 0, 255).astype(np.uint8), "RGB").convert("RGBA")
+
+
+def background_light(accent, deep, focal, w, h):
+    """Cielo CHIARO: bianco in alto, appena velato del colore d'accento verso
+    l'orizzonte. Niente vignette scura: la luce viene dall'alto."""
+    yy, xx = np.mgrid[0:h, 0:w].astype(np.float32)
+    fx, fy = focal
+    d = np.sqrt(((xx - fx) / w) ** 2 + ((yy - fy) / h) ** 2)
+    d = np.clip(d / d.max(), 0, 1)
+    glow = (1 - d) ** 1.8
+    near = np.array(mix((255, 255, 255), accent, 0.20), np.float32)
+    far = np.array(deep, np.float32)                      # bianco sporco
+    img = far[None, None, :] + (near - far)[None, None, :] * glow[..., None]
     return Image.fromarray(np.clip(img, 0, 255).astype(np.uint8), "RGB").convert("RGBA")
 
 
@@ -211,7 +243,11 @@ def glow_compose(base, layer, radius=9):
     return Image.alpha_composite(base, layer)
 
 
-def make(cid: str, accent_hex: str, deep_hex: str, w: int, h: int) -> str:
+def make(cid: str, accent_hex: str, deep_hex: str, w: int, h: int,
+         light: bool = False) -> str:
+    """Compone lo sfondo. `light=True` produce la variante CHIARA: cielo
+    bianco-azzurro, niente campo stellato, stella e orizzonte pieni nel colore
+    d'accento. Stessa composizione, tono opposto."""
     accent = hx(accent_hex)
     deep = hx(deep_hex)
     scale = min(w / W, h / H) * 0.62       # soggetto contenuto: e' uno SFONDO
@@ -220,12 +256,15 @@ def make(cid: str, accent_hex: str, deep_hex: str, w: int, h: int) -> str:
     cx, cy = int(w * 0.655), int(h * 0.42)
     focal = (int(w * 0.62), hor_y)         # la luce nasce dall'orizzonte
 
-    img = background(accent, deep, focal, w, h)
-    img = Image.alpha_composite(img, starfield(abs(hash(cid)) & 0xffff, w, h, hor_y))
+    if light:
+        img = background_light(accent, deep, focal, w, h)
+    else:
+        img = background(accent, deep, focal, w, h)
+        img = Image.alpha_composite(img, starfield(abs(hash(cid)) & 0xffff, w, h, hor_y))
 
     # bagliore del tramonto sull'orizzonte + alone dietro la stella
     # (attenuati sui colori chiari: vedi glow_gain)
-    g = glow_gain(accent)
+    g = glow_gain(accent) * (0.55 if light else 1.0)
     glow = Image.new("RGBA", (w, h), (0, 0, 0, 0))
     gd = ImageDraw.Draw(glow)
     gd.ellipse([-w * 0.25, hor_y - h * 0.30, w * 1.25, hor_y + h * 0.30],
@@ -234,8 +273,10 @@ def make(cid: str, accent_hex: str, deep_hex: str, w: int, h: int) -> str:
     gd.ellipse([cx - r, cy - r, cx + r, cy + r], fill=accent + (int(34 * g),))
     img = Image.alpha_composite(img, glow.filter(ImageFilter.GaussianBlur(170)))
 
-    img = glow_compose(img, horizon(accent, w, h, hor_y, cx, scale), radius=14)
-    img = glow_compose(img, emblem(accent, cx, cy, w, h, scale), radius=12)
+    img = glow_compose(img, horizon(accent, w, h, hor_y, cx, scale),
+                       radius=6 if light else 14)
+    img = glow_compose(img, emblem(accent, cx, cy, w, h, scale),
+                       radius=4 if light else 12)
 
     os.makedirs(DEST, exist_ok=True)
     out = os.path.join(DEST, cid + ".png")
@@ -256,8 +297,14 @@ def write_presets() -> str:
                 "icon": "vesper-logo-symbolic",
                 # temi icone del colore, dal più desiderato al ripiego generico
                 "icon_themes": icons + [t for t in ICON_FALLBACK if t not in icons],
+                # temi GTK: decidono il FONDO e i colori DENTRO le finestre
+                # delle applicazioni, così anche quelle seguono il preset
+                "gtk_themes": gtk + [t for t in GTK_FALLBACK if t not in gtk],
+                # interfaccia chiara o scura (vale anche per i componenti di
+                # Vesper: pannello, Centro di Controllo, file manager)
+                "light": bool(light),
             }
-            for cid, (accent, _deep, name, desc, icons) in PALETTE.items()
+            for cid, (accent, _deep, name, desc, icons, gtk, light) in PALETTE.items()
         },
     }
     out = os.path.join(ROOT, "data", "presets.json")
@@ -288,7 +335,8 @@ def main() -> int:
             print("colore sconosciuto:", cid, "- disponibili:", ", ".join(PALETTE))
             return 2
         accent, deep = PALETTE[cid][0], PALETTE[cid][1]
-        print("generato", make(cid, accent, deep, w, h))
+        light = PALETTE[cid][6]
+        print("generato", make(cid, accent, deep, w, h, light=light))
     print("catalogo preset:", write_presets())
     print(f"[sfondi] {len(wanted)} file in {os.path.normpath(DEST)}")
     return 0

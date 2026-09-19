@@ -17,7 +17,16 @@
         "Adwaita",
         "gnome",
         "hicolor"
-      ]
+      ],
+      "gtk_themes": [
+        "Mint-Y-Dark-Aqua",
+        "Mint-L-Dark-Aqua",
+        "Mint-Y-Dark",
+        "Mint-Y",
+        "Adwaita-dark",
+        "Adwaita"
+      ],
+      "light": false
     },
     "acqua": {
       "name": "Acquamarina",
@@ -35,7 +44,16 @@
         "Adwaita",
         "gnome",
         "hicolor"
-      ]
+      ],
+      "gtk_themes": [
+        "Mint-Y-Dark-Teal",
+        "Mint-L-Dark-Teal",
+        "Mint-Y-Dark",
+        "Mint-Y",
+        "Adwaita-dark",
+        "Adwaita"
+      ],
+      "light": false
     },
     "verde": {
       "name": "Verde",
@@ -51,7 +69,15 @@
         "Adwaita",
         "gnome",
         "hicolor"
-      ]
+      ],
+      "gtk_themes": [
+        "Mint-Y-Dark",
+        "Mint-L-Dark",
+        "Adwaita-dark",
+        "Mint-Y",
+        "Adwaita"
+      ],
+      "light": false
     },
     "lime": {
       "name": "Lime",
@@ -67,7 +93,15 @@
         "Adwaita",
         "gnome",
         "hicolor"
-      ]
+      ],
+      "gtk_themes": [
+        "Mint-Y-Dark",
+        "Mint-L-Dark",
+        "Adwaita-dark",
+        "Mint-Y",
+        "Adwaita"
+      ],
+      "light": false
     },
     "giallo": {
       "name": "Giallo",
@@ -85,7 +119,16 @@
         "Adwaita",
         "gnome",
         "hicolor"
-      ]
+      ],
+      "gtk_themes": [
+        "Mint-Y-Dark-Sand",
+        "Mint-L-Dark-Sand",
+        "Mint-Y-Dark",
+        "Mint-Y",
+        "Adwaita-dark",
+        "Adwaita"
+      ],
+      "light": false
     },
     "ambra": {
       "name": "Ambra",
@@ -103,7 +146,16 @@
         "Adwaita",
         "gnome",
         "hicolor"
-      ]
+      ],
+      "gtk_themes": [
+        "Mint-Y-Dark-Sand",
+        "Mint-L-Dark-Sand",
+        "Mint-Y-Dark",
+        "Mint-Y",
+        "Adwaita-dark",
+        "Adwaita"
+      ],
+      "light": false
     },
     "arancio": {
       "name": "Arancio",
@@ -120,7 +172,16 @@
         "Adwaita",
         "gnome",
         "hicolor"
-      ]
+      ],
+      "gtk_themes": [
+        "Mint-Y-Dark-Orange",
+        "Mint-L-Dark-Orange",
+        "Mint-Y-Dark",
+        "Mint-Y",
+        "Adwaita-dark",
+        "Adwaita"
+      ],
+      "light": false
     },
     "rosso": {
       "name": "Rosso",
@@ -137,7 +198,16 @@
         "Adwaita",
         "gnome",
         "hicolor"
-      ]
+      ],
+      "gtk_themes": [
+        "Mint-Y-Dark-Red",
+        "Mint-L-Dark-Red",
+        "Mint-Y-Dark",
+        "Mint-Y",
+        "Adwaita-dark",
+        "Adwaita"
+      ],
+      "light": false
     },
     "rosa": {
       "name": "Rosa",
@@ -154,7 +224,16 @@
         "Adwaita",
         "gnome",
         "hicolor"
-      ]
+      ],
+      "gtk_themes": [
+        "Mint-Y-Dark-Pink",
+        "Mint-L-Dark-Pink",
+        "Mint-Y-Dark",
+        "Mint-Y",
+        "Adwaita-dark",
+        "Adwaita"
+      ],
+      "light": false
     },
     "magenta": {
       "name": "Magenta",
@@ -172,7 +251,16 @@
         "Adwaita",
         "gnome",
         "hicolor"
-      ]
+      ],
+      "gtk_themes": [
+        "Mint-Y-Dark-Pink",
+        "Mint-Y-Dark-Purple",
+        "Mint-Y-Dark",
+        "Mint-Y",
+        "Adwaita-dark",
+        "Adwaita"
+      ],
+      "light": false
     },
     "viola": {
       "name": "Viola",
@@ -189,7 +277,16 @@
         "Adwaita",
         "gnome",
         "hicolor"
-      ]
+      ],
+      "gtk_themes": [
+        "Mint-Y-Dark-Purple",
+        "Mint-L-Dark-Purple",
+        "Mint-Y-Dark",
+        "Mint-Y",
+        "Adwaita-dark",
+        "Adwaita"
+      ],
+      "light": false
     },
     "indaco": {
       "name": "Indaco",
@@ -207,7 +304,16 @@
         "Adwaita",
         "gnome",
         "hicolor"
-      ]
+      ],
+      "gtk_themes": [
+        "Mint-Y-Dark-Blue",
+        "Mint-L-Dark-Blue",
+        "Mint-Y-Dark",
+        "Mint-Y",
+        "Adwaita-dark",
+        "Adwaita"
+      ],
+      "light": false
     },
     "blu": {
       "name": "Blu",
@@ -224,7 +330,16 @@
         "Adwaita",
         "gnome",
         "hicolor"
-      ]
+      ],
+      "gtk_themes": [
+        "Mint-Y-Dark-Blue",
+        "Mint-L-Dark-Blue",
+        "Mint-Y-Dark",
+        "Mint-Y",
+        "Adwaita-dark",
+        "Adwaita"
+      ],
+      "light": false
     },
     "argento": {
       "name": "Argento",
@@ -241,7 +356,42 @@
         "Adwaita",
         "gnome",
         "hicolor"
-      ]
+      ],
+      "gtk_themes": [
+        "Mint-Y-Dark-Grey",
+        "Mint-L-Dark-Grey",
+        "Mint-Y-Dark",
+        "Mint-Y",
+        "Adwaita-dark",
+        "Adwaita"
+      ],
+      "light": false
+    },
+    "bianco": {
+      "name": "Bianco",
+      "desc": "Chiaro: sfondo bianco e interfaccia chiara.",
+      "accent": "#1a73e8",
+      "wallpaper": "bianco.png",
+      "icon": "vesper-logo-symbolic",
+      "icon_themes": [
+        "Mint-Y-Blue",
+        "Mint-Y",
+        "Mint-L-Blue",
+        "Mint-X-Blue",
+        "Papirus",
+        "Adwaita",
+        "gnome",
+        "hicolor"
+      ],
+      "gtk_themes": [
+        "Mint-Y-Blue",
+        "Mint-Y",
+        "Mint-L-Blue",
+        "Adwaita",
+        "Mint-Y-Dark",
+        "Adwaita-dark"
+      ],
+      "light": true
     }
   }
 }

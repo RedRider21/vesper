@@ -164,6 +164,13 @@ class FileList(Gtk.Box):
         self.iconview.set_pixbuf_column(self.COL_ICON)
         self.iconview.set_text_column(self.COL_NAME)
         self.iconview.set_item_width(96)
+        # Spaziatura sul WIDGET: il padding via CSS sulle celle non entra nel
+        # calcolo dell'altezza della voce e le etichette risultano tagliate.
+        self.iconview.set_item_padding(6)
+        self.iconview.set_row_spacing(10)
+        self.iconview.set_column_spacing(6)
+        self.iconview.set_margin_top(6)
+        self.iconview.set_margin_start(6)
         self.iconview.set_selection_mode(Gtk.SelectionMode.MULTIPLE)
         self.iconview.connect("item-activated",
                               lambda _v, tp: self.activate_path(self._path_at(tp)))

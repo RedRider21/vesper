@@ -104,7 +104,15 @@ TEMPLATES = os.path.join(ROOT, "tools/openbox-templates")
 THEMES_OUT = os.path.join(ROOT, "data/themes")
 
 # famiglia -> suffisso del nome tema "Vesper-<Suffix>-<preset>"
-FAMILIES = {"retro": "Retro", "cards": "Cards"}
+FAMILIES = {"core": "Core", "retro": "Retro", "cards": "Cards"}
+
+
+def load_light():
+    """Quali preset vogliono l'interfaccia chiara."""
+    with open(PRESETS_JSON, encoding="utf-8") as f:
+        data = json.load(f)
+    presets = data.get("presets", data)
+    return {k: bool((v or {}).get("light")) for k, v in presets.items()}
 
 
 def load_accents():
@@ -130,13 +138,26 @@ def darken(hex_color, factor=0.72):
     return "#%02x%02x%02x" % (r, g, b)
 
 
-def render(template_text, accent):
-    return (template_text
-            .replace("@ACCENT_DK@", darken(accent))
-            .replace("@ACCENT@", accent))
+def render(template_text, accent, light=False):
+    """Sostituisce i colori del preset. Se il preset è CHIARO, la famiglia
+    Core viene tradotta nella variante chiara con la stessa mappa usata per
+    l'interfaccia (src/vesper/palette.py): un colore solo, in un posto solo.
+    Retro è già chiaro di suo e Cards ha la barra graphite per scelta, quindi
+    non si toccano."""
+    out = (template_text
+           .replace("@ACCENT_DK@", darken(accent))
+           .replace("@ACCENT@", accent))
+    if light:
+        try:
+            sys.path.insert(0, os.path.join(ROOT, "src"))
+            from vesper.palette import to_light
+            out = to_light(out)
+        except Exception:
+            pass
+    return out
 
 
-def gen_family(fam_dir, suffix, accents):
+def gen_family(fam_dir, suffix, accents, light_map=None):
     src_ob = os.path.join(TEMPLATES, fam_dir, "openbox-3")
     themerc_in = os.path.join(src_ob, "themerc.in")
     if not os.path.isfile(themerc_in):
@@ -146,8 +167,8 @@ def gen_family(fam_dir, suffix, accents):
         tpl = f.read()
     # La famiglia Cards usa maschere .xbm "a sfera": le (ri)generiamo nel
     # template stesso cosi' restano l'unica fonte di verita' (color-agnostiche).
-    if fam_dir == "cards":
-        gen_button_masks(src_ob)
+    # Le maschere dei pulsanti le genera tools/make-button-masks.py e stanno
+    # già nel template: qui si copiano soltanto.
     # glifi .xbm da copiare (color-agnostici); niente = pulsanti default Openbox
     xbms = [n for n in os.listdir(src_ob) if n.endswith(".xbm")]
     made = 0
@@ -155,8 +176,9 @@ def gen_family(fam_dir, suffix, accents):
         name = "Vesper-%s-%s" % (suffix, key)
         dest_ob = os.path.join(THEMES_OUT, name, "openbox-3")
         os.makedirs(dest_ob, exist_ok=True)
+        light = bool((light_map or {}).get(key)) and fam_dir == "core"
         with open(os.path.join(dest_ob, "themerc"), "w", encoding="utf-8") as f:
-            f.write(render(tpl, accent))
+            f.write(render(tpl, accent, light=light))
         for x in xbms:
             shutil.copyfile(os.path.join(src_ob, x),
                             os.path.join(dest_ob, x))
@@ -165,8 +187,28 @@ def gen_family(fam_dir, suffix, accents):
     return made
 
 
+def gen_fallback(accents):
+    """Scrive anche il tema SENZA suffisso (Vesper-Core): è il ripiego usato
+    quando il tema del preset non c'è, quindi deve avere lo stesso aspetto.
+    Prende il colore del preset predefinito del catalogo."""
+    with open(PRESETS_JSON, encoding="utf-8") as f:
+        default = json.load(f).get("default", "cyan")
+    accent = accents.get(default) or "#00e5ff"
+    src_ob = os.path.join(TEMPLATES, "core", "openbox-3")
+    with open(os.path.join(src_ob, "themerc.in"), encoding="utf-8") as f:
+        tpl = f.read()
+    dest_ob = os.path.join(THEMES_OUT, "Vesper-Core", "openbox-3")
+    os.makedirs(dest_ob, exist_ok=True)
+    with open(os.path.join(dest_ob, "themerc"), "w", encoding="utf-8") as f:
+        f.write(render(tpl, accent))
+    for x in [n for n in os.listdir(src_ob) if n.endswith(".xbm")]:
+        shutil.copyfile(os.path.join(src_ob, x), os.path.join(dest_ob, x))
+    print("  + Vesper-Core  (ripiego, %s)" % accent)
+
+
 def main():
     accents = load_accents()
+    light_map = load_light()
     if not accents:
         print("Nessun accent trovato in data/presets.json", file=sys.stderr)
         return 1
@@ -174,8 +216,9 @@ def main():
     total = 0
     for fam_dir, suffix in FAMILIES.items():
         print("Famiglia %s -> Vesper-%s-*" % (fam_dir, suffix))
-        total += gen_family(fam_dir, suffix, accents)
-    print("Fatto: %d temi generati in %s" % (total, THEMES_OUT))
+        total += gen_family(fam_dir, suffix, accents, light_map)
+    gen_fallback(accents)
+    print("Fatto: %d temi generati in %s" % (total + 1, THEMES_OUT))
     return 0
 
 

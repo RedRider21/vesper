@@ -65,7 +65,7 @@
   <animateIconify>yes</animateIconify>
   <font place="ActiveWindow">
     <name>Chakra Petch, Cantarell, Sans</name>
-    <size>9</size>
+    <size>11</size>
     <!-- font size in points -->
     <weight>bold</weight>
     <!-- 'bold' or 'normal' -->
@@ -74,7 +74,7 @@
   </font>
   <font place="InactiveWindow">
     <name>Chakra Petch, Cantarell, Sans</name>
-    <size>9</size>
+    <size>11</size>
     <!-- font size in points -->
     <weight>bold</weight>
     <!-- 'bold' or 'normal' -->

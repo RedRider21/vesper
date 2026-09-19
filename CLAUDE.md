@@ -91,4 +91,10 @@ vesper/
   altrimenti si cambiano tema e pulsanti del desktop vero dell'utente
   (successo: tema marco e button-layout modificati e poi ripristinati a mano).
 - Chiudere sempre le finestre Xephyr a fine prova (`pkill Xephyr`).
+- **MAI `pkill` per NOME su processi che esistono anche nella sessione vera**
+  dell'utente (`marco`, `metacity`, `openbox`, `dunst`, ...): si uccide il suo
+  desktop, non quello di prova. Successo con `pkill -f "^marco"`, che ha
+  fermato il gestore finestre reale lasciando le finestre senza decorazioni
+  (rimediato con `marco --replace`). In prova: salvare il PID di ciò che si
+  avvia (`prog & PID=$!`) e chiudere solo quello.
 - Commit locale a ogni modifica; nei messaggi niente riferimenti a Claude.

@@ -42,7 +42,7 @@
   <h2>1. Installare</h2>
 
   <h3>Debian, Ubuntu, Linux Mint</h3>
-<pre>sudo apt install ./vesper_0.2.1_all.deb</pre>
+<pre>sudo apt install ./vesper_0.2.2_all.deb</pre>
   <p class="intro">
     Il pacchetto tira dietro le dipendenze da solo. Per toglierlo:
     <code>sudo apt remove vesper</code> (la configurazione in
@@ -50,7 +50,7 @@
   </p>
 
   <h3>Qualsiasi distribuzione, dai sorgenti</h3>
-<pre>tar xzf vesper-0.2.1.tar.gz &amp;&amp; cd vesper-0.2.1
+<pre>tar xzf vesper-0.2.2.tar.gz &amp;&amp; cd vesper-0.2.2
 sudo ./install.sh --prefix=/usr     # come i pacchetti della distro
 sudo ./install.sh                   # in /usr/local
 ./install.sh --user                 # in ~/.local, senza root
@@ -238,6 +238,7 @@ vesper-wm auto       # lascia decidere a Vesper (predefinito)</pre>
     <tr><td><code>vesper-disks</code></td><td>dischi e chiavette: elenco, montaggio, smontaggio</td></tr>
     <tr><td><code>vesper-keys</code></td><td>scorciatoie del desktop (usato dal Centro di Controllo)</td></tr>
     <tr><td><code>vesper-launcherd</code>, <code>vesper-launch</code></td><td>avvio «caldo» delle finestre: <code>--status</code>, <code>--stop</code></td></tr>
+    <tr><td><code>vesper-zram</code></td><td>memoria compressa: <code>status</code>, <code>enable [%]</code>, <code>disable</code></td></tr>
     <tr><td><code>vesper-screenshot</code>, <code>vesper-clipboard</code>, <code>vesper-nightlight</code>, <code>vesper-screens</code>, <code>vesper-audio</code>, <code>vesper-wifi</code>, <code>vesper-bluetooth</code>, <code>vesper-battery</code>, <code>vesper-brightness</code></td><td>utilità richiamate dal pannello e dalle scorciatoie</td></tr>
   </table>
 </section>
@@ -265,6 +266,23 @@ vesper-wm auto       # lascia decidere a Vesper (predefinito)</pre>
 </section>
 
 <section id="problemi">
+  <h3>Memoria compressa (zram)</h3>
+  <p class="intro">
+    La zram è uno swap che vive nella RAM e tiene i dati compressi: invece di
+    scrivere sul disco, comprime (con zstd tre o quattro volte). Conta
+    soprattutto sotto i 2,5 GB di memoria e nelle sessioni live, dove il
+    sistema sta già in RAM; con molta memoria cambia poco. Vesper
+    <strong>non la accende mai da solo</strong>: lo swap è configurazione di
+    sistema. Lo stato si vede in Centro di Controllo →
+    <em>Memoria compressa</em>, che dice anche se ci sono due gestori
+    installati insieme (capita con <code>zram-tools</code> accanto a
+    <code>systemd-zram-generator</code>: uno dei due fallisce a ogni avvio).
+    L'attivazione è esplicita, chiede i privilegi e scrive
+    <code>/etc/systemd/zram-generator.conf</code>; senza systemd attiva la
+    zram per la sessione e stampa la riga da mettere nell'avvio della propria
+    distribuzione.
+  </p>
+
   <h3>Avvio «caldo» delle finestre</h3>
   <p class="intro">
     La sessione avvia <code>vesper-launcherd</code>, un processo che tiene GTK

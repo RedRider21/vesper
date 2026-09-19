@@ -977,6 +977,167 @@ def _panel_restart():
                      start_new_session=True)
 
 
+def _zram_stato() -> dict:
+    """Stato della zram, chiesto a vesper-zram (che sa leggere /sys)."""
+    import json as _json
+    try:
+        return _json.loads(run_capture(["vesper-zram", "status", "--json"],
+                                       timeout=8) or "{}")
+    except ValueError:
+        return {}
+
+
+def _gb(kb: float) -> str:
+    if kb >= 1024 * 1024:
+        return "%.1f GB" % (kb / 1024 / 1024)
+    return "%.0f MB" % (kb / 1024)
+
+
+def open_zram(_btn=None):
+    """Swap compresso in RAM: stato e accensione, sempre su richiesta."""
+    win, body = panel_window(_t("v.zram.title"), 620, 540)
+
+    intro = Gtk.Label(label=_t("v.zram.intro"))
+    intro.set_xalign(0); intro.set_line_wrap(True)
+    intro.get_style_context().add_class("vesper-val")
+    body.pack_start(intro, False, False, 0)
+
+    griglia = Gtk.Grid(column_spacing=16, row_spacing=6)
+    body.pack_start(griglia, False, False, 6)
+    valori = {}
+    for riga, (chiave, etichetta) in enumerate((
+            ("ram", _t("v.zram.ram")),
+            ("zram", _t("v.zram.device")),
+            ("dentro", _t("v.zram.inside")),
+            ("swap", _t("v.zram.swap")),
+            ("conf", _t("v.zram.config")),
+            ("consiglio", _t("v.zram.advice")))):
+        k = Gtk.Label(label=etichetta); k.set_xalign(0)
+        k.get_style_context().add_class("vesper-key")
+        v = Gtk.Label(label="-"); v.set_xalign(0); v.set_line_wrap(True)
+        v.get_style_context().add_class("vesper-val")
+        griglia.attach(k, 0, riga, 1, 1)
+        griglia.attach(v, 1, riga, 1, 1)
+        valori[chiave] = v
+
+    avviso = Gtk.Label(label="")
+    avviso.set_xalign(0); avviso.set_line_wrap(True)
+    avviso.get_style_context().add_class("vesper-warn")
+    body.pack_start(avviso, False, False, 0)
+
+    # --- scelte per l'accensione ---
+    scelte = Gtk.Box(orientation=Gtk.Orientation.HORIZONTAL, spacing=10)
+    scelte.pack_start(Gtk.Label(label=_t("v.zram.size")), False, False, 0)
+    quota = Gtk.SpinButton.new_with_range(10, 200, 5)
+    quota.set_value(50)
+    scelte.pack_start(quota, False, False, 0)
+    scelte.pack_start(Gtk.Label(label=_t("v.zram.algo")), False, False, 0)
+    algo = Gtk.ComboBoxText()
+    for nome in ("zstd", "lz4", "lzo-rle", "lzo"):
+        algo.append_text(nome)
+    algo.set_active(0)
+    scelte.pack_start(algo, False, False, 0)
+    body.pack_start(scelte, False, False, 0)
+
+    stato_msg = Gtk.Label(label="")
+    stato_msg.set_xalign(0); stato_msg.set_line_wrap(True)
+    stato_msg.get_style_context().add_class("vesper-val")
+    body.pack_start(stato_msg, False, False, 0)
+
+    b_on = icon_button(_t("v.zram.enable"), "media-playback-start-symbolic",
+                       primary=True)
+    b_off = icon_button(_t("v.zram.disable"), "media-playback-stop-symbolic")
+
+    def aggiorna():
+        s = _zram_stato()
+        attiva = bool(s.get("attiva"))
+        valori["ram"].set_text(_gb(s.get("ram_kb", 0)))
+        dev = s.get("dispositivi") or []
+        if dev:
+            d = dev[0]
+            valori["zram"].set_text(
+                "%s - %s, %s (%s%% della RAM)"
+                % (d["dispositivo"], _gb(d["disksize"] / 1024), d["algoritmo"],
+                   s.get("quota_ram", 0)))
+            if d.get("originale", 0) > 1024 * 1024:
+                valori["dentro"].set_text(
+                    _t("v.zram.ratio") % (_gb(d["originale"] / 1024),
+                                          _gb(d["usato_ram"] / 1024),
+                                          d.get("rapporto", 0)))
+            else:
+                valori["dentro"].set_text(_t("v.zram.empty"))
+        else:
+            valori["zram"].set_text(_t("v.zram.absent"))
+            valori["dentro"].set_text("-")
+        valori["swap"].set_text("%s (%s %s)"
+                                % (_gb(s.get("swap_totale_kb", 0)),
+                                   _t("v.zram.used"),
+                                   _gb(s.get("swap_usato_kb", 0))))
+        valori["conf"].set_text(s.get("config") or _t("v.zram.noconfig"))
+        valori["consiglio"].set_text(s.get("consiglio", "-"))
+        conflitti = s.get("conflitti") or []
+        if conflitti:
+            avviso.set_text(_t("v.zram.conflict")
+                            % ", ".join(c["servizio"] for c in conflitti))
+        else:
+            avviso.set_text("")
+        b_on.set_sensitive(not attiva)
+        b_off.set_sensitive(attiva)
+        if dev:
+            quota.set_value(max(10, min(200, int(s.get("quota_ram") or 50))))
+        return False
+
+    def lavora(argomenti, messaggio):
+        stato_msg.set_text(messaggio)
+
+        def worker():
+            r = subprocess.run(["vesper-zram", *argomenti],
+                               capture_output=True, text=True)
+            uscita = (r.stdout + r.stderr).strip().splitlines()
+
+            def fine():
+                stato_msg.set_text(uscita[-1] if uscita else "")
+                aggiorna()
+                return False
+            GLib.idle_add(fine)
+        threading.Thread(target=worker, daemon=True).start()
+
+    def on_on(_b):
+        # L'accensione tocca la configurazione di sistema: si chiede conferma,
+        # e i privilegi li chiede vesper-zram (doas/sudo/pkexec).
+        d = Gtk.MessageDialog(transient_for=win, modal=True,
+                              message_type=Gtk.MessageType.QUESTION,
+                              buttons=Gtk.ButtonsType.OK_CANCEL,
+                              text=_t("v.zram.confirm_q"))
+        d.format_secondary_text(_t("v.zram.confirm_body")
+                                % (int(quota.get_value()),
+                                   algo.get_active_text() or "zstd"))
+        r = d.run(); d.destroy()
+        if r == Gtk.ResponseType.OK:
+            lavora(["enable", str(int(quota.get_value())),
+                    "--algo", algo.get_active_text() or "zstd"],
+                   _t("v.zram.working"))
+
+    def on_off(_b):
+        lavora(["disable"], _t("v.zram.working"))
+
+    b_on.connect("clicked", on_on)
+    b_off.connect("clicked", on_off)
+    barra = Gtk.Box(orientation=Gtk.Orientation.HORIZONTAL, spacing=8)
+    barra.pack_start(b_on, False, False, 0)
+    barra.pack_start(b_off, False, False, 0)
+    b_ref = icon_button(_t("v.refresh"), "view-refresh-symbolic")
+    b_ref.connect("clicked", lambda _b: aggiorna())
+    barra.pack_start(b_ref, False, False, 0)
+    b_close = icon_button(_t("v.close"), "window-close")
+    b_close.connect("clicked", lambda _b: win.destroy())
+    barra.pack_end(b_close, False, False, 0)
+    body.pack_end(barra, False, False, 0)
+
+    aggiorna()
+    win.show_all()
+
+
 def open_statusbar(_btn=None):
     win, body = panel_window(_t("v.panel.bottom"), 540, 680)
 

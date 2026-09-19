@@ -60,7 +60,7 @@ COMANDI="vesper-session vesper-panel vesper-panel-restart vesper-control-center
          vesper-screensaver vesper-screensaver-idle vesper-screenshot
          vesper-wifi vesper-wm
          vesper-player vesper-recorder vesper-video vesper-disks vesper-editor
-         vesper-launcherd vesper-launch"
+         vesper-launcherd vesper-launch vesper-zram"
 
 if [ "$ACTION" = uninstall ]; then
   echo "Disinstallo Vesper da $PREFIX"

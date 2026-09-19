@@ -118,6 +118,8 @@ VIEW_MAP = {
     "touchpad": views.open_mouse,
     "lingua": views.open_language,
     "language": views.open_language,
+    "zram": views.open_zram,
+    "memoria": views.open_zram,
 }
 
 
@@ -247,6 +249,8 @@ def build_window() -> Gtk.Window:
              _t("cc.d.monitor"), launch("monitor")),
         Tile("system-file-manager", _t("cc.t.files"), _t("cc.d.files"),
              launch_app(["vesper-files"])),
+        Tile("drive-harddisk", _t("cc.t.zram"), _t("cc.d.zram"),
+             launch("zram")),
         Tile("utilities-terminal", _t("cc.t.logs"), _t("cc.d.logs"),
              launch("log")),
     ]), False, False, 0)

@@ -23,13 +23,13 @@ login.
 **Debian, Ubuntu, Linux Mint** — pacchetto `.deb`:
 
 ```sh
-sudo apt install ./vesper_0.2.1_all.deb     # scarica il .deb dalle release
+sudo apt install ./vesper_0.2.2_all.deb     # scarica il .deb dalle release
 ```
 
 **Da sorgenti, su qualsiasi distribuzione:**
 
 ```sh
-tar xzf vesper-0.2.1.tar.gz && cd vesper-0.2.1
+tar xzf vesper-0.2.2.tar.gz && cd vesper-0.2.2
 sudo ./install.sh                 # in /usr/local
 sudo ./install.sh --prefix=/usr   # in /usr (come i pacchetti della distro)
 ./install.sh --user               # in ~/.local, senza root
@@ -72,7 +72,7 @@ comando giusto per Debian/Ubuntu, Fedora, Arch e Alpine.
 | | |
 |---|---|
 | ![Centro di Controllo](docs/img/centro-controllo.png) | ![File manager](docs/img/file-manager.png) |
-| **Centro di Controllo** — 19 pannelli di impostazioni | **File manager** — schede, viste, cestino, miniature |
+| **Centro di Controllo** — 20 pannelli di impostazioni | **File manager** — schede, viste, cestino, miniature |
 | ![Preset di aspetto](docs/img/preset.png) | ![Salvaschermo](docs/img/salvaschermo.png) |
 | **Preset di aspetto** — un colore cambia tutto | **Salvaschermo** — animazioni e blocco schermo |
 
@@ -82,7 +82,7 @@ comando giusto per Debian/Ubuntu, Fedora, Arch e Alpine.
 |---|---|
 | `vesper-session` | avvia la sessione: preset, desktop, pannello, servizi, autostart XDG, Openbox |
 | `vesper-panel` | pannello: menu applicazioni, lista finestre, desktop virtuali, orologio, applet |
-| `vesper-control-center` | Centro di Controllo: 19 viste (aspetto, schermi, audio, rete, ...) |
+| `vesper-control-center` | Centro di Controllo: 20 viste (aspetto, schermi, audio, rete, ...) |
 | `vesper-files` | file manager: finestra **e** desktop (sfondo + icone) |
 | `vesper-profile` | preset di aspetto: accento, sfondo, icone, stile finestre |
 | `vesper-screensaver` | salvaschermo animato + blocco schermo con password |
@@ -92,6 +92,7 @@ comando giusto per Debian/Ubuntu, Fedora, Arch e Alpine.
 | `vesper-recorder` | registratore vocale |
 | `vesper-disks` | dischi e chiavette: elenco, montaggio, smontaggio |
 | `vesper-launcherd` | avvio «caldo»: tiene GTK importato e apre le finestre senza ripagare gli import |
+| `vesper-zram` | memoria compressa: stato e attivazione, sempre su richiesta esplicita |
 | altri `vesper-*` | audio, batteria, bluetooth, luminosità, appunti, data/ora, scorciatoie, lingua, luce blu, schermi, schermate, sfondo, terminale, wifi |
 
 Tutti i comandi trovano da soli il pacchetto Python e i dati a partire da dove

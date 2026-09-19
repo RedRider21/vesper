@@ -1,0 +1,340 @@
+#!/bin/sh
+# SPDX-License-Identifier: AGPL-3.0-or-later
+# Copyright (C) 2026 Daniele Deplano (RedRider21). Parte di Vesper.
+# vesper-zram - stato e attivazione della zram (swap compresso in RAM).
+#
+# La zram è un disco di swap che vive nella RAM e tiene i dati compressi:
+# invece di scrivere su disco, si comprime (zstd fa 3-4 volte). Su macchine con
+# poca memoria - e nelle live, dove il sistema STA in RAM - e' il modo piu'
+# semplice per guadagnare spazio senza toccare il disco.
+#
+# Vesper non la attiva mai da solo: lo swap e' configurazione di SISTEMA, e chi
+# installa un desktop non si aspetta che gli venga riscritta. Qui c'e' il
+# comando per vederla e, se la vuoi, per accenderla in modo esplicito.
+#
+#   vesper-zram status            stato leggibile
+#   vesper-zram status --json     lo stesso per il Centro di Controllo
+#   vesper-zram enable [PCT] [--algo NOME]   attiva (default: 50% della RAM, zstd)
+#   vesper-zram disable           disattiva e rimuove la configurazione
+#   vesper-zram conflicts         segnala piu' gestori zram installati insieme
+#
+# Con systemd scrive /etc/systemd/zram-generator.conf (persistente). Senza, fa
+# l'attivazione immediata con zramctl/mkswap/swapon, che pero' NON sopravvive
+# al riavvio: la riga giusta da mettere nell'avvio della distro viene stampata.
+# --- ambiente comune (pacchetto Python, dati, interprete) ---
+_self=$(readlink -f "$0" 2>/dev/null || echo "$0"); _d=$(dirname "$_self")
+for _e in "$_d/env.sh" "$(dirname "$_d")/lib/vesper/env.sh" \
+          /usr/local/lib/vesper/env.sh /usr/lib/vesper/env.sh; do
+  [ -r "$_e" ] && { . "$_e"; break; }
+done
+[ -n "${VESPER_PY:-}" ] || { echo "vesper-zram: python3 non disponibile" >&2; exit 1; }
+
+exec "$VESPER_PY" - "$@" <<'PY'
+import json
+import os
+import re
+import shutil
+import subprocess
+import sys
+
+CONF = "/etc/systemd/zram-generator.conf"
+DEF_PCT = 50
+DEF_ALGO = "zstd"
+# Altri gestori della zram: se ne gira piu' d'uno si pestano i piedi (uno dei
+# servizi fallisce a ogni avvio, di solito senza conseguenze ma sporco).
+ALTRI = ("zramswap.service", "zram-config.service", "zramstart.service")
+
+
+def _sh(cmd, **kw):
+    try:
+        return subprocess.run(cmd, capture_output=True, text=True,
+                              env=dict(os.environ, LC_ALL="C"), **kw)
+    except OSError:
+        return subprocess.CompletedProcess(cmd, 1, "", "")
+
+
+def _leggi(percorso, default=""):
+    try:
+        with open(percorso) as f:
+            return f.read().strip()
+    except OSError:
+        return default
+
+
+def ram_kb() -> int:
+    for riga in _leggi("/proc/meminfo").splitlines():
+        if riga.startswith("MemTotal:"):
+            return int(riga.split()[1])
+    return 0
+
+
+def dispositivi() -> list:
+    """Un dizionario per ogni /dev/zram*, con quanto sta comprimendo."""
+    out = []
+    base = "/sys/block"
+    if not os.path.isdir(base):
+        return out
+    for nome in sorted(n for n in os.listdir(base) if n.startswith("zram")):
+        d = os.path.join(base, nome)
+        disksize = int(_leggi(os.path.join(d, "disksize"), "0") or 0)
+        if not disksize:
+            continue
+        algo = _leggi(os.path.join(d, "comp_algorithm"))
+        scelto = re.search(r"\[([^\]]+)\]", algo)
+        # mm_stat: originale, compresso, usato in RAM, limite, picco, pagine intere
+        stat = _leggi(os.path.join(d, "mm_stat")).split()
+        orig = int(stat[0]) if len(stat) > 2 else 0
+        compresso = int(stat[1]) if len(stat) > 2 else 0
+        usato = int(stat[2]) if len(stat) > 2 else 0
+        out.append({
+            "nome": nome,
+            "dispositivo": "/dev/" + nome,
+            "disksize": disksize,
+            "algoritmo": scelto.group(1) if scelto else (algo or "?"),
+            "originale": orig,
+            "compresso": compresso,
+            "usato_ram": usato,
+            "rapporto": round(orig / compresso, 2) if compresso else 0.0,
+            "swap": any(riga.split()[0] == "/dev/" + nome
+                        for riga in _leggi("/proc/swaps").splitlines()[1:]),
+        })
+    return out
+
+
+def swap_totale() -> tuple:
+    """(totale kB, usato kB) di TUTTO lo swap, zram compreso."""
+    tot = usato = 0
+    for riga in _leggi("/proc/swaps").splitlines()[1:]:
+        pezzi = riga.split()
+        if len(pezzi) >= 4:
+            tot += int(pezzi[2])
+            usato += int(pezzi[3])
+    return tot, usato
+
+
+def con_systemd() -> bool:
+    return os.path.isdir("/run/systemd/system") and bool(shutil.which("systemctl"))
+
+
+def conflitti() -> list:
+    """Servizi di ALTRI gestori zram presenti insieme al generatore."""
+    trovati = []
+    if not con_systemd():
+        return trovati
+    elenco = _sh(["systemctl", "list-unit-files", "--no-legend",
+                  "--no-pager"]).stdout
+    for servizio in ALTRI:
+        for riga in elenco.splitlines():
+            if riga.split()[:1] == [servizio]:
+                stato = _sh(["systemctl", "is-active", servizio]).stdout.strip()
+                abilitato = _sh(["systemctl", "is-enabled", servizio]).stdout.strip()
+                if abilitato in ("enabled", "static") or stato in ("active", "failed"):
+                    trovati.append({"servizio": servizio, "stato": stato,
+                                    "abilitato": abilitato})
+    return trovati
+
+
+def stato() -> dict:
+    ram = ram_kb()
+    dev = dispositivi()
+    tot, usato = swap_totale()
+    zram_kb = sum(d["disksize"] for d in dev) // 1024
+    return {
+        "ram_kb": ram,
+        "dispositivi": dev,
+        "attiva": any(d["swap"] for d in dev),
+        "zram_kb": zram_kb,
+        "quota_ram": round(100 * zram_kb / ram, 1) if ram else 0,
+        "swap_totale_kb": tot,
+        "swap_usato_kb": usato,
+        "systemd": con_systemd(),
+        "config": CONF if os.path.exists(CONF) else "",
+        "config_testo": _leggi(CONF),
+        "conflitti": conflitti(),
+        "consiglio": consiglio(ram, any(d["swap"] for d in dev)),
+    }
+
+
+def consiglio(ram_totale_kb: int, gia_attiva: bool) -> str:
+    gb = ram_totale_kb / 1024 / 1024
+    if gia_attiva:
+        return "attiva: non c'è altro da fare"
+    if gb < 2.5:
+        return "consigliata: con meno di 2,5 GB di RAM il guadagno si sente subito"
+    if gb < 6:
+        return "utile: aiuta quando apri molte finestre o lavori in una VM"
+    return "poco utile: con tanta RAM la zram cambia poco, ma non fa danni"
+
+# ------------------------------------------------------------- attivazione
+def _priv() -> list:
+    """Come chiedere i privilegi: doas, sudo o pkexec, il primo che c'e'."""
+    for c in ("doas", "sudo", "pkexec"):
+        if shutil.which(c):
+            return [c]
+    return []
+
+
+def _come_root(cmd: list) -> int:
+    """Esegue il comando da root. Ritorna il codice d'uscita."""
+    if os.geteuid() == 0:
+        return _sh(cmd).returncode
+    priv = _priv()
+    if not priv:
+        print("vesper-zram: servono i privilegi di amministratore "
+              "(doas, sudo o pkexec non trovati)", file=sys.stderr)
+        return 1
+    r = subprocess.run(priv + cmd)
+    return r.returncode
+
+
+def _scrivi_conf(testo: str) -> int:
+    """Scrive la configurazione del generatore passando da tee, cosi' funziona
+    anche con pkexec (che non eredita la redirezione della shell)."""
+    if os.geteuid() == 0:
+        try:
+            with open(CONF, "w") as f:
+                f.write(testo)
+            return 0
+        except OSError as e:
+            print("vesper-zram: %s" % e, file=sys.stderr)
+            return 1
+    priv = _priv()
+    if not priv:
+        print("vesper-zram: servono i privilegi di amministratore",
+              file=sys.stderr)
+        return 1
+    r = subprocess.run(priv + ["tee", CONF], input=testo, text=True,
+                       stdout=subprocess.DEVNULL)
+    return r.returncode
+
+
+def abilita(pct: int, algo: str) -> int:
+    ram = ram_kb()
+    dimensione_kb = ram * pct // 100
+    if con_systemd():
+        testo = ("# Scritto da vesper-zram: swap compresso in RAM.\n"
+                 "# zram-size è un'espressione sulla RAM totale (in MB).\n"
+                 "[zram0]\n"
+                 "zram-size = ram * %.2f\n"
+                 "compression-algorithm = %s\n"
+                 "swap-priority = 100\n" % (pct / 100.0, algo))
+        if _scrivi_conf(testo):
+            return 1
+        _come_root(["systemctl", "daemon-reload"])
+        esito = _come_root(["systemctl", "restart",
+                            "systemd-zram-setup@zram0.service"])
+        if esito:
+            print("vesper-zram: configurazione scritta in %s, ma il servizio "
+                  "non è partito: si attiverà al prossimo avvio." % CONF)
+            return 0
+        print("vesper-zram: zram attiva (%d%% della RAM, %s) e configurata in %s"
+              % (pct, algo, CONF))
+        return 0
+
+    # Senza systemd: attivazione immediata, che pero' non sopravvive al riavvio.
+    print("vesper-zram: niente systemd, attivo la zram per questa sessione.")
+    for cmd in (["modprobe", "zram"],
+                ["zramctl", "--find", "--size", "%dKiB" % dimensione_kb,
+                 "--algorithm", algo]):
+        if _come_root(cmd):
+            print("vesper-zram: comando fallito: %s" % " ".join(cmd),
+                  file=sys.stderr)
+            return 1
+    dev = [d for d in dispositivi() if not d["swap"]]
+    if not dev:
+        print("vesper-zram: nessun dispositivo zram libero", file=sys.stderr)
+        return 1
+    nodo = dev[-1]["dispositivo"]
+    if _come_root(["mkswap", nodo]) or _come_root(["swapon", "-p", "100", nodo]):
+        return 1
+    print("vesper-zram: %s attivo. Per renderlo permanente aggiungi all'avvio "
+          "della tua distribuzione:\n"
+          "  zramctl --find --size %dKiB --algorithm %s && mkswap %s && "
+          "swapon -p 100 %s" % (nodo, dimensione_kb, algo, nodo, nodo))
+    return 0
+
+
+def disabilita() -> int:
+    for d in dispositivi():
+        if d["swap"]:
+            _come_root(["swapoff", d["dispositivo"]])
+    if con_systemd():
+        _come_root(["systemctl", "stop", "systemd-zram-setup@zram0.service"])
+        if os.path.exists(CONF):
+            _come_root(["rm", "-f", CONF])
+            _come_root(["systemctl", "daemon-reload"])
+    print("vesper-zram: zram disattivata")
+    return 0
+
+
+# ------------------------------------------------------------- stampa
+def _gb(kb: float) -> str:
+    return "%.1f GB" % (kb / 1024 / 1024) if kb >= 1024 * 1024 \
+        else "%.0f MB" % (kb / 1024)
+
+
+def stampa_stato(s: dict) -> None:
+    print("RAM totale:    %s" % _gb(s["ram_kb"]))
+    if s["dispositivi"]:
+        for d in s["dispositivi"]:
+            print("%-14s %s, algoritmo %s, %s"
+                  % (d["dispositivo"] + ":", _gb(d["disksize"] / 1024),
+                     d["algoritmo"], "in uso come swap" if d["swap"]
+                     else "presente ma non usato"))
+            if d["originale"] > 1024 * 1024:      # sotto il MB non dice nulla
+                print("               dentro: %s di dati in %s di RAM "
+                      "(compressione %.1fx)"
+                      % (_gb(d["originale"] / 1024), _gb(d["usato_ram"] / 1024),
+                         d["rapporto"]))
+    else:
+        print("zram:          assente")
+    print("swap totale:   %s (usati %s)"
+          % (_gb(s["swap_totale_kb"]), _gb(s["swap_usato_kb"])))
+    if s["config"]:
+        print("configurata in %s" % s["config"])
+    for c in s["conflitti"]:
+        print("ATTENZIONE: c'è anche %s (%s, %s): due gestori della zram "
+              "insieme si pestano i piedi." % (c["servizio"], c["stato"],
+                                               c["abilitato"]))
+    print("consiglio:     %s" % s["consiglio"])
+
+
+def main() -> int:
+    a = sys.argv[1:]
+    cmd = a[0] if a else "status"
+    if cmd in ("-h", "--help", "aiuto"):
+        print("uso: vesper-zram status [--json] | enable [PCT] [--algo NOME] "
+              "| disable | conflicts")
+        return 0
+    if cmd in ("status", "stato"):
+        s = stato()
+        if "--json" in a:
+            print(json.dumps(s))
+        else:
+            stampa_stato(s)
+        return 0
+    if cmd == "conflicts":
+        c = conflitti()
+        for x in c:
+            print("%s\t%s\t%s" % (x["servizio"], x["stato"], x["abilitato"]))
+        return 1 if c else 0
+    if cmd in ("enable", "attiva"):
+        pct = DEF_PCT
+        algo = DEF_ALGO
+        resto = a[1:]
+        for i, v in enumerate(resto):
+            if v.isdigit():
+                pct = max(10, min(200, int(v)))
+            elif v in ("--algo", "--algoritmo") and i + 1 < len(resto):
+                algo = resto[i + 1]
+        return abilita(pct, algo)
+    if cmd in ("disable", "disattiva"):
+        return disabilita()
+    sys.stderr.write("uso: vesper-zram status [--json] | enable [PCT] "
+                     "[--algo NOME] | disable | conflicts\n")
+    return 2
+
+
+if __name__ == "__main__":
+    sys.exit(main())
+PY

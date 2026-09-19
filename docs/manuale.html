@@ -1,0 +1,292 @@
+<!DOCTYPE html>
+<html lang="it">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Manuale di Vesper</title>
+<meta name="description" content="Manuale di Vesper: installazione, primo avvio, pannello, preset di aspetto, file manager, scorciatoie, configurazione e risoluzione dei problemi.">
+<link rel="icon" href="img/logo-128.png" type="image/png">
+<link rel="stylesheet" href="stile.css">
+<script src="sito.js" defer></script>
+</head>
+<body>
+
+<header class="top">
+  <div class="riga">
+    <a class="marchio" href="index.html"><img src="img/logo-128.png" alt="">Vesper</a>
+    <nav>
+      <a href="index.html">Home</a>
+      <a href="#installare">Installare</a>
+      <a href="#primo-avvio">Primo avvio</a>
+      <a href="#pannello">Pannello</a>
+      <a href="#aspetto">Aspetto</a>
+      <a href="#file">File</a>
+      <a href="#tasti">Tasti</a>
+      <a href="#problemi">Problemi</a>
+    </nav>
+    <button class="tema" id="cambia-tema" type="button">☾ Scuro</button>
+  </div>
+</header>
+
+<main>
+
+<section>
+  <h2>Manuale</h2>
+  <p class="intro">
+    Tutto quello che serve per installare e usare Vesper, dall'accesso al primo
+    preset. Se qualcosa non torna, in fondo c'è la parte sui problemi comuni.
+  </p>
+</section>
+
+<section id="installare">
+  <h2>1. Installare</h2>
+
+  <h3>Debian, Ubuntu, Linux Mint</h3>
+<pre>sudo apt install ./vesper_0.1.0_all.deb</pre>
+  <p class="intro">
+    Il pacchetto tira dietro le dipendenze da solo. Per toglierlo:
+    <code>sudo apt remove vesper</code> (la configurazione in
+    <code>~/.config/vesper</code> resta).
+  </p>
+
+  <h3>Qualsiasi distribuzione, dai sorgenti</h3>
+<pre>tar xzf vesper-0.1.0.tar.gz &amp;&amp; cd vesper-0.1.0
+sudo ./install.sh --prefix=/usr     # come i pacchetti della distro
+sudo ./install.sh                   # in /usr/local
+./install.sh --user                 # in ~/.local, senza root
+sudo ./install.sh --uninstall       # disinstalla</pre>
+  <p class="intro">
+    <code>DESTDIR=/tmp/pkg ./install.sh</code> serve a chi impacchetta. Nel
+    repository ci sono già le ricette per Arch (<code>packaging/arch/PKGBUILD</code>),
+    Fedora/openSUSE (<code>packaging/rpm/vesper.spec</code>) e Alpine
+    (<code>packaging/alpine/APKBUILD</code>).
+  </p>
+
+  <h3>Dove finiscono i file</h3>
+<pre>&lt;prefisso&gt;/bin/vesper-*                    comandi
+&lt;prefisso&gt;/lib/vesper/                     pacchetto Python
+&lt;prefisso&gt;/share/vesper/                   sfondi, skin, preset
+&lt;prefisso&gt;/share/themes/                   temi delle finestre
+&lt;prefisso&gt;/share/xsessions/vesper.desktop  voce di sessione
+~/.config/vesper/                          configurazione dell'utente
+~/.cache/vesper/                           log e roba rigenerabile</pre>
+</section>
+
+<section id="primo-avvio">
+  <h2>2. Primo avvio</h2>
+  <p class="intro">
+    Esci dalla sessione, e nella schermata di accesso scegli <strong>Vesper</strong>
+    dall'elenco delle sessioni (di solito è un'icona a forma di ingranaggio o il
+    nome della sessione accanto al campo della password). Al primo accesso
+    Vesper crea la sua configurazione in <code>~/.config/vesper</code> e applica
+    il preset predefinito.
+  </p>
+  <p class="intro">
+    Il log della sessione sta in <code>~/.cache/vesper/session.log</code>: è il
+    primo posto dove guardare se qualcosa non parte.
+  </p>
+</section>
+
+<section id="pannello">
+  <h2>3. Il pannello</h2>
+  <img src="img/desktop.png" alt="La barra di Vesper" style="width:100%;border-radius:12px;border:1px solid var(--bordo)">
+  <p class="intro">
+    Da sinistra: il <strong>menu</strong> (la stella), i lanciatori di terminale,
+    file manager e Centro di Controllo, i <strong>desktop virtuali</strong> e la
+    lista delle finestre. A destra: monitor delle risorse, schermi, rete, audio,
+    microfono, Bluetooth, lingua, batteria, orologio e "mostra desktop".
+  </p>
+  <ul>
+    <li><strong>Menu</strong>: ha una ricerca che filtra dal vivo le applicazioni
+        installate, raggruppate nelle categorie standard.</li>
+    <li><strong>Orologio</strong>: un clic apre il calendario, con la regolazione
+        di ora, data e fuso orario.</li>
+    <li><strong>Posizione</strong>: la barra si sposta in alto o in basso dal menu
+        stesso o dal Centro di Controllo → <em>Pannello</em>.</li>
+    <li><strong>Più monitor</strong>: una barra per schermo, e il menu si apre su
+        quello dove hai cliccato.</li>
+  </ul>
+</section>
+
+<section id="aspetto">
+  <h2>4. Aspetto: i preset</h2>
+  <img src="img/preset.png" alt="Selettore dei preset" style="width:100%;border-radius:12px;border:1px solid var(--bordo)">
+  <p class="intro">
+    Un <strong>preset</strong> è un look completo: colore d'accento, sfondo, set
+    di icone, tema GTK e decorazione delle finestre. Si sceglie dal menu
+    (<em>Aspetto: ...</em>), dal Centro di Controllo o da terminale:
+  </p>
+<pre>vesper-profile              # selettore grafico
+vesper-profile list         # elenco dei preset
+vesper-profile set viola    # applica
+vesper-profile style vetro  # stile finestre: flat | vetro | telaio | aero</pre>
+  <p class="intro">
+    Le <strong>icone</strong> e il <strong>tema GTK</strong> seguono il colore del
+    preset: Vesper usa i set del colore giusto fra quelli installati (le varianti
+    Mint-Y e simili). Si può anche fissarne uno dal Centro di Controllo →
+    <em>Tema GTK e icone</em>.
+  </p>
+
+  <h3>Sfondo</h3>
+<pre>vesper-wallpaper list              # gli sfondi di serie
+vesper-wallpaper set ~/foto.jpg    # un'immagine tua
+vesper-wallpaper mode fit          # stretch | fit | center | tile
+vesper-wallpaper reset             # torna a quello del preset</pre>
+
+  <h3>Le finestre</h3>
+  <p class="intro">
+    Vesper sceglie da solo: se c'è <code>marco</code> (o <code>metacity</code>)
+    usa le decorazioni vere di Mint nel colore del preset, altrimenti Openbox con
+    le proprie. Per cambiare:
+  </p>
+<pre>vesper-wm            # mostra la scelta e cosa è disponibile
+vesper-wm marco      # decorazioni di Mint
+vesper-wm openbox    # decorazioni di Vesper
+vesper-wm auto       # lascia decidere a Vesper (predefinito)</pre>
+  <p class="intro">Ha effetto al prossimo accesso.</p>
+
+  <h3>Skin del pannello</h3>
+  <p class="intro">
+    La barra può seguire il preset oppure avere una palette fissa (HUD, scuro,
+    chiaro, Nord, Solarized, Terminal Green, Ambra, alto contrasto, nero,
+    bianco): Centro di Controllo → <em>Aspetto coordinato</em>. Le skin sono
+    file CSS: mettendone uno in <code>~/.config/vesper/panel-themes/</code>
+    compare nell'elenco.
+  </p>
+</section>
+
+<section id="file">
+  <h2>5. File e desktop</h2>
+  <img src="img/file-manager.png" alt="Il file manager" style="width:100%;border-radius:12px;border:1px solid var(--bordo)">
+  <p class="intro">
+    <code>vesper-files</code> apre la finestra; <code>vesper-files --desktop</code>
+    è la modalità che disegna sfondo e icone del desktop (la avvia la sessione).
+  </p>
+  <ul>
+    <li>Schede (<kbd>Ctrl+T</kbd>), viste a icone ed elenco, barra dei luoghi con
+        le cartelle XDG, il cestino e i segnalibri di GTK.</li>
+    <li>Copia, taglia e incolla asincroni con avanzamento; i nomi in conflitto
+        diventano <em>file (2)</em>.</li>
+    <li><kbd>Canc</kbd> sposta nel cestino, <kbd>Maiusc+Canc</kbd> elimina
+        davvero (con conferma).</li>
+    <li>Sul desktop le icone si posizionano liberamente e restano dove le
+        metti; il tasto destro apre il menu con le azioni.</li>
+  </ul>
+</section>
+
+<section id="tasti">
+  <h2>6. Scorciatoie</h2>
+  <table>
+    <tr><th>Tasti</th><th>Azione</th></tr>
+    <tr><td><kbd>Super</kbd>+<kbd>C</kbd></td><td>Centro di Controllo</td></tr>
+    <tr><td><kbd>Super</kbd>+<kbd>T</kbd></td><td>Terminale</td></tr>
+    <tr><td><kbd>Super</kbd>+<kbd>E</kbd></td><td>File manager</td></tr>
+    <tr><td><kbd>Super</kbd>+<kbd>P</kbd></td><td>Preset di aspetto</td></tr>
+    <tr><td><kbd>Super</kbd>+<kbd>L</kbd></td><td>Blocca lo schermo</td></tr>
+    <tr><td><kbd>Super</kbd>+<kbd>D</kbd></td><td>Mostra il desktop</td></tr>
+    <tr><td><kbd>Super</kbd>+<kbd>V</kbd></td><td>Cronologia degli appunti</td></tr>
+    <tr><td><kbd>Super</kbd>+<kbd>N</kbd></td><td>Filtro luce blu</td></tr>
+    <tr><td><kbd>Stamp</kbd></td><td>Cattura schermata</td></tr>
+    <tr><td><kbd>Super</kbd>+<kbd>Stamp</kbd></td><td>Cattura di un'area</td></tr>
+  </table>
+  <p class="intro">
+    Si modificano dal Centro di Controllo → <em>Tasti rapidi</em>: l'editor
+    riscrive la configurazione del gestore finestre conservando i commenti.
+  </p>
+</section>
+
+<section id="comandi">
+  <h2>7. Comandi</h2>
+  <table>
+    <tr><th>Comando</th><th>A cosa serve</th></tr>
+    <tr><td><code>vesper-session</code></td><td>avvia la sessione (lo chiama il gestore di accesso)</td></tr>
+    <tr><td><code>vesper-panel</code></td><td>la barra</td></tr>
+    <tr><td><code>vesper-control-center [vista]</code></td><td>impostazioni; <code>vesper-control-center --help</code> elenca le viste</td></tr>
+    <tr><td><code>vesper-files [cartella]</code></td><td>file manager; <code>--desktop</code> per sfondo e icone</td></tr>
+    <tr><td><code>vesper-profile</code></td><td>preset di aspetto</td></tr>
+    <tr><td><code>vesper-wallpaper</code></td><td>sfondo</td></tr>
+    <tr><td><code>vesper-wm</code></td><td>gestore finestre e decorazioni</td></tr>
+    <tr><td><code>vesper-lang</code></td><td>lingua dell'interfaccia</td></tr>
+    <tr><td><code>vesper-screensaver</code></td><td>salvaschermo e blocco schermo</td></tr>
+    <tr><td><code>vesper-logout</code></td><td>dialogo di fine sessione</td></tr>
+    <tr><td><code>vesper-screenshot</code>, <code>vesper-clipboard</code>, <code>vesper-nightlight</code>, <code>vesper-screens</code>, <code>vesper-audio</code>, <code>vesper-wifi</code>, <code>vesper-bluetooth</code>, <code>vesper-battery</code>, <code>vesper-brightness</code></td><td>utilità richiamate dal pannello e dalle scorciatoie</td></tr>
+  </table>
+</section>
+
+<section id="config">
+  <h2>8. Configurazione</h2>
+  <p class="intro">Tutto sotto <code>~/.config/vesper/</code>, file di testo modificabili a mano:</p>
+  <table>
+    <tr><th>File</th><th>Contenuto</th></tr>
+    <tr><td><code>profile</code></td><td>preset attivo</td></tr>
+    <tr><td><code>accent.css</code>, <code>window-style.css</code></td><td>generati dal preset (non si modificano a mano)</td></tr>
+    <tr><td><code>wallpaper</code>, <code>wallpaper-mode</code></td><td>sfondo scelto e adattamento</td></tr>
+    <tr><td><code>panel.conf</code>, <code>panel-theme</code></td><td>barra: posizione, altezza, icone, skin</td></tr>
+    <tr><td><code>icon-theme</code>, <code>gtk-theme</code>, <code>theme</code>, <code>window-style</code></td><td>scelte di icone, tema GTK e finestre</td></tr>
+    <tr><td><code>ui-mode</code></td><td>interfaccia chiara o scura: auto, chiaro, scuro</td></tr>
+    <tr><td><code>wm</code></td><td>gestore finestre: auto, openbox, marco, metacity</td></tr>
+    <tr><td><code>openbox-rc.xml</code>, <code>openbox-menu.xml</code></td><td>configurazione del gestore finestre (solo di Vesper)</td></tr>
+    <tr><td><code>desktop-items.json</code></td><td>posizione delle icone sul desktop</td></tr>
+    <tr><td><code>lang</code></td><td>lingua dell'interfaccia</td></tr>
+  </table>
+  <p class="intro">
+    Vesper non tocca <code>~/.config/openbox</code>: se usi Openbox anche per
+    conto tuo, la tua configurazione resta intatta.
+  </p>
+</section>
+
+<section id="problemi">
+  <h2>9. Se qualcosa non va</h2>
+
+  <h3>La sessione non parte</h3>
+  <p class="intro">
+    Guarda <code>~/.cache/vesper/session.log</code>. Il caso più comune è il
+    gestore finestre mancante: serve <code>openbox</code> oppure
+    <code>marco</code>/<code>metacity</code>.
+  </p>
+
+  <h3>La voce "Vesper" non compare al login</h3>
+  <p class="intro">
+    Il file di sessione deve stare in <code>/usr/share/xsessions/vesper.desktop</code>.
+    Con l'installazione utente (<code>--user</code>) finisce in
+    <code>~/.local/share/xsessions</code>, che alcuni gestori di accesso non
+    leggono: in quel caso installa con <code>sudo</code>.
+  </p>
+
+  <h3>Il Centro di Controllo non si apre</h3>
+  <p class="intro">
+    Il suo log è <code>~/.cache/vesper/control-center.log</code>.
+  </p>
+
+  <h3>Le icone non seguono il colore del preset</h3>
+  <p class="intro">
+    Vuol dire che i set di quel colore non sono installati. Su Debian/Ubuntu/Mint
+    si aggiungono con <code>sudo apt install mint-y-icons mint-themes</code>;
+    altrimenti si sceglie un set fisso dal Centro di Controllo.
+  </p>
+
+  <h3>Il pannello è sparito</h3>
+<pre>vesper-panel-restart</pre>
+
+  <h3>Tornare indietro</h3>
+  <p class="intro">
+    Vesper non modifica la configurazione degli altri desktop: basta scegliere
+    la sessione di prima al login. Per rimuoverlo del tutto:
+    <code>sudo apt remove vesper</code> oppure
+    <code>sudo ./install.sh --uninstall</code>.
+  </p>
+</section>
+
+</main>
+
+<footer class="fondo">
+  <div class="riga">
+    <p><strong>Vesper</strong> — Copyright © 2026 <strong>Daniele Deplano (RedRider21)</strong>.
+       Licenza <a href="https://github.com/RedRider21/vesper/blob/master/LICENSE">GNU AGPL v3.0 o successiva</a>.</p>
+  </div>
+</footer>
+
+<button id="torna-su" type="button" title="Torna all'inizio" aria-label="Torna all'inizio">↑</button>
+
+</body>
+</html>

@@ -1,0 +1,182 @@
+/* Vesper - foglio di stile del sito. Nessuna dipendenza esterna.
+   Due temi: chiaro e scuro. Di serie segue le preferenze del sistema; il
+   pulsante in alto a destra forza una delle due e la ricorda. */
+
+:root {
+  --accent: #0b8ea8;
+  --accent-forte: #00e5ff;
+  --fondo: #f6f8fa;
+  --fondo-2: #ffffff;
+  --fondo-3: #eef2f6;
+  --testo: #17242e;
+  --testo-tenue: #5d6b76;
+  --bordo: #d7dfe6;
+  --ombra: 0 1px 3px rgba(20,35,50,.08), 0 8px 24px rgba(20,35,50,.06);
+  --raggio: 12px;
+  --larghezza: 980px;
+}
+
+html[data-tema="scuro"] {
+  --accent: #00e5ff;
+  --accent-forte: #7df3ff;
+  --fondo: #050a14;
+  --fondo-2: #0a1422;
+  --fondo-3: #0a1a26;
+  --testo: #c8f5ff;
+  --testo-tenue: #7fa3b3;
+  --bordo: #17293a;
+  --ombra: 0 1px 3px rgba(0,0,0,.5), 0 10px 30px rgba(0,0,0,.45);
+}
+
+@media (prefers-color-scheme: dark) {
+  html:not([data-tema="chiaro"]) {
+    --accent: #00e5ff;
+    --accent-forte: #7df3ff;
+    --fondo: #050a14;
+    --fondo-2: #0a1422;
+    --fondo-3: #0a1a26;
+    --testo: #c8f5ff;
+    --testo-tenue: #7fa3b3;
+    --bordo: #17293a;
+    --ombra: 0 1px 3px rgba(0,0,0,.5), 0 10px 30px rgba(0,0,0,.45);
+  }
+}
+
+* { box-sizing: border-box; }
+
+body {
+  margin: 0;
+  background: var(--fondo);
+  color: var(--testo);
+  font: 16px/1.65 system-ui, -apple-system, "Segoe UI", Cantarell, sans-serif;
+  -webkit-font-smoothing: antialiased;
+}
+
+a { color: var(--accent); text-decoration: none; }
+a:hover { text-decoration: underline; }
+
+/* ---- intestazione fissa ---- */
+header.top {
+  position: sticky; top: 0; z-index: 50;
+  background: color-mix(in srgb, var(--fondo) 88%, transparent);
+  backdrop-filter: blur(10px);
+  border-bottom: 1px solid var(--bordo);
+}
+.top .riga {
+  max-width: var(--larghezza); margin: 0 auto; padding: 10px 16px;
+  display: flex; align-items: center; gap: 14px;
+}
+.top .marchio { display: flex; align-items: center; gap: 10px; font-weight: 700; }
+.top .marchio img { width: 26px; height: 26px; }
+.top nav { margin-left: auto; display: flex; gap: 16px; flex-wrap: wrap; }
+.top nav a { color: var(--testo-tenue); font-size: 15px; }
+.top nav a:hover { color: var(--accent); text-decoration: none; }
+
+button.tema {
+  border: 1px solid var(--bordo); background: var(--fondo-2); color: var(--testo);
+  border-radius: 999px; padding: 6px 12px; cursor: pointer; font-size: 14px;
+  display: inline-flex; align-items: center; gap: 6px;
+}
+button.tema:hover { border-color: var(--accent); color: var(--accent); }
+
+/* ---- copertina ---- */
+.copertina {
+  max-width: var(--larghezza); margin: 0 auto; padding: 34px 16px 10px;
+  text-align: center;
+}
+.copertina img.banner {
+  width: 100%; border-radius: var(--raggio); box-shadow: var(--ombra);
+}
+.copertina p.claim {
+  font-size: 19px; color: var(--testo-tenue); margin: 18px auto 22px;
+  max-width: 720px;
+}
+.bottoni { display: flex; gap: 12px; justify-content: center; flex-wrap: wrap; }
+.bottone {
+  display: inline-block; padding: 11px 20px; border-radius: 10px;
+  background: var(--accent); color: #04121a; font-weight: 650;
+  border: 1px solid transparent;
+}
+html[data-tema="scuro"] .bottone { color: #04121a; }
+.bottone:hover { text-decoration: none; filter: brightness(1.08); }
+.bottone.secondario {
+  background: var(--fondo-2); color: var(--testo); border-color: var(--bordo);
+}
+.bottone.secondario:hover { border-color: var(--accent); color: var(--accent); }
+
+/* ---- sezioni ---- */
+main { max-width: var(--larghezza); margin: 0 auto; padding: 0 16px 60px; }
+section { padding: 38px 0 10px; }
+section > h2 {
+  font-size: 26px; margin: 0 0 6px;
+  padding-bottom: 8px; border-bottom: 2px solid var(--accent);
+  display: inline-block;
+}
+section > p.intro { color: var(--testo-tenue); margin-top: 10px; }
+
+.griglia { display: grid; gap: 18px; grid-template-columns: repeat(2, 1fr); }
+@media (max-width: 760px) { .griglia { grid-template-columns: 1fr; } }
+
+figure.scatto {
+  margin: 0; background: var(--fondo-2); border: 1px solid var(--bordo);
+  border-radius: var(--raggio); overflow: hidden; box-shadow: var(--ombra);
+}
+figure.scatto img { width: 100%; display: block; }
+figure.scatto figcaption {
+  padding: 10px 14px; font-size: 14px; color: var(--testo-tenue);
+  border-top: 1px solid var(--bordo);
+}
+
+.schede { display: grid; gap: 14px; grid-template-columns: repeat(3, 1fr); }
+@media (max-width: 860px) { .schede { grid-template-columns: repeat(2, 1fr); } }
+@media (max-width: 560px) { .schede { grid-template-columns: 1fr; } }
+.scheda {
+  background: var(--fondo-2); border: 1px solid var(--bordo);
+  border-radius: var(--raggio); padding: 16px;
+}
+.scheda h3 { margin: 0 0 6px; font-size: 17px; color: var(--accent); }
+.scheda p { margin: 0; font-size: 15px; color: var(--testo-tenue); }
+
+pre {
+  background: var(--fondo-3); border: 1px solid var(--bordo);
+  border-radius: 10px; padding: 14px 16px; overflow-x: auto;
+  font: 14px/1.6 ui-monospace, "JetBrains Mono", Menlo, Consolas, monospace;
+  color: var(--testo);
+}
+code { font-family: ui-monospace, Menlo, Consolas, monospace; font-size: .94em; }
+p code, li code, td code {
+  background: var(--fondo-3); border: 1px solid var(--bordo);
+  border-radius: 6px; padding: 1px 6px;
+}
+
+table { width: 100%; border-collapse: collapse; margin: 14px 0; font-size: 15px; }
+th, td { text-align: left; padding: 9px 10px; border-bottom: 1px solid var(--bordo); }
+th { color: var(--accent); font-size: 14px; }
+
+.tavolozza { display: flex; flex-wrap: wrap; gap: 8px; margin-top: 12px; }
+.tinta {
+  width: 46px; height: 46px; border-radius: 10px; border: 1px solid var(--bordo);
+}
+
+footer.fondo {
+  border-top: 1px solid var(--bordo); background: var(--fondo-2);
+  padding: 26px 16px; color: var(--testo-tenue); font-size: 15px;
+}
+footer.fondo .riga { max-width: var(--larghezza); margin: 0 auto; }
+
+/* ---- torna su ---- */
+#torna-su {
+  position: fixed; right: 20px; bottom: 20px; z-index: 60;
+  width: 46px; height: 46px; border-radius: 50%;
+  border: 1px solid var(--bordo); background: var(--fondo-2); color: var(--accent);
+  box-shadow: var(--ombra); cursor: pointer; font-size: 20px; line-height: 1;
+  opacity: 0; pointer-events: none; transition: opacity .18s ease, transform .18s ease;
+}
+#torna-su.visibile { opacity: 1; pointer-events: auto; }
+#torna-su:hover { transform: translateY(-2px); border-color: var(--accent); }
+
+@media (prefers-reduced-motion: reduce) {
+  #torna-su { transition: none; }
+  html { scroll-behavior: auto; }
+}
+html { scroll-behavior: smooth; }

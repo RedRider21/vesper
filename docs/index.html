@@ -1,0 +1,205 @@
+<!DOCTYPE html>
+<html lang="it">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Vesper — ambiente desktop leggero per Linux</title>
+<meta name="description" content="Vesper: ambiente desktop leggero in Python e GTK3. Pannello, Centro di Controllo, file manager, salvaschermo e preset di aspetto che cambiano insieme colore, sfondo, icone e finestre.">
+<link rel="icon" href="img/logo-128.png" type="image/png">
+<link rel="stylesheet" href="stile.css">
+<meta property="og:title" content="Vesper — ambiente desktop leggero per Linux">
+<meta property="og:description" content="Pannello, Centro di Controllo, file manager proprio e preset di aspetto che cambiano tutto insieme. Python + GTK3, 6 MB installati.">
+<meta property="og:image" content="img/banner.png">
+<script src="sito.js" defer></script>
+</head>
+<body>
+
+<header class="top">
+  <div class="riga">
+    <a class="marchio" href="#"><img src="img/logo-128.png" alt="">Vesper</a>
+    <nav>
+      <a href="#cose">Cos'è</a>
+      <a href="#schermate">Schermate</a>
+      <a href="#aspetto">Aspetto</a>
+      <a href="#installazione">Installazione</a>
+      <a href="manuale.html">Manuale</a>
+      <a href="https://github.com/RedRider21/vesper">GitHub</a>
+    </nav>
+    <button class="tema" id="cambia-tema" type="button">☾ Scuro</button>
+  </div>
+</header>
+
+<div class="copertina">
+  <img class="banner" src="img/banner.png" alt="Vesper — ambiente desktop leggero, Python + GTK3">
+  <p class="claim">
+    Un ambiente desktop completo e leggero per Linux: pannello, Centro di
+    Controllo, file manager proprio e salvaschermo. Un solo colore cambia
+    insieme accento, sfondo, icone e decorazione delle finestre.
+  </p>
+  <div class="bottoni">
+    <a class="bottone" href="https://github.com/RedRider21/vesper/releases/latest">Scarica l'ultima versione</a>
+    <a class="bottone secondario" href="manuale.html">Leggi il manuale</a>
+    <a class="bottone secondario" href="https://github.com/RedRider21/vesper">Codice sorgente</a>
+  </div>
+</div>
+
+<main>
+
+<section id="cose">
+  <h2>Cos'è</h2>
+  <p class="intro">
+    Vesper si installa come qualunque altro ambiente desktop: dopo
+    l'installazione compare fra le sessioni del gestore di accesso e si sceglie
+    al login. Gira su <strong>Python 3 e GTK3</strong>, occupa
+    <strong>6 MB</strong> e non porta con sé componenti di altri desktop.
+  </p>
+  <div class="schede">
+    <div class="scheda">
+      <h3>Pannello</h3>
+      <p>Menu delle applicazioni per categorie con ricerca, lista finestre,
+         desktop virtuali, orologio con fuso, monitor delle risorse e applet per
+         audio, batteria, rete, Bluetooth e schermi. Una barra per monitor.</p>
+    </div>
+    <div class="scheda">
+      <h3>Centro di Controllo</h3>
+      <p>Diciannove pannelli nativi: aspetto, sfondo, tema GTK e icone, stile
+         finestre, salvaschermo, lingua, schermi, tastiera, mouse, rete,
+         Bluetooth, autostart, scorciatoie, informazioni di sistema.</p>
+    </div>
+    <div class="scheda">
+      <h3>File manager</h3>
+      <p>Due modalità dallo stesso codice: finestra (schede, viste, copia
+         asincrona, cestino, miniature) e desktop (sfondo e icone con
+         posizionamento libero). Nessuna dipendenza da pcmanfm.</p>
+    </div>
+    <div class="scheda">
+      <h3>Preset di aspetto</h3>
+      <p>Quindici colori. Sceglierne uno cambia insieme accento, sfondo, set di
+         icone, tema GTK e decorazione delle finestre — subito, senza riavviare
+         la sessione.</p>
+    </div>
+    <div class="scheda">
+      <h3>Salvaschermo</h3>
+      <p>Otto animazioni disegnate in Cairo e blocco schermo con password
+         (salvata come hash PBKDF2, mai in chiaro).</p>
+    </div>
+    <div class="scheda">
+      <h3>Cinque lingue</h3>
+      <p>Italiano, inglese, francese, spagnolo e tedesco: si cambia dal menu o
+         dal Centro di Controllo, e il pannello si riavvia da solo.</p>
+    </div>
+  </div>
+</section>
+
+<section id="schermate">
+  <h2>Schermate</h2>
+  <p class="intro">Il desktop, così com'è appena installato.</p>
+  <div class="griglia">
+    <figure class="scatto">
+      <img src="img/desktop.png" alt="Il desktop di Vesper con sfondo, icone e barra inferiore">
+      <figcaption>Il desktop: sfondo del preset, icone e barra con applet.</figcaption>
+    </figure>
+    <figure class="scatto">
+      <img src="img/centro-controllo.png" alt="Centro di Controllo di Vesper">
+      <figcaption>Centro di Controllo: tutte le impostazioni in un posto solo.</figcaption>
+    </figure>
+    <figure class="scatto">
+      <img src="img/file-manager.png" alt="File manager di Vesper">
+      <figcaption>File manager: luoghi, schede, viste a icone ed elenco.</figcaption>
+    </figure>
+    <figure class="scatto">
+      <img src="img/preset.png" alt="Selettore dei preset di aspetto">
+      <figcaption>Preset di aspetto: anteprima dello sfondo e colore d'accento.</figcaption>
+    </figure>
+    <figure class="scatto">
+      <img src="img/salvaschermo.png" alt="Salvaschermo di Vesper">
+      <figcaption>Salvaschermo: animazioni in Cairo e blocco schermo.</figcaption>
+    </figure>
+    <figure class="scatto">
+      <img src="img/banner-chiaro.png" alt="Vesper nella variante chiara">
+      <figcaption>C'è anche il preset chiaro: interfaccia, icone e finestre in tono.</figcaption>
+    </figure>
+  </div>
+</section>
+
+<section id="aspetto">
+  <h2>Un colore, tutto coordinato</h2>
+  <p class="intro">
+    Ogni preset porta con sé il proprio sfondo e sceglie i set di icone e i temi
+    del proprio colore fra quelli installati (le varianti Mint-Y e simili).
+    Cambiando preset si ricolorano barra, menu, finestre e icone insieme.
+  </p>
+  <div class="tavolozza">
+    <span class="tinta" style="background:#00e5ff" title="Cyan"></span>
+    <span class="tinta" style="background:#2ad1c5" title="Acquamarina"></span>
+    <span class="tinta" style="background:#23d18b" title="Verde"></span>
+    <span class="tinta" style="background:#b8ff3b" title="Lime"></span>
+    <span class="tinta" style="background:#ffe14b" title="Giallo"></span>
+    <span class="tinta" style="background:#ffb000" title="Ambra"></span>
+    <span class="tinta" style="background:#ff8a3b" title="Arancio"></span>
+    <span class="tinta" style="background:#ff3b5c" title="Rosso"></span>
+    <span class="tinta" style="background:#ff5a8a" title="Rosa"></span>
+    <span class="tinta" style="background:#ff5ad0" title="Magenta"></span>
+    <span class="tinta" style="background:#a06bff" title="Viola"></span>
+    <span class="tinta" style="background:#6366f1" title="Indaco"></span>
+    <span class="tinta" style="background:#3b82f6" title="Blu"></span>
+    <span class="tinta" style="background:#b8c6d0" title="Argento"></span>
+    <span class="tinta" style="background:#1a73e8" title="Bianco (chiaro)"></span>
+  </div>
+
+  <h3 style="margin-top:26px">Le finestre</h3>
+  <p class="intro">
+    Vesper sceglie da solo il modo migliore di disegnarle: se sul sistema c'è
+    <code>marco</code> (o <code>metacity</code>) usa le <strong>decorazioni vere
+    di Mint</strong> nel colore del preset; altrimenti usa <strong>Openbox</strong>
+    con le decorazioni di Vesper. Si cambia quando si vuole con
+    <code>vesper-wm</code> o dal Centro di Controllo.
+  </p>
+</section>
+
+<section id="installazione">
+  <h2>Installazione</h2>
+  <p class="intro">Debian, Ubuntu, Linux Mint — pacchetto <code>.deb</code>:</p>
+<pre>sudo apt install ./vesper_0.1.0_all.deb</pre>
+  <p class="intro">Qualsiasi distribuzione, dai sorgenti:</p>
+<pre>tar xzf vesper-0.1.0.tar.gz &amp;&amp; cd vesper-0.1.0
+sudo ./install.sh --prefix=/usr</pre>
+  <p class="intro">
+    Poi si esce dalla sessione e al login si sceglie <strong>Vesper</strong>
+    nell'elenco delle sessioni. Ci sono anche le ricette per Arch
+    (<code>PKGBUILD</code>), Fedora/openSUSE (<code>.spec</code>) e Alpine
+    (<code>APKBUILD</code>): partono tutte dallo stesso installatore.
+  </p>
+
+  <h3 style="margin-top:22px">Cosa serve</h3>
+  <table>
+    <tr><th>Componente</th><th>Perché</th><th>Debian/Ubuntu/Mint</th></tr>
+    <tr><td>openbox <em>oppure</em> marco</td><td>gestore finestre</td><td><code>openbox</code> · <code>marco</code></td></tr>
+    <tr><td>python3 + PyGObject + Cairo</td><td>tutto il desktop</td><td><code>python3-gi python3-gi-cairo gir1.2-gtk-3.0</code></td></tr>
+    <tr><td>wmctrl</td><td>lista finestre e desktop virtuali</td><td><code>wmctrl</code></td></tr>
+    <tr><td>xrandr</td><td>gestione schermi</td><td><code>x11-xserver-utils</code></td></tr>
+  </table>
+  <p class="intro">
+    Il pacchetto <code>.deb</code> se le porta dietro da solo; l'installatore da
+    sorgenti avvisa di ciò che manca, col comando giusto per la tua
+    distribuzione.
+  </p>
+</section>
+
+</main>
+
+<footer class="fondo">
+  <div class="riga">
+    <p><strong>Vesper</strong> — Copyright © 2026 <strong>Daniele Deplano (RedRider21)</strong>.
+       Software libero sotto licenza
+       <a href="https://github.com/RedRider21/vesper/blob/master/LICENSE">GNU AGPL v3.0 o successiva</a>;
+       vedi anche <a href="https://github.com/RedRider21/vesper/blob/master/COPYRIGHT">COPYRIGHT</a>
+       e <a href="https://github.com/RedRider21/vesper/blob/master/THIRD-PARTY.md">i componenti di terzi</a>.</p>
+    <p>Il nome «Vesper» e il marchio (la stella della sera) sono di Daniele Deplano (RedRider21).</p>
+  </div>
+</footer>
+
+<button id="torna-su" type="button" title="Torna all'inizio" aria-label="Torna all'inizio">↑</button>
+
+</body>
+</html>

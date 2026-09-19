@@ -1,14 +1,18 @@
+<p align="center">
+  <img src="docs/img/banner.png" alt="Vesper — ambiente desktop leggero, Python + GTK3 su Openbox" width="100%">
+</p>
+
 # Vesper
 
 **Vesper** è un ambiente desktop (Desktop Environment) leggero scritto in
-**Python + GTK3**, che gira su **Openbox** come window manager e si installa
-come un qualsiasi altro DE: dopo l'installazione compare fra le sessioni del
-display manager e si sceglie al login.
+**Python + GTK3**, e si installa come un qualsiasi altro DE: dopo
+l'installazione compare fra le sessioni del gestore di accesso e si sceglie al
+login.
 
-> "Vesper" = la stella della sera: interfaccia **flat**, scura, con accento
-> luminoso (cyan di default, cambiabile dal preset).
+> "Vesper" = la stella della sera: interfaccia **flat**, con accento luminoso
+> (cyan di serie) e un colore che cambia insieme sfondo, icone e finestre.
 
-![marchio: stella a quattro punte sopra l'orizzonte](data/icons/hicolor/scalable/apps/vesper-logo.svg)
+![Il desktop di Vesper: sfondo, icone e barra](docs/img/desktop.png)
 
 ## Installazione
 
@@ -59,6 +63,15 @@ automatico), `picom` (vetro reale/angoli arrotondati), `brightnessctl`,
 Vesper sotto un altro desktop). L'installatore segnala cosa manca, con il
 comando giusto per Debian/Ubuntu, Fedora, Arch e Alpine.
 
+## Com'è fatto
+
+| | |
+|---|---|
+| ![Centro di Controllo](docs/img/centro-controllo.png) | ![File manager](docs/img/file-manager.png) |
+| **Centro di Controllo** — 19 pannelli di impostazioni | **File manager** — schede, viste, cestino, miniature |
+| ![Preset di aspetto](docs/img/preset.png) | ![Salvaschermo](docs/img/salvaschermo.png) |
+| **Preset di aspetto** — un colore cambia tutto | **Salvaschermo** — animazioni e blocco schermo |
+
 ## Componenti
 
 | Comando | Ruolo |
@@ -88,6 +101,21 @@ ognuno col proprio sfondo.
 Gli sfondi si rigenerano con `python3 tools/make-wallpapers.py` (anche a
 risoluzioni diverse: `--size 2560x1440`), le skin del pannello con
 `python3 tools/make-panel-themes.py`.
+
+## Le finestre
+
+Vesper disegna le finestre in due modi, e sceglie da solo il migliore
+disponibile:
+
+- se sul sistema c'è **marco** (o metacity), la sessione parte con quello e le
+  finestre hanno le **decorazioni vere di Mint** (i temi `metacity-1` di
+  Mint-Y/Mint-L), col colore del preset attivo;
+- altrimenti si usa **Openbox** con le decorazioni di Vesper: barra piatta,
+  titolo centrato, pulsanti completi a destra e il chiudi colorato.
+
+Si cambia quando si vuole: `vesper-wm marco`, `vesper-wm openbox`, oppure dal
+Centro di Controllo → *Aspetto coordinato*. Openbox non sa leggere i temi di
+Mint (sono in un formato diverso): è il motivo per cui la scelta esiste.
 
 ## File manager
 
@@ -138,6 +166,16 @@ Il desktop è funzionante e installabile. Restano da fare: schermata di login
 automount dei dispositivi rimovibili, temi icone per preset e pacchetti
 nativi (deb/rpm/apk). Vedi [`docs/porting-plan.md`](docs/porting-plan.md).
 
-## Licenza
+## Licenza e autore
 
-AGPL-3.0-or-later.
+Copyright (C) 2026 **Daniele Deplano (RedRider21)**.
+
+Il codice originale di Vesper è distribuito sotto **GNU AGPL v3.0 o
+successiva** (`AGPL-3.0-or-later`): vedi [`LICENSE`](LICENSE) e
+[`COPYRIGHT`](COPYRIGHT), che contiene anche l'enunciazione d'autore e la
+possibilità di una licenza commerciale alternativa. I componenti di terzi
+inclusi (temi finestre) restano soggetti alle loro licenze: l'elenco è in
+[`THIRD-PARTY.md`](THIRD-PARTY.md).
+
+Il nome «Vesper» e il marchio (la stella della sera) sono di Daniele Deplano
+(RedRider21).

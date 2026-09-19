@@ -6,98 +6,242 @@
       "desc": "Blu notte con accento cyan: il colore di Vesper.",
       "accent": "#00e5ff",
       "wallpaper": "cyan.png",
-      "icon": "vesper-logo-symbolic"
+      "icon": "vesper-logo-symbolic",
+      "icon_themes": [
+        "Mint-Y-Cyan",
+        "Mint-Y-Aqua",
+        "Mint-L-Aqua",
+        "Mint-X-Aqua",
+        "Mint-Y",
+        "Papirus",
+        "Adwaita",
+        "gnome",
+        "hicolor"
+      ]
     },
     "acqua": {
       "name": "Acquamarina",
       "desc": "Verde-azzurro tenue, riposante.",
       "accent": "#2ad1c5",
       "wallpaper": "acqua.png",
-      "icon": "vesper-logo-symbolic"
+      "icon": "vesper-logo-symbolic",
+      "icon_themes": [
+        "Mint-Y-Aqua",
+        "Mint-Y-Teal",
+        "Mint-L-Teal",
+        "Mint-X-Teal",
+        "Mint-Y",
+        "Papirus",
+        "Adwaita",
+        "gnome",
+        "hicolor"
+      ]
     },
     "verde": {
       "name": "Verde",
       "desc": "Verde smeraldo su fondo scuro.",
       "accent": "#23d18b",
       "wallpaper": "verde.png",
-      "icon": "vesper-logo-symbolic"
+      "icon": "vesper-logo-symbolic",
+      "icon_themes": [
+        "Mint-Y",
+        "Mint-L",
+        "Mint-X",
+        "Papirus",
+        "Adwaita",
+        "gnome",
+        "hicolor"
+      ]
     },
     "lime": {
       "name": "Lime",
       "desc": "Verde acido, molto contrastato.",
       "accent": "#b8ff3b",
       "wallpaper": "lime.png",
-      "icon": "vesper-logo-symbolic"
+      "icon": "vesper-logo-symbolic",
+      "icon_themes": [
+        "Mint-Y",
+        "Mint-L",
+        "Mint-X",
+        "Papirus",
+        "Adwaita",
+        "gnome",
+        "hicolor"
+      ]
     },
     "giallo": {
       "name": "Giallo",
       "desc": "Giallo caldo, alta visibilità.",
       "accent": "#ffe14b",
       "wallpaper": "giallo.png",
-      "icon": "vesper-logo-symbolic"
+      "icon": "vesper-logo-symbolic",
+      "icon_themes": [
+        "Mint-Y-Yellow",
+        "Mint-L-Yellow",
+        "Mint-X-Yellow",
+        "Mint-Y-Sand",
+        "Mint-Y",
+        "Papirus",
+        "Adwaita",
+        "gnome",
+        "hicolor"
+      ]
     },
     "ambra": {
       "name": "Ambra",
       "desc": "Ambra da terminale d'altri tempi.",
       "accent": "#ffb000",
       "wallpaper": "ambra.png",
-      "icon": "vesper-logo-symbolic"
+      "icon": "vesper-logo-symbolic",
+      "icon_themes": [
+        "Mint-Y-Sand",
+        "Mint-L-Sand",
+        "Mint-X-Sand",
+        "Mint-Y-Orange",
+        "Mint-Y",
+        "Papirus",
+        "Adwaita",
+        "gnome",
+        "hicolor"
+      ]
     },
     "arancio": {
       "name": "Arancio",
       "desc": "Arancio tramonto, caldo.",
       "accent": "#ff8a3b",
       "wallpaper": "arancio.png",
-      "icon": "vesper-logo-symbolic"
+      "icon": "vesper-logo-symbolic",
+      "icon_themes": [
+        "Mint-Y-Orange",
+        "Mint-L-Orange",
+        "Mint-X-Orange",
+        "Mint-Y",
+        "Papirus",
+        "Adwaita",
+        "gnome",
+        "hicolor"
+      ]
     },
     "rosso": {
       "name": "Rosso",
       "desc": "Rosso acceso su nero.",
       "accent": "#ff3b5c",
       "wallpaper": "rosso.png",
-      "icon": "vesper-logo-symbolic"
+      "icon": "vesper-logo-symbolic",
+      "icon_themes": [
+        "Mint-Y-Red",
+        "Mint-L-Red",
+        "Mint-X-Red",
+        "Mint-Y",
+        "Papirus",
+        "Adwaita",
+        "gnome",
+        "hicolor"
+      ]
     },
     "rosa": {
       "name": "Rosa",
       "desc": "Rosa intenso, tono serale.",
       "accent": "#ff5a8a",
       "wallpaper": "rosa.png",
-      "icon": "vesper-logo-symbolic"
+      "icon": "vesper-logo-symbolic",
+      "icon_themes": [
+        "Mint-Y-Pink",
+        "Mint-L-Pink",
+        "Mint-X-Pink",
+        "Mint-Y",
+        "Papirus",
+        "Adwaita",
+        "gnome",
+        "hicolor"
+      ]
     },
     "magenta": {
       "name": "Magenta",
       "desc": "Magenta vivido, stile neon.",
       "accent": "#ff5ad0",
       "wallpaper": "magenta.png",
-      "icon": "vesper-logo-symbolic"
+      "icon": "vesper-logo-symbolic",
+      "icon_themes": [
+        "Mint-Y-Pink",
+        "Mint-Y-Purple",
+        "Mint-L-Pink",
+        "Mint-X-Pink",
+        "Mint-Y",
+        "Papirus",
+        "Adwaita",
+        "gnome",
+        "hicolor"
+      ]
     },
     "viola": {
       "name": "Viola",
       "desc": "Viola crepuscolo.",
       "accent": "#a06bff",
       "wallpaper": "viola.png",
-      "icon": "vesper-logo-symbolic"
+      "icon": "vesper-logo-symbolic",
+      "icon_themes": [
+        "Mint-Y-Purple",
+        "Mint-L-Purple",
+        "Mint-X-Purple",
+        "Mint-Y",
+        "Papirus",
+        "Adwaita",
+        "gnome",
+        "hicolor"
+      ]
     },
     "indaco": {
       "name": "Indaco",
       "desc": "Indaco profondo, sobrio.",
       "accent": "#6366f1",
       "wallpaper": "indaco.png",
-      "icon": "vesper-logo-symbolic"
+      "icon": "vesper-logo-symbolic",
+      "icon_themes": [
+        "Mint-Y-Navy",
+        "Mint-Y-Blue",
+        "Mint-L-Blue",
+        "Mint-X-Blue",
+        "Mint-Y",
+        "Papirus",
+        "Adwaita",
+        "gnome",
+        "hicolor"
+      ]
     },
     "blu": {
       "name": "Blu",
       "desc": "Blu pieno, classico.",
       "accent": "#3b82f6",
       "wallpaper": "blu.png",
-      "icon": "vesper-logo-symbolic"
+      "icon": "vesper-logo-symbolic",
+      "icon_themes": [
+        "Mint-Y-Blue",
+        "Mint-L-Blue",
+        "Mint-X-Blue",
+        "Mint-Y",
+        "Papirus",
+        "Adwaita",
+        "gnome",
+        "hicolor"
+      ]
     },
     "argento": {
       "name": "Argento",
       "desc": "Grigio argento: senza dominante di colore.",
       "accent": "#b8c6d0",
       "wallpaper": "argento.png",
-      "icon": "vesper-logo-symbolic"
+      "icon": "vesper-logo-symbolic",
+      "icon_themes": [
+        "Mint-Y-Grey",
+        "Mint-L-Grey",
+        "Mint-X-Grey",
+        "Mint-Y",
+        "Papirus",
+        "Adwaita",
+        "gnome",
+        "hicolor"
+      ]
     }
   }
 }

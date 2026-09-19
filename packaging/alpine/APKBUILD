@@ -1,0 +1,24 @@
+# Maintainer: Daniele Deplano (RedRider21) <deplano.d@gmail.com>
+# Ricetta per Alpine Linux. Stesso install.sh, prefisso /usr (i pacchetti apk
+# non possono installare in /usr/local).
+pkgname=vesper
+pkgver=0.1.0
+pkgrel=0
+pkgdesc="Ambiente desktop leggero in Python + GTK3 su Openbox"
+url="https://github.com/thecloners21/vesper"
+arch="noarch"
+license="AGPL-3.0-or-later"
+depends="openbox python3 py3-gobject3 py3-cairo gtk+3.0 wmctrl xrandr"
+install=""
+subpackages="$pkgname-doc"
+source="$pkgname-$pkgver.tar.gz"
+builddir="$srcdir/$pkgname-$pkgver"
+
+package() {
+	DESTDIR="$pkgdir" sh ./install.sh --prefix=/usr
+	# I .pyc stantii fanno eseguire codice vecchio: fuori dal pacchetto.
+	find "$pkgdir" -name '__pycache__' -type d -exec rm -rf {} + 2>/dev/null || true
+	find "$pkgdir" -name '*.pyc' -delete 2>/dev/null || true
+}
+
+sha512sums="SKIP  $pkgname-$pkgver.tar.gz"

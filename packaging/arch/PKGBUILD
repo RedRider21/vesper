@@ -1,0 +1,32 @@
+# Maintainer: Daniele Deplano (RedRider21) <deplano.d@gmail.com>
+# Ricetta per Arch Linux / Manjaro / EndeavourOS.
+# Usa lo stesso install.sh dell'installazione manuale, con DESTDIR: il layout
+# dei file è identico su tutte le distribuzioni, cambiano solo i NOMI dei
+# pacchetti di dipendenza.
+pkgname=vesper
+pkgver=0.1.0
+pkgrel=1
+pkgdesc="Ambiente desktop leggero in Python + GTK3 su Openbox"
+arch=('any')
+url="https://github.com/thecloners21/vesper"
+license=('AGPL3')
+depends=('openbox' 'python' 'python-gobject' 'python-cairo' 'gtk3' 'wmctrl'
+         'xorg-xrandr')
+optdepends=('dunst: notifiche sul desktop'
+            'xautolock: salvaschermo automatico dopo inattività'
+            'picom: angoli arrotondati e vetro reale'
+            'lxappearance: impostazioni GTK avanzate'
+            'brightnessctl: tasti luminosità sui portatili'
+            'bluez: Bluetooth'
+            'polkit-gnome: richieste grafiche dei privilegi'
+            'maim: cattura schermate'
+            'xclip: appunti')
+source=("$pkgname-$pkgver.tar.gz")
+sha256sums=('SKIP')
+
+package() {
+  cd "$srcdir/$pkgname-$pkgver"
+  DESTDIR="$pkgdir" sh ./install.sh --prefix=/usr
+  # Il bytecode lo genera pacman con il suo hook su /usr/lib: non serve altro.
+  find "$pkgdir" -name '__pycache__' -type d -exec rm -rf {} + 2>/dev/null || true
+}

@@ -1518,13 +1518,157 @@ def open_logs(_btn=None):
 # ---------------------------------------------------------------------------
 # Aspetto: tema GTK (lxappearance) e wallpaper
 # ---------------------------------------------------------------------------
+def _gtk_themes() -> list[str]:
+    """Temi GTK installati (cartelle con gtk-3.0/gtk.css o gtk-2.0/gtkrc)."""
+    seen, out = set(), []
+    for d in (HOME / ".themes", HOME / ".local" / "share" / "themes",
+              Path("/usr/share/themes"), Path("/usr/local/share/themes")):
+        try:
+            entries = sorted(d.iterdir())
+        except OSError:
+            continue
+        for e in entries:
+            if e.name in seen:
+                continue
+            if (e / "gtk-3.0" / "gtk.css").is_file() or (e / "gtk-2.0" / "gtkrc").is_file():
+                seen.add(e.name)
+                out.append(e.name)
+    return out
+
+
+def _gtk_setting(key: str, default: str = "") -> str:
+    """Valore corrente di una chiave in ~/.config/gtk-3.0/settings.ini."""
+    try:
+        for ln in (HOME / ".config" / "gtk-3.0" / "settings.ini").read_text().splitlines():
+            if ln.strip().startswith(key):
+                return ln.split("=", 1)[1].strip()
+    except (OSError, IndexError):
+        pass
+    return default
+
+
+def _set_gtk_theme(name: str) -> None:
+    """Applica il tema GTK a GTK3 e GTK2 (scrittura atomica: vedi model)."""
+    from vesper.profiles import model as _m
+    _m.gtk3_set("gtk-theme-name", name)          # settings.ini, con [Settings]
+    _m._replace_line(HOME / ".gtkrc-2.0",
+                     "gtk-theme-name", 'gtk-theme-name="%s"' % name)
+
+
 def open_gtk_theme(_btn=None):
-    if have("vesper-lxappearance"):
-        run_bg(["vesper-lxappearance"])
-    elif have("lxappearance"):
-        run_bg(["lxappearance"])
-    else:
-        info_dialog(_t("v.lxappearance_missing"), _t("v.run_lxapp"), level="warn")
+    """Tema GTK (aspetto interno delle app) e SET DI ICONE.
+
+    Le icone possono seguire il preset — ogni preset indica i temi del proprio
+    colore (Mint-Y e simili) e si usa il primo installato — oppure si può
+    fissarne uno. Tutto si applica a caldo: le app GTK rileggono settings.ini
+    da sole, senza riavviare la sessione.
+    """
+    from vesper.profiles import model as _m
+    win, body = panel_window(_t("v.gtk.title"), 620, 620)
+
+    intro = Gtk.Label(label=_t("v.gtk_intro"))
+    intro.set_xalign(0)
+    intro.set_line_wrap(True)
+    intro.get_style_context().add_class("vesper-val")
+    body.pack_start(intro, False, False, 0)
+
+    # --- set di icone ---
+    h1 = Gtk.Label(label=_t("v.gtk.icons"))
+    h1.set_xalign(0)
+    h1.get_style_context().add_class("vesper-section")
+    body.pack_start(h1, False, False, 0)
+
+    auto_label = _t("v.gtk.icons_auto") % _m.icon_theme_name()
+    icon_combo = Gtk.ComboBoxText()
+    icon_combo.append("auto", auto_label)
+    themes = _m.available_icon_themes()
+    for name in themes:
+        icon_combo.append(name, name)
+    icon_combo.set_active_id(_m.get_icon_choice() if _m.get_icon_choice() in
+                             (["auto"] + themes) else "auto")
+    body.pack_start(icon_combo, False, False, 0)
+
+    icon_status = Gtk.Label(label="")
+    icon_status.set_xalign(0)
+    icon_status.get_style_context().add_class("vesper-val")
+    body.pack_start(icon_status, False, False, 0)
+
+    # anteprima: alcune icone comuni nel tema selezionato
+    prev = Gtk.Box(orientation=Gtk.Orientation.HORIZONTAL, spacing=12)
+    prev.get_style_context().add_class("vesper-card")
+    body.pack_start(prev, False, False, 0)
+
+    def refresh_preview(theme_name):
+        for ch in prev.get_children():
+            prev.remove(ch)
+        try:
+            th = Gtk.IconTheme.new()
+            th.set_custom_theme(theme_name)
+        except Exception:                    # noqa: BLE001
+            return
+        for n in ("folder", "user-home", "text-x-generic", "applications-internet",
+                  "utilities-terminal", "preferences-system"):
+            try:
+                pb = th.load_icon(n, 32, Gtk.IconLookupFlags.FORCE_SIZE)
+                prev.pack_start(Gtk.Image.new_from_pixbuf(pb), False, False, 0)
+            except Exception:                # noqa: BLE001
+                continue
+        prev.show_all()
+
+    def icon_changed(combo):
+        choice = combo.get_active_id() or "auto"
+        applied = _m.set_icon_choice(choice)
+        icon_status.set_text(_t("v.gtk.icons_set") % applied)
+        refresh_preview(applied)
+    refresh_preview(_m.icon_theme_name())
+    icon_combo.connect("changed", icon_changed)   # connesso DOPO set_active_id
+
+    # --- tema GTK ---
+    h2 = Gtk.Label(label=_t("v.gtk.theme"))
+    h2.set_xalign(0)
+    h2.get_style_context().add_class("vesper-section")
+    body.pack_start(h2, False, False, 0)
+
+    gtk_combo = Gtk.ComboBoxText()
+    gtk_themes = _gtk_themes()
+    for name in gtk_themes:
+        gtk_combo.append(name, name)
+    cur_gtk = _gtk_setting("gtk-theme-name", "Adwaita")
+    if cur_gtk in gtk_themes:
+        gtk_combo.set_active_id(cur_gtk)
+    body.pack_start(gtk_combo, False, False, 0)
+
+    gtk_status = Gtk.Label(label="")
+    gtk_status.set_xalign(0)
+    gtk_status.get_style_context().add_class("vesper-val")
+    body.pack_start(gtk_status, False, False, 0)
+
+    def gtk_changed(combo):
+        name = combo.get_active_id()
+        if not name:
+            return
+        _set_gtk_theme(name)
+        gtk_status.set_text(_t("v.gtk.theme_set") % name)
+    gtk_combo.connect("changed", gtk_changed)     # connesso DOPO set_active_id
+
+    note = Gtk.Label(label=_t("v.gtk.note"))
+    note.set_xalign(0)
+    note.set_line_wrap(True)
+    note.get_style_context().add_class("vesper-val")
+    body.pack_start(note, False, False, 0)
+
+    # --- strumento esterno, se c'è ---
+    btns = Gtk.Box(orientation=Gtk.Orientation.HORIZONTAL, spacing=8)
+    if have("lxappearance"):
+        b_lx = icon_button(_t("v.gtk.lxappearance"), "preferences-desktop-theme")
+        b_lx.connect("clicked", lambda _b: run_bg(["lxappearance"]))
+        btns.pack_start(b_lx, False, False, 0)
+    b_close = icon_button(_t("v.close"), "window-close")
+    b_close.connect("clicked", lambda _b: win.destroy())
+    btns.pack_end(b_close, False, False, 0)
+    body.pack_end(btns, False, False, 0)
+
+    win.show_all()
 
 
 def open_wallpaper(_btn=None):
@@ -2601,12 +2745,40 @@ def open_appearance(_btn=None):
     for rb in fam_radios.values():
         rb.connect("toggled", lambda w: w.get_active() and fam_apply())
 
+    # --- Oppure un tema FISSO fra tutti quelli installati -------------------
+    # Qui compaiono anche i temi di terze parti inclusi in Vesper (i "1977" nei
+    # vari colori) e qualunque tema che l'utente abbia messo in ~/.themes.
+    fixed_row = Gtk.Box(orientation=Gtk.Orientation.HORIZONTAL, spacing=8)
+    fixed_row.get_style_context().add_class("vesper-card")
+    fl = Gtk.Label(label=_t("v.ac.fixed_theme"))
+    fl.set_xalign(0)
+    fl.get_style_context().add_class("vesper-key")
+    fixed_row.pack_start(fl, True, True, 0)
+    fixed_combo = Gtk.ComboBoxText()
+    installed = _ob_list_themes()
+    for name in installed:
+        fixed_combo.append("raw:" + name, name)
+    if cur_fam.startswith("raw:") and cur_fam[4:] in installed:
+        fixed_combo.set_active_id(cur_fam)
+    fixed_row.pack_end(fixed_combo, False, False, 0)
+    body.pack_start(fixed_row, False, False, 0)
+
+    def fixed_changed(combo):
+        key = combo.get_active_id()
+        if not key or _m is None:
+            return
+        for rb in fam_radios.values():        # esce dalle famiglie coordinate
+            rb.set_active(False)
+        _m.set_theme_family(key)
+        fam_status.set_text(_t("v.ac.theme_applied") % (key, _m.resolve_ob_theme()))
+    fixed_combo.connect("changed", fixed_changed)   # DOPO set_active_id
+
     note = Gtk.Label(label=_t("v.ac_note"))
     note.set_xalign(0); note.set_line_wrap(True)
     note.get_style_context().add_class("vesper-val")
     body.pack_start(note, False, False, 0)
 
-    # --- Tema pannello (skin barra + menu), indipendente dal profilo ---------
+    # --- Tema pannello (skin barra + menu), indipendente dal preset ---------
     h_pt = Gtk.Label(label=_t("v.pt.title")); h_pt.set_xalign(0)
     h_pt.get_style_context().add_class("vesper-section")
     body.pack_start(h_pt, False, False, 0)

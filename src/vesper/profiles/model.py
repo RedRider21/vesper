@@ -523,6 +523,39 @@ def set_theme_family(fam: str) -> None:
     set_window_theme()
 
 
+def ensure_themes_visible() -> int:
+    """Rende i temi finestre di Vesper visibili a Openbox e a GTK.
+
+    Openbox e GTK cercano i temi SOLO in ~/.themes, ~/.local/share/themes e
+    /usr/share/themes. Se Vesper gira dai sorgenti (o da un prefisso non
+    standard) i suoi temi stanno altrove e il window manager non li vedrebbe:
+    qui si creano i collegamenti mancanti in ~/.local/share/themes, senza
+    toccare nulla di già presente. Ritorna quanti ne ha collegati."""
+    std = [HOME / ".themes", HOME / ".local" / "share" / "themes",
+           Path("/usr/share/themes"), Path("/usr/local/share/themes")]
+    dest = HOME / ".local" / "share" / "themes"
+    made = 0
+    for src_dir in paths.data_dirs("themes"):
+        if any(str(src_dir).startswith(str(d)) for d in std):
+            continue                       # già in un percorso standard
+        try:
+            dest.mkdir(parents=True, exist_ok=True)
+        except OSError:
+            return made
+        for t in sorted(src_dir.iterdir()):
+            if not (t / "openbox-3" / "themerc").is_file():
+                continue
+            link = dest / t.name
+            if link.exists() or link.is_symlink():
+                continue
+            try:
+                link.symlink_to(t, target_is_directory=True)
+                made += 1
+            except OSError:
+                pass
+    return made
+
+
 def _theme_installed(name: str) -> bool:
     for d in [HOME / ".themes", HOME / ".local" / "share" / "themes",
               Path("/usr/share/themes")] + paths.data_dirs("themes"):
@@ -632,12 +665,73 @@ def set_window_theme(key: str | None = None, reconfigure: bool = True) -> None:
 
 
 # ---------------------------------------------------------------- tema icone
+# Scelta del set di icone: "auto" (segue il preset) o il nome di un tema
+# preciso, se l'utente ne vuole uno fisso.
+ICON_THEME_CONF = CONF_DIR / "icon-theme"
+ICON_FALLBACK = ["Mint-Y", "Papirus", "Adwaita", "gnome", "hicolor"]
+
+
+def icon_candidates(key: str | None = None) -> list[str]:
+    """Temi icone abbinati al preset, dal preferito al ripiego generico.
+    Vengono dal catalogo (presets.json): ogni preset elenca i set di icone del
+    PROPRIO colore, così le icone restano intonate a barra, finestre e sfondo."""
+    cands = list(preset_data(key).get("icon_themes") or [])
+    return cands + [t for t in ICON_FALLBACK if t not in cands]
+
+
 def icon_theme_name(key: str | None = None) -> str:
-    """Nome del tema icone tinto per il preset (Vesper-<Preset>).
-    I temi sono pre-generati (tools/make-icons.py) ed ereditano un tema di
-    sistema per la copertura completa."""
-    k = key or current_preset()
-    return f"{THEME_PREFIX}-" + (k[:1].upper() + k[1:])
+    """Tema icone da usare: la scelta manuale se c'è, altrimenti il primo tema
+    del colore del preset che risulti INSTALLATO sulla macchina."""
+    fixed = get_icon_choice()
+    if fixed != "auto":
+        return fixed
+    for name in icon_candidates(key):
+        if _icon_theme_installed(name):
+            return name
+    return current_icon_theme()
+
+
+def get_icon_choice() -> str:
+    """'auto' (segue il preset) o il nome del tema scelto a mano."""
+    try:
+        v = ICON_THEME_CONF.read_text().strip()
+        return v or "auto"
+    except OSError:
+        return "auto"
+
+
+def set_icon_choice(name: str, key: str | None = None) -> str:
+    """Fissa il set di icone ('auto' per tornare a seguire il preset) e lo
+    applica subito."""
+    paths.ensure_config()
+    ICON_THEME_CONF.write_text((name or "auto").strip() + "\n")
+    return set_icon_theme(key)
+
+
+def available_icon_themes() -> list[str]:
+    """Temi icone installati sulla macchina (ordinati, senza cursori)."""
+    seen, out = set(), []
+    for d in [HOME / ".icons", HOME / ".local" / "share" / "icons",
+              Path("/usr/share/icons"), Path("/usr/local/share/icons")] + \
+             paths.data_dirs("icons"):
+        try:
+            entries = sorted(d.iterdir())
+        except OSError:
+            continue
+        for e in entries:
+            if not (e / "index.theme").is_file() or e.name in seen:
+                continue
+            # I temi di soli CURSORI (Bibata, DMZ, ...) hanno solo la
+            # cartella "cursors": non sono set di icone, qui non servono.
+            try:
+                sub = {x.name for x in e.iterdir() if x.is_dir()}
+            except OSError:
+                sub = set()
+            if sub and not (sub - {"cursors"}):
+                continue
+            seen.add(e.name)
+            out.append(e.name)
+    return out
 
 
 def _replace_line(path: Path, prefix: str, newline: str) -> None:
@@ -671,18 +765,50 @@ def _replace_line(path: Path, prefix: str, newline: str) -> None:
     _os.replace(str(tmp), str(path))
 
 
-def set_icon_theme(key: str | None = None, refresh: bool = False) -> str:
-    """Imposta il tema icone GTK2/GTK3 sul preset (icone tinte con l'accent).
+def gtk3_set(key: str, value: str) -> None:
+    """Scrive una chiave in ~/.config/gtk-3.0/settings.ini.
 
-    Se il tema del preset non e' installato NON si tocca la scelta dell'utente:
-    Vesper e' un DE generico e potrebbe girare senza i temi icone di serie.
+    ATTENZIONE: quel file è un key file GLib e DEVE iniziare col gruppo
+    [Settings]. Senza, GTK lo rifiuta INTERO ("Key file does not start with a
+    group") e nessuna impostazione viene letta: era il caso di una home nuova,
+    dove il file non esiste ancora e va creato da zero.
+    """
+    path = HOME / ".config" / "gtk-3.0" / "settings.ini"
+    try:
+        lines = path.read_text().splitlines() if path.exists() else []
+    except OSError:
+        lines = []
+    if not any(ln.strip().startswith("[") for ln in lines):
+        lines.insert(0, "[Settings]")
+    out, done = [], False
+    for ln in lines:
+        if ln.strip().startswith(key + "="):
+            if not done:
+                out.append("%s=%s" % (key, value))
+                done = True
+        else:
+            out.append(ln)
+    if not done:
+        # subito dopo l'intestazione del gruppo, non in coda a un altro gruppo
+        idx = next((i for i, ln in enumerate(out)
+                    if ln.strip() == "[Settings]"), -1)
+        out.insert(idx + 1 if idx >= 0 else len(out), "%s=%s" % (key, value))
+    path.parent.mkdir(parents=True, exist_ok=True)
+    tmp = path.with_name(path.name + ".tmp")
+    tmp.write_text("\n".join(out) + "\n")
+    os.replace(str(tmp), str(path))       # atomico: vedi _replace_line
+
+
+def set_icon_theme(key: str | None = None, refresh: bool = False) -> str:
+    """Imposta il tema icone GTK2/GTK3 abbinato al preset (o quello scelto a
+    mano). Se non è installato NON si tocca la scelta dell'utente: Vesper è un
+    DE generico e gira anche dove quei temi non ci sono.
     Nessun riavvio di processi: le app GTK (compreso il desktop di Vesper)
     rileggono settings.ini da sole e ricaricano le icone a caldo."""
     theme = icon_theme_name(key)
     if not _icon_theme_installed(theme):
         return current_icon_theme()
-    _replace_line(HOME / ".config" / "gtk-3.0" / "settings.ini",
-                  "gtk-icon-theme-name", f"gtk-icon-theme-name={theme}")
+    gtk3_set("gtk-icon-theme-name", theme)
     _replace_line(HOME / ".gtkrc-2.0",
                   "gtk-icon-theme-name", f'gtk-icon-theme-name="{theme}"')
     return theme
@@ -733,6 +859,7 @@ def activate_preset(key: str, log=print) -> bool:
 def apply_current() -> dict:
     """Riapplica l'aspetto del preset già corrente (uso all'avvio sessione)."""
     key = current_preset()
+    ensure_themes_visible()
     set_icon_theme(key)
     set_wallpaper(wallpaper_path(key), remember=False)
     write_accent_css(key)

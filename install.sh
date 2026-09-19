@@ -15,11 +15,17 @@
 #   <prefisso>/bin/vesper-*                 comandi
 #   <prefisso>/lib/vesper/vesper/           pacchetto Python
 #   <prefisso>/lib/vesper/env.sh            risolutore percorsi dei comandi
-#   <prefisso>/share/vesper/                sfondi, skin, preset, temi, skel
+#   <prefisso>/share/vesper/                sfondi, skin, preset, skel
+#   <prefisso>/share/themes/                temi finestre (Openbox + GTK)
 #   <prefisso>/share/icons/hicolor/         marchio
 #   <prefisso>/share/xsessions/vesper.desktop   voce di sessione (login)
 #   <prefisso>/share/applications/*.desktop     app nel menu
 set -eu
+
+# I file del repo possono avere modalità di gruppo (umask 002 di chi sviluppa).
+# Un'installazione di sistema vuole 755 per le cartelle e 644 per i dati: lo
+# garantiamo con la umask e con i chmod espliciti a fine copia.
+umask 022
 
 PREFIX=/usr/local
 DESTDIR="${DESTDIR:-}"
@@ -43,19 +49,23 @@ SHARE="$DESTDIR$PREFIX/share/vesper"
 ICONS="$DESTDIR$PREFIX/share/icons/hicolor"
 XSESS="$DESTDIR$PREFIX/share/xsessions"
 APPS="$DESTDIR$PREFIX/share/applications"
+THEMES="$DESTDIR$PREFIX/share/themes"
 
 COMANDI="vesper-session vesper-panel vesper-panel-restart vesper-control-center
          vesper-files vesper-profile vesper-logout vesper-shutdown
          vesper-autostart vesper-terminal vesper-wallpaper vesper-lang
          vesper-audio vesper-audio-unmute vesper-battery vesper-bluetooth
          vesper-brightness vesper-clipboard vesper-datetime vesper-keys
-         vesper-netinfo vesper-nightlight vesper-screens vesper-screenshot
+         vesper-netinfo vesper-nightlight vesper-prompt vesper-screens
+         vesper-screensaver vesper-screensaver-idle vesper-screenshot
          vesper-wifi"
 
 if [ "$ACTION" = uninstall ]; then
   echo "Disinstallo Vesper da $PREFIX"
   for c in $COMANDI; do rm -f "$BIN/$c"; done
   rm -rf "$LIB" "$SHARE"
+  for t in Vesper-Core Vesper-Arc-Dark Vesper-Arc-Light; do rm -rf "$THEMES/$t"; done
+  rm -rf "$THEMES"/Vesper-Retro-* "$THEMES"/Vesper-Cards-* "$THEMES"/1977-*
   rm -f "$XSESS/vesper.desktop"
   rm -f "$APPS/vesper-control-center.desktop" "$APPS/vesper-files.desktop" \
         "$APPS/vesper-profile.desktop"
@@ -76,7 +86,7 @@ if [ -z "$DESTDIR" ] && [ ! -w "$(dirname "$PREFIX")" ] && [ "$(id -u)" != 0 ]; 
 fi
 
 echo "Installo Vesper in $PREFIX${DESTDIR:+ (radice: $DESTDIR)}"
-mkdir -p "$BIN" "$LIB" "$SHARE" "$ICONS/scalable/apps" "$XSESS" "$APPS"
+mkdir -p "$BIN" "$LIB" "$SHARE" "$ICONS/scalable/apps" "$XSESS" "$APPS" "$THEMES"
 
 # --- pacchetto Python ------------------------------------------------------
 # Senza __pycache__: bytecode vecchio con mtime azzerati farebbe eseguire
@@ -100,13 +110,29 @@ for c in $COMANDI; do
 done
 
 # --- dati ------------------------------------------------------------------
-for d in backgrounds panel-themes themes skel; do
+for d in backgrounds panel-themes skel; do
   [ -d "$SRC/data/$d" ] || continue
   rm -rf "$SHARE/$d"
   mkdir -p "$SHARE/$d"
   (cd "$SRC/data/$d" && find . -type f -print | while read -r f; do
       mkdir -p "$SHARE/$d/$(dirname "$f")"; cp "$f" "$SHARE/$d/$f"; done)
 done
+
+# Temi delle FINESTRE: vanno dove li cercano Openbox e GTK
+# (<prefisso>/share/themes), non fra i dati di Vesper, altrimenti il window
+# manager non li troverebbe.
+if [ -d "$SRC/data/themes" ]; then
+  mkdir -p "$THEMES"
+  for t in "$SRC"/data/themes/*/; do
+    [ -d "$t" ] || continue
+    name=$(basename "$t")
+    rm -rf "$THEMES/$name"
+    mkdir -p "$THEMES/$name"
+    (cd "$t" && find . -type f -print | while read -r f; do
+        mkdir -p "$THEMES/$name/$(dirname "$f")"; cp "$f" "$THEMES/$name/$f"; done)
+  done
+  cp "$SRC/data/themes/ATTRIBUZIONI.md" "$SHARE/ATTRIBUZIONI-temi.md" 2>/dev/null || true
+fi
 [ -f "$SRC/data/presets.json" ] && cp "$SRC/data/presets.json" "$SHARE/presets.json"
 
 # --- icone, sessione, voci di menu ----------------------------------------
@@ -115,10 +141,30 @@ cp "$SRC/data/icons/hicolor/scalable/apps/vesper-logo-symbolic.svg" "$ICONS/scal
 cp "$SRC/data/xsessions/vesper.desktop" "$XSESS/vesper.desktop"
 cp "$SRC/data/applications/"*.desktop "$APPS/"
 
-command -v gtk-update-icon-cache >/dev/null 2>&1 && \
-  gtk-update-icon-cache -q -f -t "$DESTDIR$PREFIX/share/icons/hicolor" 2>/dev/null || true
-command -v update-desktop-database >/dev/null 2>&1 && \
-  update-desktop-database -q "$APPS" 2>/dev/null || true
+# --- permessi: cartelle 755, dati 644, comandi 755 -----------------------
+# (cp conserva le modalità dei sorgenti: senza questo passaggio i dati
+# resterebbero scrivibili dal gruppo.)
+for d in "$LIB" "$SHARE" "$THEMES"; do
+  [ -d "$d" ] || continue
+  find "$d" -type d -exec chmod 755 {} + 2>/dev/null || true
+  find "$d" -type f -exec chmod 644 {} + 2>/dev/null || true
+done
+chmod 755 "$BIN" 2>/dev/null || true
+for c in $COMANDI; do [ -f "$BIN/$c" ] && chmod 755 "$BIN/$c"; done
+chmod 644 "$XSESS/vesper.desktop" 2>/dev/null || true
+chmod 644 "$APPS"/vesper-*.desktop 2>/dev/null || true
+chmod 644 "$ICONS/scalable/apps"/vesper-logo*.svg 2>/dev/null || true
+chmod 755 "$ICONS" "$ICONS/scalable" "$ICONS/scalable/apps" 2>/dev/null || true
+
+# Cache di sistema: si aggiornano SOLO su un'installazione vera. Con DESTDIR
+# (packaging) i file generati finirebbero dentro il pacchetto, dove non devono
+# stare: li rigenera lo script post-installazione del pacchetto.
+if [ -z "$DESTDIR" ]; then
+  command -v gtk-update-icon-cache >/dev/null 2>&1 && \
+    gtk-update-icon-cache -q -f -t "$PREFIX/share/icons/hicolor" 2>/dev/null || true
+  command -v update-desktop-database >/dev/null 2>&1 && \
+    update-desktop-database -q "$APPS" 2>/dev/null || true
+fi
 
 # --- riepilogo e dipendenze mancanti --------------------------------------
 echo

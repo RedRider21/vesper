@@ -32,27 +32,50 @@ W, H = 1920, 1080
 ROOT = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
 DEST = os.path.join(ROOT, "data", "backgrounds")
 
-# Tavolozza: id -> accent, fondo profondo tinto, nome e descrizione. Il fondo
-# è quasi nero ma virato verso l'accent, così anche i bordi restano coerenti.
-# È anche il catalogo dei preset: da qui nasce data/presets.json.
+# Tavolozza: id -> accent, fondo, nome, descrizione e TEMI ICONE abbinati.
+# Il fondo è quasi nero ma virato verso l'accent, così anche i bordi restano
+# coerenti col colore. È anche il catalogo dei preset: da qui nasce
+# data/presets.json, comprese le catene dei temi icone: ogni preset indica i
+# set di icone del SUO colore (Mint-Y/Mint-L/Mint-X ...), e il primo installato
+# vince. Così icone, barra, finestre e sfondo restano intonati.
 DEFAULT_PRESET = "cyan"
 
 PALETTE = {
-    "cyan":    ("#00e5ff", "#020611", "Cyan", "Blu notte con accento cyan: il colore di Vesper."),
-    "acqua":   ("#2ad1c5", "#02100f", "Acquamarina", "Verde-azzurro tenue, riposante."),
-    "verde":   ("#23d18b", "#02100a", "Verde", "Verde smeraldo su fondo scuro."),
-    "lime":    ("#b8ff3b", "#060c02", "Lime", "Verde acido, molto contrastato."),
-    "giallo":  ("#ffe14b", "#0d0c02", "Giallo", "Giallo caldo, alta visibilità."),
-    "ambra":   ("#ffb000", "#0f0902", "Ambra", "Ambra da terminale d'altri tempi."),
-    "arancio": ("#ff8a3b", "#0f0602", "Arancio", "Arancio tramonto, caldo."),
-    "rosso":   ("#ff3b5c", "#0c0205", "Rosso", "Rosso acceso su nero."),
-    "rosa":    ("#ff5a8a", "#0f0309", "Rosa", "Rosa intenso, tono serale."),
-    "magenta": ("#ff5ad0", "#0f0310", "Magenta", "Magenta vivido, stile neon."),
-    "viola":   ("#a06bff", "#070310", "Viola", "Viola crepuscolo."),
-    "indaco":  ("#6366f1", "#04030f", "Indaco", "Indaco profondo, sobrio."),
-    "blu":     ("#3b82f6", "#02060f", "Blu", "Blu pieno, classico."),
-    "argento": ("#b8c6d0", "#05080c", "Argento", "Grigio argento: senza dominante di colore."),
+    # id:        (accent,    fondo,      nome,          descrizione,
+    #             [temi icone in ordine di preferenza])
+    "cyan":    ("#00e5ff", "#020611", "Cyan", "Blu notte con accento cyan: il colore di Vesper.",
+                ["Mint-Y-Cyan", "Mint-Y-Aqua", "Mint-L-Aqua", "Mint-X-Aqua"]),
+    "acqua":   ("#2ad1c5", "#02100f", "Acquamarina", "Verde-azzurro tenue, riposante.",
+                ["Mint-Y-Aqua", "Mint-Y-Teal", "Mint-L-Teal", "Mint-X-Teal"]),
+    "verde":   ("#23d18b", "#02100a", "Verde", "Verde smeraldo su fondo scuro.",
+                ["Mint-Y", "Mint-L", "Mint-X"]),
+    "lime":    ("#b8ff3b", "#060c02", "Lime", "Verde acido, molto contrastato.",
+                ["Mint-Y", "Mint-L", "Mint-X"]),
+    "giallo":  ("#ffe14b", "#0d0c02", "Giallo", "Giallo caldo, alta visibilità.",
+                ["Mint-Y-Yellow", "Mint-L-Yellow", "Mint-X-Yellow", "Mint-Y-Sand"]),
+    "ambra":   ("#ffb000", "#0f0902", "Ambra", "Ambra da terminale d'altri tempi.",
+                ["Mint-Y-Sand", "Mint-L-Sand", "Mint-X-Sand", "Mint-Y-Orange"]),
+    "arancio": ("#ff8a3b", "#0f0602", "Arancio", "Arancio tramonto, caldo.",
+                ["Mint-Y-Orange", "Mint-L-Orange", "Mint-X-Orange"]),
+    "rosso":   ("#ff3b5c", "#0c0205", "Rosso", "Rosso acceso su nero.",
+                ["Mint-Y-Red", "Mint-L-Red", "Mint-X-Red"]),
+    "rosa":    ("#ff5a8a", "#0f0309", "Rosa", "Rosa intenso, tono serale.",
+                ["Mint-Y-Pink", "Mint-L-Pink", "Mint-X-Pink"]),
+    "magenta": ("#ff5ad0", "#0f0310", "Magenta", "Magenta vivido, stile neon.",
+                ["Mint-Y-Pink", "Mint-Y-Purple", "Mint-L-Pink", "Mint-X-Pink"]),
+    "viola":   ("#a06bff", "#070310", "Viola", "Viola crepuscolo.",
+                ["Mint-Y-Purple", "Mint-L-Purple", "Mint-X-Purple"]),
+    "indaco":  ("#6366f1", "#04030f", "Indaco", "Indaco profondo, sobrio.",
+                ["Mint-Y-Navy", "Mint-Y-Blue", "Mint-L-Blue", "Mint-X-Blue"]),
+    "blu":     ("#3b82f6", "#02060f", "Blu", "Blu pieno, classico.",
+                ["Mint-Y-Blue", "Mint-L-Blue", "Mint-X-Blue"]),
+    "argento": ("#b8c6d0", "#05080c", "Argento", "Grigio argento: senza dominante di colore.",
+                ["Mint-Y-Grey", "Mint-L-Grey", "Mint-X-Grey"]),
 }
+
+# Ripieghi comuni in coda a ogni catena: temi quasi sempre presenti, così un
+# preset ha SEMPRE un set di icone completo anche su una distro spoglia.
+ICON_FALLBACK = ["Mint-Y", "Papirus", "Adwaita", "gnome", "hicolor"]
 
 
 def hx(c: str) -> tuple[int, int, int]:
@@ -231,8 +254,10 @@ def write_presets() -> str:
                 "accent": accent,
                 "wallpaper": cid + ".png",
                 "icon": "vesper-logo-symbolic",
+                # temi icone del colore, dal più desiderato al ripiego generico
+                "icon_themes": icons + [t for t in ICON_FALLBACK if t not in icons],
             }
-            for cid, (accent, _deep, name, desc) in PALETTE.items()
+            for cid, (accent, _deep, name, desc, icons) in PALETTE.items()
         },
     }
     out = os.path.join(ROOT, "data", "presets.json")

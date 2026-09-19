@@ -1,10 +1,14 @@
 [Desktop Entry]
-Type=XSession
 Name=Vesper
 Comment=Ambiente desktop leggero (Python + GTK3 su Openbox)
 Comment[en]=Lightweight desktop environment (Python + GTK3 on Openbox)
+Comment[fr]=Environnement de bureau léger (Python + GTK3 sur Openbox)
+Comment[es]=Entorno de escritorio ligero (Python + GTK3 sobre Openbox)
+Comment[de]=Leichte Arbeitsumgebung (Python + GTK3 auf Openbox)
 Exec=vesper-session
 TryExec=vesper-session
 Icon=vesper-logo
+Type=Application
 DesktopNames=Vesper
-Keywords=vesper;desktop;openbox;
+X-LightDM-DesktopName=Vesper
+Keywords=vesper;desktop;openbox;sessione;session;

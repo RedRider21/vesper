@@ -7,3 +7,10 @@ dist/
 *.apk
 pkg/
 src/*.tar.gz
+
+# artefatti di build dei pacchetti (si rigenerano con tools/make-*.sh)
+packaging/*.deb
+packaging/*.rpm
+packaging/*.apk
+packaging/*.tar.gz
+packaging/*.sha256

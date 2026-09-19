@@ -10,6 +10,26 @@ Scaffold creato il 2026-08-16. Sviluppo in sessione dedicata.
    `~/.config/vesper/` + `/usr/share/vesper/`. Risultato: pannello + Centro di
    Controllo + profili funzionanti come DE generico.
 
+   > **Il port del pannello DEVE includere queste migliorie (2026-08-19), già
+   > presenti nella sorgente di riferimento `nxs_cc/panel.py`:**
+   > 1. **Multi-monitor** — `run()` crea **una barra per monitor** (`Panel(i)`
+   >    per ogni `Gdk.Screen.get_n_monitors()`); `_place()` usa l'indice
+   >    monitor invece del solo primario; ricostruzione su `monitors-changed`/
+   >    `size-changed`. Così barra **e menu** compaiono anche sullo schermo
+   >    esterno (il menu si apre sul monitor dove si clicca). NB: i `GLib.timeout`
+   >    dei callback ritornano `self._alive` per auto-cancellarsi quando la barra
+   >    viene distrutta (hotplug). In Vesper NON serve `panelcfg` di NexusSec:
+   >    usare i propri percorsi.
+   > 2. **Orologio con regolazione ora/data/fuso** — il popup del calendario ha
+   >    spin HH:MM + combo fuso (`COMMON_TZ`) con "Imposta", che chiama un helper
+   >    privilegiato (in NexusSec `nxs-datetime`, via `doas`; in Vesper l'analogo
+   >    `vesper-datetime` con `pkexec`/`doas`). Dopo il set: `time.tzset()` +
+   >    ridisegno orologio. Richiede `tzdata` (zoneinfo) tra i depends.
+   > 3. **Monitor risorse (multiload)** — applet `LoadMonitor` (`Gtk.EventBox` +
+   >    3 `Gtk.DrawingArea` Cairo) con mini-grafici **CPU/RAM/Rete** letti da
+   >    `/proc` (nessuna dipendenza extra oltre `py3-cairo`); clic → Monitor
+   >    risorse del Centro di Controllo. Rete auto-scalata sul picco.
+
 2. **vesper-files (finestra)** — file manager GTK3:
    - viste icone/lista (`Gtk.IconView` / `Gtk.TreeView`);
    - navigazione con cronologia, barra percorso, tab;
@@ -23,6 +43,19 @@ Scaffold creato il 2026-08-16. Sviluppo in sessione dedicata.
    disegna sfondo (modalità stretch/fill/center) + icone del desktop
    (`~/Scrivania`/`~/Desktop`) con drag, selezione, menu contestuale. Sostituisce
    `pcmanfm --desktop` e `pcmanfm --set-wallpaper`.
+
+   > **PROTOTIPO VALIDATO** (`filemanager/desktop.py`, 2026-08-17). Architettura
+   > decisa dopo prove fallite: **NON** Overlay+Fixed né `Gtk.Layout` (occlusione
+   > tra GdkWindow → sfondo nero; draw inaffidabile). Soluzione = **un unico
+   > `Gtk.DrawingArea`** che disegna in **Cairo** wallpaper + icone; le icone sono
+   > DATI (`IconItem`), hit-test e drag a mano, `queue_draw()` per il repaint
+   > (come libfm ma senza il bug "icona invisibile finché non clicchi").
+   > Ottiene: **posizionamento libero**, **niente auto-riallineamento**, posizioni
+   > persistenti (`~/.config/vesper/desktop-items.json`), toggle "Allinea
+   > automaticamente". Screenshot di prova in `docs/proto/`.
+   > **Dipendenza runtime**: `py3-cairo` (pycairo) oltre a gtk3/pygobject3/pango/
+   > gdk-pixbuf. Da completare: modalità finestra, thumbnail, monitor cartelle,
+   > multi-monitor, wallpaper fit/center.
 
 4. **vesper-session** — script/eseguibile che lancia Openbox e i componenti in
    ordine: `vesper-files --desktop` (sfondo+icone) → `vesper-panel` →

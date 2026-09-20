@@ -1,6 +1,6 @@
 # Vesper — confronto con gli altri ambienti desktop
 
-> Aggiornato al 2026-09-19, dopo il porting completo. Serve a vedere a colpo
+> Aggiornato al 2026-09-20, con le traduzioni complete e la misura della memoria. Serve a vedere a colpo
 > d'occhio dove Vesper è alla pari e dove no.
 
 Legenda: ✅ c'è · ⚠️ parziale · ❌ manca
@@ -16,7 +16,7 @@ Legenda: ✅ c'è · ⚠️ parziale · ❌ manca
 | Salvaschermo + blocco schermo con password | ✅ | ✅ |
 | Voce di sessione nel display manager | ✅ | ✅ |
 | Autostart XDG | ✅ | ✅ |
-| Multilingua | spesso parziale | ✅ it/en/fr/es/de |
+| Multilingua | spesso parziale | ✅ it/en/fr/es/de: interfaccia, voci di menu, menu del tasto destro e aiuti dei comandi |
 | Pacchetti installabili | ✅ | ✅ deb + ricette Arch/RPM/Alpine |
 | Demone notifiche | ✅ proprio | ⚠️ si usa quello installato |
 | Agente PolicyKit | ✅ proprio | ⚠️ si usa quello installato |
@@ -26,6 +26,7 @@ Legenda: ✅ c'è · ⚠️ parziale · ❌ manca
 | Schermata di login propria | ✅ (GDM/SDDM/LightDM) | ❌ si usa quella della distro |
 | Set di icone proprio | ✅ | ⚠️ si usano quelli di sistema, scelti per colore |
 | Pagine di manuale | ✅ | ❌ |
+| Memoria a sessione avviata (PSS) | dell'ordine di alcune centinaia di MiB | **~120 MiB** misurati, ~87 senza l'avvio caldo |
 
 ## In sintesi
 

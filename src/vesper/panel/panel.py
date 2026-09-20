@@ -477,6 +477,20 @@ class LoadMonitor(Gtk.EventBox):
             pass
         return sectors * 512.0
 
+    def _pss_vesper(self):
+        """Memoria del solo desktop Vesper (MiB), aggiornata di rado: leggere
+        /proc costa poco ma non ha senso farlo a ogni giro."""
+        ora = time.time()
+        if ora - getattr(self, "_pss_quando", 0.0) < 15.0:
+            return getattr(self, "_pss_mib", None)
+        self._pss_quando = ora
+        try:
+            from vesper.raminfo import pss_vesper
+            self._pss_mib = pss_vesper() / 1024.0
+        except Exception:                                # noqa: BLE001
+            self._pss_mib = None
+        return self._pss_mib
+
     def _tick(self):
         idle, total = self._read_cpu()
         pidle, ptotal = self._prev_cpu
@@ -508,10 +522,15 @@ class LoadMonitor(Gtk.EventBox):
             la1 = la5 = la15 = 0.0
         self.load.push(min(1.0, la1 / self._ncpu))
 
-        self.set_tooltip_text(
-            _t("pn.mon.tip")
-            % (la1, la5, la15, self._ncpu, round(cpu * 100), round(mem * 100),
-               _human(rate), _human(drate)))
+        # La percentuale RAM e' quella di TUTTO il sistema (1 - MemAvailable/
+        # MemTotal, come `free`). Accanto si mostra quanto pesa il desktop:
+        # senza, sembra che quel numero sia colpa di Vesper.
+        testo = _t("pn.mon.tip") % (la1, la5, la15, self._ncpu, round(cpu * 100),
+                                    round(mem * 100), _human(rate), _human(drate))
+        pss = self._pss_vesper()
+        if pss:
+            testo += "\n" + _t("pn.mon.vesper") % pss
+        self.set_tooltip_text(testo)
         return self._alive
 
 

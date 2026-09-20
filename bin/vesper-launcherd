@@ -7,6 +7,8 @@
 #   vesper-launcherd --status     dice se e' in ascolto
 #   vesper-launcherd --stop       lo ferma
 #   vesper-launcherd --no-prewarm non precarica i moduli a riposo
+#   vesper-launcherd --off        non parte piu' all'accesso (libera ~33 MiB)
+#   vesper-launcherd --on         torna a partire all'accesso
 #
 # Tiene GTK e i moduli del desktop gia' importati e apre le finestre dentro di
 # se': senza, ogni comando ripaga il costo degli import. Se non gira, i comandi
@@ -20,8 +22,22 @@ done
 [ -n "${VESPER_PY:-}" ] || { echo "vesper-launcherd: python3 non disponibile" >&2; exit 1; }
 LOG="${XDG_CACHE_HOME:-$HOME/.cache}/vesper"
 mkdir -p "$LOG" 2>/dev/null
+CONF="${VESPER_CONFIG_HOME:-$HOME/.config/vesper}"
 case "${1:-}" in
+  --off)
+    mkdir -p "$CONF"; printf 'off\n' > "$CONF/launcher"
+    "$VESPER_PY" -m vesper.launcher.service --stop >/dev/null 2>&1
+    echo "$(vesper_t cli.launch.off 'avvio caldo disattivato: ~33 MiB in meno, finestre di Vesper piu lente di circa mezzo secondo')"
+    exit 0 ;;
+  --on)
+    mkdir -p "$CONF"; printf 'on\n' > "$CONF/launcher"
+    echo "$(vesper_t cli.launch.on 'avvio caldo attivo: parte al prossimo accesso')"
+    exit 0 ;;
   --status|--stop|-h|--help)
     exec "$VESPER_PY" -m vesper.launcher.service "$@" ;;
 esac
+# spento dall'utente: la sessione non deve avviarlo
+if [ "$(head -1 "$CONF/launcher" 2>/dev/null || echo on)" = "off" ]; then
+  exit 0
+fi
 exec "$VESPER_PY" -m vesper.launcher.service "$@" >>"$LOG/launcherd.log" 2>&1

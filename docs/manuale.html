@@ -311,6 +311,33 @@ vesper-wm auto       # lascia decidere a Vesper (predefinito)</pre>
     processi a se': il primo puo' avere documenti non salvati, i secondi
     portano dentro le pipeline di GStreamer.
   </p>
+  <p class="intro">
+    Costa circa <strong>33 MiB</strong> di memoria: su una macchina con poca
+    RAM si spegne con <code>vesper-launcherd --off</code> (si riaccende con
+    <code>--on</code>), e le finestre torneranno ad aprirsi in circa mezzo
+    secondo invece che in qualche decina di millisecondi.
+  </p>
+
+  <h3>Quanta memoria occupa Vesper</h3>
+  <p class="intro">
+    Una sessione completa — pannello, icone del desktop, avvio caldo e
+    Openbox — occupa <strong>circa 120 MiB</strong>; senza l'avvio caldo
+    ~87 MiB, e il solo pannello con il gestore finestre ~47 MiB. La misura è
+    in PSS, la quota di memoria che tocca davvero a ogni processo: sommare
+    gli RSS conta la stessa copia di GTK una volta per processo e gonfia il
+    totale. Di quei numeri circa 30 MiB per processo sono <em>GTK3 stessa</em>;
+    il codice di Vesper ne aggiunge 2-5, e un desktop scritto in C sulla
+    stessa libreria parte dalla stessa base.
+  </p>
+  <p class="intro">
+    L'indicatore <em>RAM</em> del pannello è un'altra cosa: mostra la memoria
+    non disponibile di <strong>tutto il sistema</strong> (lo stesso criterio
+    di <code>free</code>, cioè <code>1 - MemAvailable/MemTotal</code>), quindi
+    comprende servizi, X, tmpfs e la cache dei file — che il kernel libera
+    appena qualcuno ne ha bisogno. Per sapere quanto è Vesper e quanto è il
+    resto c'è <code>vesper-ram</code>, che spacca il totale e elenca i primi
+    consumatori.
+  </p>
 </section>
 
 <section id="problemi">

@@ -67,6 +67,31 @@ automatico), `picom` (vetro reale/angoli arrotondati), `brightnessctl`,
 Vesper sotto un altro desktop). L'installatore segnala cosa manca, con il
 comando giusto per Debian/Ubuntu, Fedora, Arch e Alpine.
 
+### Quanta memoria occupa
+
+Misurata in **PSS** (la quota di memoria che tocca davvero a ogni processo:
+sommare gli RSS conta GTK una volta per processo e gonfia il totale).
+
+| Sessione | Memoria |
+|---|---|
+| pannello + icone del desktop + avvio caldo + Openbox | **~120 MiB** |
+| senza l'avvio caldo (`vesper-launcherd --off`) | **~87 MiB** |
+| solo pannello e window manager | **~47 MiB** |
+
+Di questi, circa **30 MiB per processo sono GTK3 stessa**: il codice di Vesper
+ne aggiunge 2-5. Un desktop scritto in C con la stessa libreria parte dalla
+stessa base. Il disco occupato dall'installazione è ~6 MiB.
+
+Serve almeno **512 MiB di RAM** perché ci stiano anche il sistema e un
+browser; Vesper da solo gira in 256 MiB.
+
+**`vesper-ram`** dice dove va la memoria sulla tua macchina: quanto il
+desktop, quanto gli altri programmi, quanto la cache dei file. Serve perché
+l'indicatore «RAM» del pannello mostra la memoria non disponibile di **tutto
+il sistema** (stesso criterio di `free`), non quella di Vesper: la cache dei
+file, per esempio, ci finisce dentro anche se il kernel la libera appena
+serve.
+
 ## Com'è fatto
 
 | | |
@@ -92,7 +117,8 @@ comando giusto per Debian/Ubuntu, Fedora, Arch e Alpine.
 | `vesper-player`, `vesper-video` | lettore audio (playlist) e riproduttore video |
 | `vesper-recorder` | registratore vocale |
 | `vesper-disks` | dischi e chiavette: elenco, montaggio, smontaggio |
-| `vesper-launcherd` | avvio «caldo»: tiene GTK importato e apre le finestre senza ripagare gli import |
+| `vesper-launcherd` | avvio «caldo»: tiene GTK importato e apre le finestre senza ripagare gli import (`--off` per spegnerlo e liberare ~33 MiB) |
+| `vesper-ram` | dove va la memoria: quanto il desktop, quanto gli altri programmi, quanto la cache |
 | `vesper-zram` | memoria compressa: stato e attivazione, sempre su richiesta esplicita |
 | altri `vesper-*` | audio, batteria, bluetooth, luminosità, appunti, data/ora, scorciatoie, lingua, luce blu, schermi, schermate, sfondo, terminale, wifi |
 

@@ -27,6 +27,12 @@ except Exception:                       # noqa: BLE001
     def apply_css():
         return
 
+try:
+    from vesper.i18n import t as _t
+except Exception:                       # noqa: BLE001
+    def _t(chiave, **kw):               # ripiego: mostra la chiave
+        return chiave
+
 
 def _accent():
     """Accent del preset attivo (#rrggbb). Import morbido: se i preset non
@@ -54,7 +60,7 @@ def _mix(hex_color, factor):
                               min(255, int(b * factor)))
 
 
-APP_NAME = "Lettore audio"
+APP_NAME = _t("pl.app")
 AUDIO_EXT = (".mp3", ".flac", ".ogg", ".oga", ".opus", ".wav", ".m4a",
              ".aac", ".wma", ".aiff", ".ape", ".mka", ".mp2", ".m4b")
 
@@ -236,12 +242,12 @@ class Player(Gtk.Window):
         root.pack_start(cover, False, False, 2)
 
         # --- Titolo + sottotitolo (centrati) --------------------------------
-        self.title_lbl = Gtk.Label(label="Nessun brano")
+        self.title_lbl = Gtk.Label(label=_t("pl.notrack"))
         self.title_lbl.set_justify(Gtk.Justification.CENTER)
         self.title_lbl.set_ellipsize(3)
         self.title_lbl.set_max_width_chars(48)
         self.title_lbl.get_style_context().add_class("vesper-title")
-        self.sub_lbl = Gtk.Label(label="Apri un file o premi «Prova audio»")
+        self.sub_lbl = Gtk.Label(label=_t("pl.hint"))
         self.sub_lbl.set_justify(Gtk.Justification.CENTER)
         self.sub_lbl.set_ellipsize(3)
         self.sub_lbl.set_max_width_chars(60)
@@ -270,22 +276,25 @@ class Player(Gtk.Window):
         ctl.set_halign(Gtk.Align.CENTER)
         self.repeat_btn = Gtk.ToggleButton()
         self.repeat_btn.set_relief(Gtk.ReliefStyle.NONE)
-        self.repeat_btn.set_tooltip_text("Ripeti la playlist")
+        self.repeat_btn.set_tooltip_text(_t("pl.tt.repeat"))
         self.repeat_btn.set_image(Gtk.Image.new_from_icon_name(
             "media-playlist-repeat-symbolic", Gtk.IconSize.LARGE_TOOLBAR))
         self.repeat_btn.set_always_show_image(True)
         self.repeat_btn.connect("toggled", self._on_repeat)
         ctl.pack_start(self.repeat_btn, False, False, 0)
         ctl.pack_start(self._icon_btn("media-skip-backward-symbolic",
-                                      "Precedente", self.prev), False, False, 0)
+                                      _t("pl.tt.prev"), self.prev),
+                       False, False, 0)
         self.play_btn = self._icon_btn("media-playback-start-symbolic",
-                                       "Riproduci/Pausa", self.toggle_play,
+                                       _t("pl.tt.play"), self.toggle_play,
                                        cls="vesper-play")
         ctl.pack_start(self.play_btn, False, False, 0)
         ctl.pack_start(self._icon_btn("media-playback-stop-symbolic",
-                                      "Ferma", self.stop), False, False, 0)
+                                      _t("pl.tt.stop"), self.stop),
+                       False, False, 0)
         ctl.pack_start(self._icon_btn("media-skip-forward-symbolic",
-                                      "Successivo", self.next), False, False, 0)
+                                      _t("pl.tt.next"), self.next),
+                       False, False, 0)
         root.pack_start(ctl, False, False, 2)
 
         # --- Volume ----------------------------------------------------------
@@ -313,20 +322,20 @@ class Player(Gtk.Window):
         # --- Azioni file -----------------------------------------------------
         act = Gtk.Box(orientation=Gtk.Orientation.HORIZONTAL, spacing=6)
         act.pack_start(self._icon_btn("document-open-symbolic",
-                                      "Apri file audio", self.open_files),
+                                      _t("pl.open_title"), self.open_files),
                        False, False, 0)
         act.pack_start(self._icon_btn("folder-open-symbolic",
-                                      "Apri una cartella", self.open_folder),
+                                      _t("pl.tt.openfolder"), self.open_folder),
                        False, False, 0)
         act.pack_start(self._icon_btn("edit-clear-all-symbolic",
-                                      "Svuota la playlist", self.clear),
+                                      _t("pl.tt.clear"), self.clear),
                        False, False, 0)
-        test_b = Gtk.Button(label="Prova audio")
+        test_b = Gtk.Button(label=_t("pl.test"))
         test_b.set_image(Gtk.Image.new_from_icon_name(
             "audio-speakers-symbolic", Gtk.IconSize.MENU))
         test_b.set_always_show_image(True)
         test_b.get_style_context().add_class("vesper-primary")
-        test_b.set_tooltip_text("Riproduce il brano campione per verificare l'uscita audio")
+        test_b.set_tooltip_text(_t("pl.tt.test"))
         test_b.connect("clicked", lambda _w: self.play_sample())
         act.pack_end(test_b, False, False, 0)
         root.pack_start(act, False, False, 0)
@@ -373,13 +382,13 @@ class Player(Gtk.Window):
         self.current = -1
         for c in self.listbox.get_children():
             self.listbox.remove(c)
-        self.title_lbl.set_text("Nessun brano")
-        self.sub_lbl.set_text("Apri un file o premi «Prova audio»")
+        self.title_lbl.set_text(_t("pl.notrack"))
+        self.sub_lbl.set_text(_t("pl.hint"))
 
     # --------------------------------------------------------- open dialogs
     def _audio_filter(self):
         f = Gtk.FileFilter()
-        f.set_name("File audio")
+        f.set_name(_t("pl.audiofiles"))
         for ext in AUDIO_EXT:
             f.add_pattern("*" + ext)
             f.add_pattern("*" + ext.upper())
@@ -387,10 +396,10 @@ class Player(Gtk.Window):
 
     def open_files(self):
         d = Gtk.FileChooserDialog(
-            title="Apri file audio", transient_for=self,
+            title=_t("pl.open_title"), transient_for=self,
             action=Gtk.FileChooserAction.OPEN)
-        d.add_buttons(Gtk.STOCK_CANCEL, Gtk.ResponseType.CANCEL,
-                      Gtk.STOCK_OPEN, Gtk.ResponseType.OK)
+        d.add_buttons(_t("pl.cancel"), Gtk.ResponseType.CANCEL,
+                      _t("pl.open"), Gtk.ResponseType.OK)
         d.set_select_multiple(True)
         d.add_filter(self._audio_filter())
         music = os.path.expanduser("~/Music")
@@ -405,10 +414,10 @@ class Player(Gtk.Window):
 
     def open_folder(self):
         d = Gtk.FileChooserDialog(
-            title="Apri una cartella di musica", transient_for=self,
+            title=_t("pl.folder_title"), transient_for=self,
             action=Gtk.FileChooserAction.SELECT_FOLDER)
-        d.add_buttons(Gtk.STOCK_CANCEL, Gtk.ResponseType.CANCEL,
-                      Gtk.STOCK_OPEN, Gtk.ResponseType.OK)
+        d.add_buttons(_t("pl.cancel"), Gtk.ResponseType.CANCEL,
+                      _t("pl.open"), Gtk.ResponseType.OK)
         if d.run() == Gtk.ResponseType.OK:
             folder = d.get_filename()
             found = []
@@ -443,7 +452,7 @@ class Player(Gtk.Window):
                 elif self._add_paths([p]):
                     self._play_index(first_new)
                 return
-        self.sub_lbl.set_text("Brano campione non trovato in ~/Music.")
+        self.sub_lbl.set_text(_t("pl.nosample"))
 
     # ---------------------------------------------------------- riproduzione
     def _play_index(self, idx):
@@ -566,7 +575,7 @@ class Player(Gtk.Window):
 
     def _on_error(self, _bus, msg):
         err, _dbg = msg.parse_error()
-        self.sub_lbl.set_text("Errore: %s" % err.message)
+        self.sub_lbl.set_text(_t("pl.error") % err.message)
         self.stop()
 
     def _on_state(self, _bus, msg):

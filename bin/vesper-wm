@@ -26,6 +26,12 @@ import sys
 
 from vesper.profiles import model
 
+try:
+    from vesper.i18n import t as _t
+except Exception:                       # noqa: BLE001
+    def _t(chiave, **kw):               # ripiego: mostra la chiave
+        return chiave
+
 if len(sys.argv) > 1 and sys.argv[1] in ("--risolto", "--resolved"):
     # lo usa vesper-session per sapere quale gestore avviare
     print(model.resolve_wm())
@@ -33,21 +39,22 @@ if len(sys.argv) > 1 and sys.argv[1] in ("--risolto", "--resolved"):
 
 if len(sys.argv) > 1:
     scelto = model.set_wm(sys.argv[1])
-    print("gestore finestre:", scelto)
+    print(_t("cli.wm.chosen"), scelto)
     if scelto in ("marco", "metacity"):
-        print("decorazioni:", model.wm_theme_name() or "(nessun tema Mint trovato)")
-    print("Ha effetto al prossimo accesso.")
+        print(_t("cli.wm.decorations"),
+              model.wm_theme_name() or _t("cli.wm.no_mint_theme"))
+    print(_t("cli.wm.next_login"))
     raise SystemExit(0)
 
 attuale = model.get_wm()
-print("scelta:", attuale, "-> in uso:", model.resolve_wm())
+print(_t("cli.wm.choice"), attuale, "->", _t("cli.wm.in_use"), model.resolve_wm())
 for wm in model.WM_SUPPORTED:
     if wm == "auto":
-        print("  %-9s %-15s %s" % ("auto", "-",
-              "preferisce le decorazioni Mint, ripiega su Openbox"))
+        print("  %-9s %-15s %s" % ("auto", "-", _t("cli.wm.auto_note")))
         continue
-    stato = "disponibile" if shutil.which(wm) else "non installato"
-    note = ("decorazioni di Vesper, coordinate col preset" if wm == "openbox"
-            else "decorazioni vere di Mint (temi metacity-1)")
+    stato = (_t("cli.wm.available") if shutil.which(wm)
+             else _t("cli.wm.not_installed"))
+    note = (_t("cli.wm.note_openbox") if wm == "openbox"
+            else _t("cli.wm.note_mint"))
     print("  %-9s %-15s %s" % (wm, stato, note))
 PY

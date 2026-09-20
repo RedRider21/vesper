@@ -58,6 +58,17 @@ for _c in python3 python3.13 python3.12 python3.11 python3.10 python3.9; do
 done
 export VESPER_PY
 
+# --- traduzione dei messaggi degli script -------------------------------
+# vesper_t <chiave> [ripiego italiano]: definita in i18n.sh, accanto a questo
+# file. Se manca, resta il ripiego (gli script non devono mai restare muti).
+vesper_t() { printf '%s\n' "${2:-$1}"; }
+for _i in "$_vesper_env_dir/i18n.sh" "${VESPER_LIB:-}/../i18n.sh" \
+          "$_vesper_up1/lib/vesper/i18n.sh" "$_vesper_up2/lib/vesper/i18n.sh" \
+          /usr/local/lib/vesper/i18n.sh /usr/lib/vesper/i18n.sh; do
+  [ -r "$_i" ] && { . "$_i"; break; }
+done
+unset _i
+
 # GTK_IM_MODULE "simple": senza, un TextView editabile può tentare di caricare
 # un modulo input-method assente e far crashare l'app su X minimale.
 export GTK_IM_MODULE="${GTK_IM_MODULE:-gtk-im-context-simple}"

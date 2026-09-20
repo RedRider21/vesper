@@ -1513,9 +1513,8 @@ class Editor(Gtk.Window):
 def main(argv=None):
     argv = list(argv if argv is not None else sys.argv[1:])
     if argv and argv[0] in ("-h", "--help", "aiuto"):
-        print("uso: vesper-editor [+RIGA] [FILE...]\n"
-              "  +RIGA   posiziona il cursore su quella riga del primo file\n"
-              "Scorciatoie: Ctrl+Maiusc+H dentro il programma.")
+        print(_t("cli.editor.usage") + "\n"
+              + _t("cli.shortcuts_hint") % _ta("Ctrl+Maiusc+H"))
         return 0
     riga = None
     file_da_aprire = []

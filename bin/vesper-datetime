@@ -14,6 +14,15 @@
 
 # Gli strumenti di sistema stampano messaggi TRADOTTI: qui se ne legge
 # l'output, quindi serve la lingua neutra o il parsing non trova nulla.
+# Messaggi tradotti (it/en/fr/es/de). Senza i18n.sh restano in italiano.
+vesper_t() { printf '%s\n' "${2:-$1}"; }
+_vt_self=$(readlink -f "$0" 2>/dev/null || echo "$0"); _vt_d=$(dirname "$_vt_self")
+for _i in "$_vt_d/i18n.sh" "$(dirname "$_vt_d")/lib/vesper/i18n.sh" \
+          /usr/local/lib/vesper/i18n.sh /usr/lib/vesper/i18n.sh; do
+  [ -r "$_i" ] && { . "$_i"; break; }
+done
+unset _i _vt_self _vt_d
+
 LC_ALL=C
 LANG=C
 export LC_ALL LANG
@@ -23,22 +32,22 @@ priv() { if command -v doas >/dev/null 2>&1; then doas "$@"; \
 case "${1:-}" in
   set-datetime)
     DT="$2"
-    [ -n "$DT" ] || { echo "manca data/ora (YYYY-MM-DD HH:MM:SS)" >&2; exit 2; }
+    [ -n "$DT" ] || { echo "$(vesper_t cli.dt.need_datetime 'manca data/ora (YYYY-MM-DD HH:MM:SS)')" >&2; exit 2; }
     # busybox date: -D FORMATO per interpretare la stringa; se non regge (es.
     # coreutils installato) si ripiega su 'date -s' diretto (GNU accetta ISO).
     priv sh -c '
       if date -D "%Y-%m-%d %H:%M:%S" -s "$1" >/dev/null 2>&1; then :
       elif date -s "$1" >/dev/null 2>&1; then :
-      else echo "impossibile impostare data/ora" >&2; exit 1; fi
+      else echo "$(vesper_t cli.dt.set_failed 'impossibile impostare data/ora')" >&2; exit 1; fi
       # Persisti nel RTC (best-effort): busybox usa -w, non fallire se assente.
       command -v hwclock >/dev/null 2>&1 && hwclock -w >/dev/null 2>&1 || true
     ' _ "$DT"
     ;;
   set-tz)
     TZN="$2"
-    [ -n "$TZN" ] || { echo "manca il fuso (es. Europe/Rome)" >&2; exit 2; }
+    [ -n "$TZN" ] || { echo "$(vesper_t cli.dt.need_tz 'manca il fuso (es. Europe/Rome)')" >&2; exit 2; }
     if [ ! -e "/usr/share/zoneinfo/$TZN" ]; then
-      echo "fuso non trovato: $TZN (tzdata installato?)" >&2; exit 1
+      echo "$(vesper_t cli.dt.tz_notfound 'fuso non trovato: %s (tzdata installato?)' | sed "s|%s|$TZN|")" >&2; exit 1
     fi
     priv sh -c '
       ln -sf "/usr/share/zoneinfo/$1" /etc/localtime
@@ -56,7 +65,7 @@ case "${1:-}" in
     fi
     ;;
   *)
-    echo "uso: vesper-datetime {set-datetime \"YYYY-MM-DD HH:MM:SS\"|set-tz Area/Citta|get-tz}" >&2
+    echo "$(vesper_t cli.dt.usage 'uso: vesper-datetime {set-datetime \"YYYY-MM-DD HH:MM:SS\"|set-tz Area/Citta|get-tz}')" >&2
     exit 2
     ;;
 esac

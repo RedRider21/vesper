@@ -6,6 +6,15 @@
 # Vesper non impone un terminale: prova quello scelto dall'utente
 # (~/.config/vesper/terminal o $TERMINAL), poi i più diffusi, infine xterm
 # intonato al tema. Con "-e CMD ..." esegue un comando nel terminale.
+# Messaggi tradotti (it/en/fr/es/de). Senza i18n.sh restano in italiano.
+vesper_t() { printf '%s\n' "${2:-$1}"; }
+_vt_self=$(readlink -f "$0" 2>/dev/null || echo "$0"); _vt_d=$(dirname "$_vt_self")
+for _i in "$_vt_d/i18n.sh" "$(dirname "$_vt_d")/lib/vesper/i18n.sh" \
+          /usr/local/lib/vesper/i18n.sh /usr/lib/vesper/i18n.sh; do
+  [ -r "$_i" ] && { . "$_i"; break; }
+done
+unset _i _vt_self _vt_d
+
 CONF="${XDG_CONFIG_HOME:-$HOME/.config}/vesper/terminal"
 [ -r "$CONF" ] && PREF=$(head -1 "$CONF" | tr -d '\n')
 CANDIDATI="${PREF:-} ${TERMINAL:-} x-terminal-emulator alacritty kitty foot
@@ -15,7 +24,7 @@ CANDIDATI="${PREF:-} ${TERMINAL:-} x-terminal-emulator alacritty kitty foot
 # Con -e: il modo di passare il comando cambia da terminale a terminale.
 if [ "${1:-}" = "-e" ]; then
   shift
-  [ $# -gt 0 ] || { echo "vesper-terminal -e: manca il comando" >&2; exit 2; }
+  [ $# -gt 0 ] || { echo "vesper-terminal -e: $(vesper_t cli.term.need_cmd 'manca il comando')" >&2; exit 2; }
   for t in $CANDIDATI; do
     command -v "$t" >/dev/null 2>&1 || continue
     case "$t" in
@@ -24,12 +33,12 @@ if [ "${1:-}" = "-e" ]; then
       *) exec "$t" -e "$*" ;;          # lxterminal/xfce4/mate: comando in UNA stringa
     esac
   done
-  echo "vesper-terminal: nessun emulatore di terminale trovato" >&2
+  echo "vesper-terminal: $(vesper_t cli.term.none 'nessun emulatore di terminale trovato')" >&2
   exit 1
 fi
 
 for t in $CANDIDATI; do
   command -v "$t" >/dev/null 2>&1 && exec "$t"
 done
-echo "vesper-terminal: nessun emulatore di terminale trovato" >&2
+echo "vesper-terminal: $(vesper_t cli.term.none 'nessun emulatore di terminale trovato')" >&2
 exit 1

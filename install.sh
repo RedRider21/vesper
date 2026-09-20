@@ -15,6 +15,7 @@
 #   <prefisso>/bin/vesper-*                 comandi
 #   <prefisso>/lib/vesper/vesper/           pacchetto Python
 #   <prefisso>/lib/vesper/env.sh            risolutore percorsi dei comandi
+#   <prefisso>/lib/vesper/i18n.sh           traduzione dei messaggi degli script
 #   <prefisso>/share/vesper/                sfondi, skin, preset, skel
 #   <prefisso>/share/themes/                temi finestre (Openbox + GTK)
 #   <prefisso>/share/icons/hicolor/         marchio
@@ -100,6 +101,7 @@ rm -rf "$LIB/vesper"
     cp "$f" "$LIB/$f"
   done)
 cp "$SRC/bin/env.sh" "$LIB/env.sh"
+cp "$SRC/bin/i18n.sh" "$LIB/i18n.sh"
 
 # --- comandi ---------------------------------------------------------------
 for c in $COMANDI; do

@@ -25,6 +25,15 @@
 
 # Gli strumenti di sistema stampano messaggi TRADOTTI: qui se ne legge
 # l'output, quindi serve la lingua neutra o il parsing non trova nulla.
+# Messaggi tradotti (it/en/fr/es/de). Senza i18n.sh restano in italiano.
+vesper_t() { printf '%s\n' "${2:-$1}"; }
+_vt_self=$(readlink -f "$0" 2>/dev/null || echo "$0"); _vt_d=$(dirname "$_vt_self")
+for _i in "$_vt_d/i18n.sh" "$(dirname "$_vt_d")/lib/vesper/i18n.sh" \
+          /usr/local/lib/vesper/i18n.sh /usr/lib/vesper/i18n.sh; do
+  [ -r "$_i" ] && { . "$_i"; break; }
+done
+unset _i _vt_self _vt_d
+
 LC_ALL=C
 LANG=C
 export LC_ALL LANG
@@ -246,10 +255,10 @@ case "${1:-}" in
     #   vesper-screens rotate HDMI-1 left
     # normal = orizzontale, left/right = verticale (a seconda di come e'
     # girato il monitor), inverted = capovolto.
-    [ -n "${2:-}" ] || { echo "uso: vesper-screens rotate OUTPUT {normal|left|right|inverted}" >&2; exit 2; }
+    [ -n "${2:-}" ] || { echo "$(vesper_t cli.screens.rotate_usage 'uso: vesper-screens rotate OUTPUT {normal|left|right|inverted}')" >&2; exit 2; }
     case "${3:-}" in
       normal|left|right|inverted) ;;
-      *) echo "orientamento non valido: ${3:-} (normal|left|right|inverted)" >&2; exit 2 ;;
+      *) echo "$(vesper_t cli.screens.bad_rotation 'orientamento non valido'): ${3:-} (normal|left|right|inverted)" >&2; exit 2 ;;
     esac
     xrandr --output "$2" --rotate "$3" 2>>"$LOG" || exit 1
     # Dopo una rotazione cambiano le dimensioni dello schermo: barre e finestre
@@ -289,11 +298,11 @@ case "${1:-}" in
         mkdir -p "$(dirname "$CONF")" 2>/dev/null || true
         printf 'VESPER_SCREEN_POLICY=%s\n' "$2" > "$CONF"
         apply_policy; reload_desktop ;;
-      *) echo "uso: vesper-screens set-policy {mirror|extend}" >&2; exit 2 ;;
+      *) echo "$(vesper_t cli.screens.policy_usage 'uso: vesper-screens set-policy {mirror|extend}')" >&2; exit 2 ;;
     esac
     ;;
 
   *)
-    echo "uso: vesper-screens {outputs|modes NOME|mirror|extend|only NOME|mode NOME WxH|primary NOME|autostart|policy|set-policy mirror|extend|lid}" >&2
+    echo "$(vesper_t cli.screens.usage 'uso: vesper-screens {outputs|modes NOME|mirror|extend|only NOME|mode NOME WxH|primary NOME|autostart|policy|set-policy mirror|extend|lid}')" >&2
     exit 2 ;;
 esac

@@ -24,6 +24,8 @@ BASE = "it"                                  # lingua di riferimento
 # t("chiave"), _t("chiave"), i18n.t('chiave'), label("chiave", "ripiego")
 RX_USO = re.compile(
     r"""\b(?:_?t|label|label_for)\(\s*["']([a-z][a-z0-9_]*(?:\.[a-z0-9_]+)+)["']""")
+# negli script shell: vesper_t <chiave> 'ripiego'
+RX_SHELL = re.compile(r"""\bvesper_t\s+([a-z][a-z0-9_]*(?:\.[a-z0-9_]+)+)""")
 ESTENSIONI = {"xml", "json", "py", "log", "sh", "txt", "png", "svg", "css",
               "desktop", "conf", "ini", "wav", "gz", "deb"}
 # chiave scritta tale e quale in una tabella, fuori da una chiamata a t()
@@ -42,12 +44,8 @@ def sorgenti():
         if "__pycache__" not in f.parts:
             yield f
     for f in sorted((RADICE / "bin").glob("vesper-*")):
-        try:
-            if f.is_file() and "python" in f.read_text(encoding="utf-8",
-                                                       errors="ignore")[:80]:
-                yield f
-        except OSError:
-            continue
+        if f.is_file():                      # shell e Python: traducono entrambi
+            yield f
 
 
 def chiavi_usate() -> tuple[dict[str, list[str]], set[str]]:
@@ -58,6 +56,8 @@ def chiavi_usate() -> tuple[dict[str, list[str]], set[str]]:
         for k in RX_USO.findall(testo):
             usi.setdefault(k, []).append(str(f.relative_to(RADICE)))
         prefissi.update(RX_PREFISSO.findall(testo))
+        for k in RX_SHELL.findall(testo):
+            usi.setdefault(k, []).append(str(f.relative_to(RADICE)))
         # chiavi passate a una funzione da una tabella (vesper-logout) o
         # composte altrove: se la chiave compare tale e quale, e' usata
         for k in RX_LETTERALE.findall(testo):

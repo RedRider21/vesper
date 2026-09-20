@@ -274,8 +274,7 @@ def run() -> int:
                 if w.get_visible():
                     w.connect("destroy", Gtk.main_quit)
         elif args and args[0] in ("-h", "--help", "aiuto"):
-            print("uso: vesper-control-center [vista]\nviste: %s"
-                  % " ".join(sorted(VIEW_MAP)))
+            print(_t("cli.cc.usage") % " ".join(sorted(VIEW_MAP)))
             return 0
         else:
             win = build_window()

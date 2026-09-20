@@ -171,7 +171,7 @@ def main():
     elif cmd == "clear":
         _save([])
     else:
-        sys.stderr.write("uso: vesper-clipboard {daemon|menu|clear}\n")
+        sys.stderr.write(_t("cli.clip.usage") + "\n")
         sys.exit(2)
 
 

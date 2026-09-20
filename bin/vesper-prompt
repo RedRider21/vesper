@@ -8,6 +8,15 @@
 #   vesper-prompt get                 stampa lo stile attivo
 #   vesper-prompt list                elenca gli stili
 #   vesper-prompt set <stile>         default | parrot | plain
+# Messaggi tradotti (it/en/fr/es/de). Senza i18n.sh restano in italiano.
+vesper_t() { printf '%s\n' "${2:-$1}"; }
+_vt_self=$(readlink -f "$0" 2>/dev/null || echo "$0"); _vt_d=$(dirname "$_vt_self")
+for _i in "$_vt_d/i18n.sh" "$(dirname "$_vt_d")/lib/vesper/i18n.sh" \
+          /usr/local/lib/vesper/i18n.sh /usr/lib/vesper/i18n.sh; do
+  [ -r "$_i" ] && { . "$_i"; break; }
+done
+unset _i _vt_self _vt_d
+
 set -eu
 CONF="$HOME/.config/vesper/prompt"
 
@@ -15,18 +24,18 @@ case "${1:-get}" in
   get)
     [ -r "$CONF" ] && cat "$CONF" || echo default ;;
   list)
-    echo "default  prompt di Vesper a una riga (accent ciano)"
-    echo "parrot   due righe stile Parrot: ┌──[user@host]─[dir] / └──╼"
-    echo "plain    minimale: user@host:dir\$" ;;
+    echo "default  $(vesper_t cli.prompt.default 'prompt di Vesper a una riga (accent ciano)')"
+    echo "parrot   $(vesper_t cli.prompt.parrot 'due righe stile Parrot'): ┌──[user@host]─[dir] / └──╼"
+    echo "plain    $(vesper_t cli.prompt.plain 'minimale'): user@host:dir\$" ;;
   set)
     st="${2:-}"
     case "$st" in
       default|parrot|plain) ;;
-      *) echo "stile non valido: '$st' (usa: vesper-prompt list)" >&2; exit 1 ;;
+      *) echo "$(vesper_t cli.prompt.invalid 'stile non valido') : '$st' (vesper-prompt list)" >&2; exit 1 ;;
     esac
     mkdir -p "$(dirname "$CONF")"
     printf '%s\n' "$st" > "$CONF"
-    echo "prompt impostato: $st (apri un nuovo terminale per vederlo)" ;;
+    echo "$(vesper_t cli.prompt.set_ok 'prompt impostato'): $st ($(vesper_t cli.prompt.reopen 'apri un nuovo terminale per vederlo'))" ;;
   *)
-    echo "uso: vesper-prompt [get|list|set <default|parrot|plain>]" >&2; exit 2 ;;
+    echo "$(vesper_t cli.prompt.usage 'uso: vesper-prompt [get|list|set <default|parrot|plain>]')" >&2; exit 2 ;;
 esac

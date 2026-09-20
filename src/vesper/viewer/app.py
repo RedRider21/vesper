@@ -777,8 +777,8 @@ class Visualizzatore(Gtk.Window):
 def main(argv=None):
     argv = list(sys.argv[1:] if argv is None else argv)
     if argv and argv[0] in ("-h", "--help", "aiuto"):
-        print("uso: vesper-viewer [file o cartella]\n"
-              "Scorciatoie: Ctrl+Maiusc+H dentro il programma.")
+        print(_t("cli.viewer.usage") + "\n"
+              + _t("cli.shortcuts_hint") % _ta("Ctrl+Maiusc+H"))
         return 0
     Visualizzatore(argv)
     Gtk.main()

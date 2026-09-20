@@ -26,10 +26,10 @@ case "${1:-get}" in
 for c in i18n.LANGS: print(c, i18n.LANG_NAMES[c])'
     ;;
   set)
-    [ -n "${2:-}" ] || { echo "uso: vesper-lang set <it|en|fr|es|de>" >&2; exit 2; }
+    [ -n "${2:-}" ] || { echo "$(vesper_t cli.lang.set_usage 'uso: vesper-lang set <it|en|fr|es|de>')" >&2; exit 2; }
     "$VESPER_PY" -c 'import sys; from vesper import i18n; sys.exit(0 if i18n.set_lang(sys.argv[1]) else 1)' "$2" \
-      || { echo "lingua non valida: $2 (usa: vesper-lang list)" >&2; exit 1; }
-    echo "lingua impostata: $2"
+      || { echo "$(vesper_t cli.lang.invalid 'lingua non valida'): $2 (vesper-lang list)" >&2; exit 1; }
+    echo "$(vesper_t cli.lang.set_ok 'lingua impostata'): $2"
     # Variabili di lingua per i processi che riavviamo (i Name[xx]/Comment[xx]
     # dei file .desktop si risolvono tramite LANGUAGE).
     case "$2" in
@@ -80,6 +80,6 @@ for c in i18n.LANGS: print(c, i18n.LANG_NAMES[c])'
     fi
     ;;
   *)
-    echo "uso: vesper-lang {get|list|set <codice>}" >&2; exit 2
+    echo "$(vesper_t cli.lang.usage 'uso: vesper-lang {get|list|set <codice>}')" >&2; exit 2
     ;;
 esac

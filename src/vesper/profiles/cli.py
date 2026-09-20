@@ -19,6 +19,12 @@ import sys
 
 from . import model
 
+try:
+    from vesper.i18n import t as _t
+except Exception:                       # noqa: BLE001
+    def _t(chiave, **kw):               # ripiego: mostra la chiave
+        return chiave
+
 
 def _list(_args) -> int:
     cur = model.current_preset()
@@ -39,8 +45,7 @@ def _get(_args) -> int:
 
 def _set(args) -> int:
     if not args:
-        print("uso: vesper-profile set <id>  (vedi: vesper-profile list)",
-              file=sys.stderr)
+        print(_t("cli.profile.set_usage"), file=sys.stderr)
         return 2
     key = args[0]
     if key not in model.presets():

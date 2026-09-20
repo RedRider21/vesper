@@ -12,6 +12,12 @@ import sys
 
 from vesper.disks import model
 
+try:
+    from vesper.i18n import t as _t
+except Exception:                       # noqa: BLE001
+    def _t(chiave, **kw):               # ripiego: mostra la chiave
+        return chiave
+
 
 def _spazio_libero(disco):
     """Blocchi di spazio NON allocato su un disco, via parted.
@@ -65,7 +71,8 @@ def elenco(mostra_liberi=False):
         if mostra_liberi:
             for ini, _fin, dim in _spazio_libero(d.path):
                 print("     %-12s %10s  %s"
-                      % ("(libero)", model.human(dim), "spazio non allocato a %s" % model.human(ini)))
+                      % ("(%s)" % _t("dk.free"), model.human(dim),
+                         _t("dk.unallocated") % model.human(ini)))
     return 0
 
 
@@ -115,6 +122,5 @@ def main(argv=None):
         for r in spazio_libero_righe(argv[1]):
             print(r)
         return 0
-    print("uso: vesper-disks [--lista|--lista-completa|--partizioni|--liberi DISCO]",
-          file=sys.stderr)
+    print(_t("cli.disks.usage"), file=sys.stderr)
     return 2

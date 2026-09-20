@@ -138,7 +138,7 @@ if [ -z "$WM" ]; then
   done
 fi
 if [ -z "$WM" ]; then
-  echo "vesper-session: nessun gestore finestre trovato (serve openbox)" >&2
+  echo "vesper-session: $(vesper_t cli.session.no_wm 'nessun gestore finestre trovato (serve openbox)')" >&2
   command -v xmessage >/dev/null 2>&1 && \
     xmessage -center "Vesper ha bisogno di un gestore finestre.
 Installa il pacchetto 'openbox' e riprova." 2>/dev/null

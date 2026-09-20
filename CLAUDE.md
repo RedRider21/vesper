@@ -16,6 +16,13 @@ come qualsiasi altro DE (voce di sessione nel display manager).
   Per il maiuscolo usare `.upper()` in Python. `apply_css()` avvolge il load in
   try/except (difensivo).
 - Prefisso unico `vesper-` sia per le classi CSS sia per i nomi dei comandi.
+- **Niente testo scritto a mano nell'interfaccia**: ogni stringa visibile passa
+  da `vesper.i18n.t()` (o da `label(chiave, ripiego)`) e va scritta in TUTTE e
+  cinque le lingue in `src/vesper/i18n/strings/*.json`. Le scorciatoie si
+  scrivono all'italiana (`Ctrl+Maiusc+S`) e le traduce `i18n.taccel()` quando
+  si mostrano. Prima di un commit: `tools/check-i18n.py` (chiavi mancanti,
+  orfane, segnaposto discordi). Restano in italiano solo gli aiuti `--help` e
+  i messaggi diagnostici degli script.
 
 ## Architettura
 

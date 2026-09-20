@@ -852,7 +852,7 @@ class Desktop(Gtk.Window):
             self._mi(m, label("fm.rename", "Rinomina"), lambda: self.rename(it),
                      "document-edit-symbolic", "F2")
         m.append(Gtk.SeparatorMenuItem())
-        self._mi(m, label("fm.trash", "Sposta nel cestino"),
+        self._mi(m, label("fm.trash_move", "Sposta nel cestino"),
                  lambda: self.trash(sel), "user-trash-symbolic", "Canc")
         if len(sel) == 1:
             m.append(Gtk.SeparatorMenuItem())

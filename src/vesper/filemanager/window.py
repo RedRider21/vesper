@@ -852,7 +852,7 @@ class FileWindow(Gtk.Window):
             if len(sel) == 1:
                 self._mi(m, label("fm.rename", "Rinomina") + "  (F2)",
                          self.rename_selection)
-            self._mi(m, label("fm.trash", "Sposta nel cestino") + "  (Del)",
+            self._mi(m, label("fm.trash_move", "Sposta nel cestino") + "  (Del)",
                      self.trash_selection)
             self._mi(m, label("fm.delete", "Elimina definitivamente"),
                      self.delete_selection)

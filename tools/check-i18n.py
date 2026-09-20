@@ -21,10 +21,10 @@ STR = SRC / "i18n" / "strings"
 LINGUE = ("it", "en", "fr", "es", "de")
 BASE = "it"                                  # lingua di riferimento
 
-# t("chiave"), _t("chiave"), i18n.t('chiave')
-RX_USO = re.compile(r"""\b_?t\(\s*["']([a-z][a-z0-9_]*(?:\.[a-z0-9_]+)+)["']""")
+# t("chiave"), _t("chiave"), i18n.t('chiave'), label("chiave", "ripiego")
+RX_USO = re.compile(r"""\b(?:_?t|label)\(\s*["']([a-z][a-z0-9_]*(?:\.[a-z0-9_]+)+)["']""")
 # chiavi composte a runtime: t("appcat." + nome), t("k." + tasto)
-RX_PREFISSO = re.compile(r"""\b_?t\(\s*["']([a-z][a-z0-9_]*\.)["']\s*\+""")
+RX_PREFISSO = re.compile(r"""\b(?:_?t|label)\(\s*["']([a-z][a-z0-9_]*\.)["']\s*\+""")
 RX_SEGNA = re.compile(r"%(?:[-+ #0]*\d*(?:\.\d+)?[sdifgxX%]|[NQ])|\{[a-z_]+\}")
 
 

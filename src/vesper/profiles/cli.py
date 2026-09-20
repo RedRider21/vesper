@@ -24,15 +24,16 @@ def _list(_args) -> int:
     cur = model.current_preset()
     for key, d in model.presets().items():
         mark = "*" if key == cur else " "
-        print("%s %-10s %-14s %-9s %s" % (mark, key, d.get("name", key),
-                                          d.get("accent", ""), d.get("desc", "")))
+        print("%s %-10s %-14s %-9s %s" % (mark, key, model.nome(key, d),
+                                          d.get("accent", ""),
+                                          model.descrizione(key, d)))
     return 0
 
 
 def _get(_args) -> int:
     key = model.current_preset()
     d = model.preset_data(key)
-    print("%s\t%s\t%s" % (key, d.get("name", key), d.get("accent", "")))
+    print("%s\t%s\t%s" % (key, model.nome(key, d), d.get("accent", "")))
     return 0
 
 
@@ -49,14 +50,14 @@ def _set(args) -> int:
     d = model.preset_data(key)
     wp = model.wallpaper_path(key)
     print("[+] preset: %s  accent: %s  sfondo: %s"
-          % (d.get("name", key), d.get("accent", ""), wp.name if wp else "-"))
+          % (model.nome(key, d), d.get("accent", ""), wp.name if wp else "-"))
     return 0 if ok else 1
 
 
 def _apply(_args) -> int:
     d = model.apply_current()
     key = model.current_preset()
-    print("[+] preset: %s  accent: %s" % (d.get("name", key), model.accent(key)))
+    print("[+] preset: %s  accent: %s" % (model.nome(key, d), model.accent(key)))
     return 0
 
 

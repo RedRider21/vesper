@@ -115,6 +115,27 @@ def preset_data(key: str | None = None) -> dict:
     return presets().get(key, {})
 
 
+def nome(key: str, d: dict | None = None) -> str:
+    """Nome del preset nella lingua scelta; ripiega sul catalogo (presets.json)."""
+    return _tradotto("pr.name." + key, (d if d is not None
+                                        else preset_data(key)).get("name", key))
+
+
+def descrizione(key: str, d: dict | None = None) -> str:
+    """Descrizione del preset nella lingua scelta; ripiega sul catalogo."""
+    return _tradotto("pr.desc." + key, (d if d is not None
+                                        else preset_data(key)).get("desc", ""))
+
+
+def _tradotto(chiave: str, ripiego: str) -> str:
+    try:
+        from vesper.i18n import t
+    except Exception:                       # noqa: BLE001
+        return ripiego
+    s = t(chiave)
+    return ripiego if s == chiave else s
+
+
 def accent(key: str | None = None) -> str:
     return preset_data(key).get("accent", DEFAULT_ACCENT)
 

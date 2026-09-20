@@ -51,6 +51,16 @@ try:
 except Exception:                                       # noqa: BLE001
     presets_model = None
 
+
+def _preset_nome(preset: dict) -> str:
+    """Nome del preset nella lingua scelta (ripiega sul catalogo)."""
+    if presets_model is None:
+        return preset.get("name", "")
+    try:
+        return presets_model.nome(presets_model.current_preset(), preset)
+    except Exception:                                   # noqa: BLE001
+        return preset.get("name", "")
+
 # Categorie del menu applicazioni: quelle STANDARD freedesktop (le stesse che
 # usano gli altri DE), ognuna con la sua icona simbolica e l'elenco dei valori
 # `Categories=` dei file .desktop che le finiscono dentro. L'ordine è quello di
@@ -1018,7 +1028,7 @@ class Panel(Gtk.Window):
         brand.get_style_context().add_class("brand")
         brand.set_angle(90)
         preset = self._preset_data()
-        sub = Gtk.Label(label=preset.get("name", ""))
+        sub = Gtk.Label(label=_preset_nome(preset))
         sub.get_style_context().add_class("brand-sub")
         sub.set_angle(90)
         # Ancorate IN BASSO (pack_end): il nome parte ~14px dal fondo e legge
@@ -1083,7 +1093,7 @@ class Panel(Gtk.Window):
         if preset:
             lst.pack_start(
                 self._menu_item("menu", preset.get("icon", "vesper-logo-symbolic"),
-                                _t("menu.preset", name=preset.get("name", "")),
+                                _t("menu.preset", name=_preset_nome(preset)),
                                 ["vesper-control-center", "aspetto"], None, None),
                 False, False, 0)
             sep()
@@ -1947,7 +1957,7 @@ class Panel(Gtk.Window):
         if not ui or "wifi" not in self._popups:
             return
         status, _listbox = ui
-        status.set_text("Scansione in corso...")
+        status.set_text(_t("pn.wifi.scanning"))
 
         def worker():
             iface = self._run_out(["vesper-wifi", "iface"]).strip()

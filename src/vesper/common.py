@@ -15,6 +15,12 @@ from gi.repository import Gtk, Gdk, GLib, Gio  # noqa: E402
 
 from vesper import paths  # noqa: E402
 
+try:
+    from vesper.i18n import t as _t
+except Exception:                       # noqa: BLE001
+    def _t(chiave, **kw):               # ripiego: mostra la chiave
+        return chiave
+
 HOME = paths.HOME
 
 # Palette Vesper (default; l'accent è sovrascrivibile dal preset attivo)
@@ -768,7 +774,7 @@ def run_bg(cmd: list[str]) -> None:
     try:
         subprocess.Popen(cmd, stdout=subprocess.DEVNULL, stderr=subprocess.DEVNULL)
     except FileNotFoundError as e:
-        info_dialog("Comando non trovato", str(e), level="warn")
+        info_dialog(_t("v.cmd_notfound"), str(e), level="warn")
 
 
 def run_capture(cmd: list[str], timeout: int = 6) -> str:
@@ -854,6 +860,6 @@ def icon_button(label: str, icon_name: str, primary: bool = False):
 def read_file(path) -> str:
     p = Path(path)
     try:
-        return p.read_text() if p.exists() else f"(file inesistente: {p})"
+        return p.read_text() if p.exists() else _t("v.file_missing") % p
     except OSError as e:
-        return f"(errore lettura: {e})"
+        return _t("v.read_error") % e

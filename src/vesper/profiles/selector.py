@@ -190,13 +190,13 @@ class Selector(Gtk.Window):
         img = Gtk.Image.new_from_icon_name(d.get("icon", "vesper-logo-symbolic"),
                                            Gtk.IconSize.DND)
         row.pack_start(img, False, False, 0)
-        name = Gtk.Label(label=d.get("name", key))
+        name = Gtk.Label(label=model.nome(key, d))
         name.set_xalign(0)
         name.get_style_context().add_class("vesper-preset-name")
         row.pack_start(name, True, True, 0)
         box.pack_start(row, False, False, 0)
 
-        desc = Gtk.Label(label=d.get("desc", ""))
+        desc = Gtk.Label(label=model.descrizione(key, d))
         desc.set_xalign(0)
         desc.set_line_wrap(True)
         desc.set_max_width_chars(28)
@@ -217,7 +217,7 @@ class Selector(Gtk.Window):
             else:
                 ctx.remove_class("sel")
         d = model.preset_data(key)
-        self.hint.set_text(_t("sel.preset_hint") % d.get("name", key))
+        self.hint.set_text(_t("sel.preset_hint") % model.nome(key, d))
 
     def _on_apply(self, _btn):
         model.activate_preset(self._selected)

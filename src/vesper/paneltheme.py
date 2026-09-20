@@ -23,6 +23,12 @@ from pathlib import Path
 
 from vesper import paths
 
+try:
+    from vesper.i18n import t as _t
+except Exception:                       # noqa: BLE001
+    def _t(chiave, **kw):               # ripiego: mostra la chiave
+        return chiave
+
 CONF = paths.PANEL_THEME_CONF
 USER_DIR = paths.config("panel-themes")
 DEFAULT = "profile"
@@ -48,7 +54,7 @@ def _meta_name(path: Path) -> str:
 def list_themes():
     """Ritorna [(id, nome, sorgente)]; 'profile' e' sempre la prima voce.
     Un file utente con lo STESSO id di una skin di sistema la sostituisce."""
-    out = [("profile", "Segui il preset di aspetto (predefinito)", "builtin")]
+    out = [("profile", _t("v.skin.follow_preset"), "builtin")]
     seen = {"profile"}
     # utente prima cosi' un id ripetuto mostra la variante utente
     for d, src in [(USER_DIR, "utente")] + [(d, "sistema") for d in _sys_dirs()]:

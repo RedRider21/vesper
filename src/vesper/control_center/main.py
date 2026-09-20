@@ -69,7 +69,7 @@ def safe(handler):
         except Exception as e:           # noqa: BLE001
             traceback.print_exc()
             try:
-                info_dialog("Errore", "%s: %s" % (type(e).__name__, e),
+                info_dialog(_t("cc.error"), "%s: %s" % (type(e).__name__, e),
                             level="error")
             except Exception:            # noqa: BLE001
                 pass
@@ -282,9 +282,8 @@ def run() -> int:
             win.show_all()
     except Exception:                    # noqa: BLE001
         traceback.print_exc()
-        info_dialog("Errore di avvio",
-                    "I dettagli sono nel log del Centro di Controllo "
-                    "(~/.cache/vesper/control-center.log).", level="error")
+        info_dialog(_t("cc.start_error"), _t("cc.start_error_body"),
+                    level="error")
         return 1
     # Dopo un cambio schermi la finestra si ricentra sul monitor attivo da sé.
     install_screens_refresh_monitor(center_toplevel_windows)

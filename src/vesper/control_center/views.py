@@ -692,7 +692,7 @@ def open_network(_btn=None):
 
         def finish(txt):
             spinner.stop()
-            ping_lbl.set_text("Connettivita': " + txt)
+            ping_lbl.set_text(_t("v.net.conn") + " " + txt)
             return False
 
         threading.Thread(target=worker, daemon=True).start()
@@ -735,14 +735,14 @@ def open_network(_btn=None):
             descr = f"DHCP su {iface}"
 
         spinner.start()
-        ping_lbl.set_text("Applico: " + descr + " ...")
+        ping_lbl.set_text(_t("v.net.applying") % descr)
 
         def worker():
             out = run_capture(["sudo", "sh", "-c", script], timeout=25)
             def finish():
                 spinner.stop()
                 refresh()
-                ping_lbl.set_text("Applicato: " + descr)
+                ping_lbl.set_text(_t("v.net.applied") % descr)
                 if out:
                     print("[rete] " + out, flush=True)
                 return False
@@ -2593,7 +2593,7 @@ def open_bluetooth(_btn=None):
         elif d["state"] == "paired":
             tags.append("abbinato")
         if d["trusted"]:
-            tags.append("fidato")
+            tags.append(_t("v.bt.trusted"))
         # Mostra SEMPRE il MAC (hex) come sottotitolo, insieme al nome in chiaro
         # (label 'name' sopra) e agli eventuali stati: cosi' ogni dispositivo ha
         # sia il nome leggibile sia l'indirizzo esadecimale, sempre visibili.
@@ -3186,7 +3186,7 @@ def _run_priv_term(inner: str, title: str = "Vesper"):
     chiedere la password) e lascia la finestra aperta a fine comando.
     Il terminale lo scegle vesper-terminal: nessun emulatore fissato."""
     _ = title
-    cmd = ("%s; echo; printf 'Premi Invio per chiudere...'; read x" % inner)
+    cmd = ("%s; echo; printf '%s'; read x" % (inner, _t("v.press_enter")))
     run_bg(["vesper-terminal", "-e", "sh", "-c", cmd])
 
 

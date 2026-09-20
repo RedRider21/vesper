@@ -16,6 +16,12 @@ import json
 import shutil
 import subprocess
 
+try:
+    from vesper.i18n import t as _t
+except Exception:                       # noqa: BLE001
+    def _t(chiave, **kw):               # ripiego: mostra la chiave
+        return chiave
+
 # Colonne chieste a lsblk. Tenute al minimo compatibile: le versioni recenti di
 # util-linux hanno sostituito MOUNTPOINT con MOUNTPOINTS (lista), quindi se la
 # prima chiamata fallisce si ripiega su un set ridotto.
@@ -129,7 +135,7 @@ class Node:
             parti.append(self.fstype)
         if self.label:
             parti.append(self.label)
-        return "  ".join(parti) if parti else "(nessun filesystem)"
+        return "  ".join(parti) if parti else _t("dk.no_fs")
 
     def __repr__(self):
         return "<Node %s %s %s>" % (self.path, self.type, human(self.size))

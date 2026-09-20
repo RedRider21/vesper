@@ -278,7 +278,7 @@ button.vesper-app-item label { font-size: 10.5px; }
 /* Ora + data: due righe dentro una barra alta 34px. Il padding e il
    margine verticali rubavano 6px e i discendenti della data (la g di
    'giu') finivano tagliati sul bordo inferiore. */
-.vesper-panel button.vesper-clock-btn { padding: 0 8px; margin: 1px; }
+.vesper-panel button.vesper-clock-btn { padding: 0 8px 6px 8px; margin: 1px; }
 .vesper-calbox { padding: 6px; }
 calendar.vesper-calendar {
   background-color: #0a1a26; color: #c8f5ff;

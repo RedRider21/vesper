@@ -499,8 +499,7 @@ class LoadMonitor(Gtk.EventBox):
         self.load.push(min(1.0, la1 / self._ncpu))
 
         self.set_tooltip_text(
-            "Carico %.2f/%.2f/%.2f (%d core)   CPU %d%%   RAM %d%%   "
-            "Rete %s/s   Disco %s/s   (clic: Monitor)"
+            _t("pn.mon.tip")
             % (la1, la5, la15, self._ncpu, round(cpu * 100), round(mem * 100),
                _human(rate), _human(drate)))
         return self._alive
@@ -969,7 +968,7 @@ class Panel(Gtk.Window):
             return
         d = Gtk.Dialog(title=_t("lang.title"), transient_for=self, modal=True)
         d.add_button("OK", Gtk.ResponseType.OK)
-        d.add_button("Annulla", Gtk.ResponseType.CANCEL)
+        d.add_button(_t("pn.cancel"), Gtk.ResponseType.CANCEL)
         area = d.get_content_area()
         area.set_spacing(8)
         try:
@@ -1547,7 +1546,7 @@ class Panel(Gtk.Window):
         box = Gtk.Box(orientation=Gtk.Orientation.VERTICAL, spacing=8)
         box.get_style_context().add_class("vesper-calbox")
         box.set_size_request(300, -1)
-        title = Gtk.Label(); title.set_markup("<b>Microfono</b>"); title.set_xalign(0)
+        title = Gtk.Label(); title.set_markup("<b>%s</b>" % _t("pn.mic.title")); title.set_xalign(0)
         box.pack_start(title, False, False, 0)
 
         row = Gtk.Box(orientation=Gtk.Orientation.HORIZONTAL, spacing=8)
@@ -1582,7 +1581,8 @@ class Panel(Gtk.Window):
                 self._bg(["vesper-audio", "mic-mute"]),
                 GLib.timeout_add(150, self._refresh_media_once)))
             status.set_text(_t("pn.mic.muted") if muted
-                            else ("Ingresso:" if sources else "Nessun ingresso."))
+                            else (_t("pn.mic.input") if sources
+                                  else _t("pn.mic.noinput")))
             for sid, name, is_def in sources:
                 b = Gtk.Button(); b.set_relief(Gtk.ReliefStyle.NONE)
                 b.get_style_context().add_class("vesper-menu-item")
@@ -1614,7 +1614,7 @@ class Panel(Gtk.Window):
         box = Gtk.Box(orientation=Gtk.Orientation.VERTICAL, spacing=8)
         box.get_style_context().add_class("vesper-calbox")
         box.set_size_request(300, -1)
-        title = Gtk.Label(); title.set_markup("<b>Audio</b>"); title.set_xalign(0)
+        title = Gtk.Label(); title.set_markup("<b>%s</b>" % _t("pn.audio.title")); title.set_xalign(0)
         box.pack_start(title, False, False, 0)
 
         row = Gtk.Box(orientation=Gtk.Orientation.HORIZONTAL, spacing=8)
@@ -1634,10 +1634,9 @@ class Panel(Gtk.Window):
         box.pack_start(status, False, False, 0)
         # Sblocco audio a un clic (utile su portatile reale: se non si sente,
         # forza unmute+volume su ALSA hardware e sink PipeWire, con ritentativi).
-        unmute_b = Gtk.Button(label="Sblocca audio (HW)")
+        unmute_b = Gtk.Button(label=_t("pn.audio.unmute"))
         unmute_b.get_style_context().add_class("vesper-menu-item")
-        unmute_b.set_tooltip_text("Se non senti nulla: sblocca e alza l'audio su "
-                                  "tutti i livelli (ALSA + PipeWire).")
+        unmute_b.set_tooltip_text(_t("pn.audio.unmute_tip"))
         unmute_b.connect("clicked", lambda _w: (
             self._bg(["vesper-audio-unmute", "2"]),
             GLib.timeout_add(400, self._refresh_media_once)))
@@ -1659,9 +1658,9 @@ class Panel(Gtk.Window):
                 self._bg(["vesper-audio", "mute"]),
                 GLib.timeout_add(150, self._refresh_media_once)))
             if pct is None:
-                status.set_text("PipeWire non attivo o nessuna uscita audio.")
+                status.set_text(_t("pn.audio.nopipewire"))
             else:
-                status.set_text("Uscita audio:" if sinks else "")
+                status.set_text(_t("pn.audio.output") if sinks else "")
             for sid, name, is_def in sinks:
                 b = Gtk.Button(); b.set_relief(Gtk.ReliefStyle.NONE)
                 b.get_style_context().add_class("vesper-menu-item")
@@ -1798,10 +1797,10 @@ class Panel(Gtk.Window):
         status.get_style_context().add_class("vesper-clock-date")
         box.pack_start(status, False, False, 0)
 
-        scan_b = Gtk.Button(label="Scansiona dispositivi")
+        scan_b = Gtk.Button(label=_t("pn.bt.scan"))
         scan_b.get_style_context().add_class("vesper-menu-item")
         box.pack_start(scan_b, False, False, 0)
-        adv_b = Gtk.Button(label="Gestione avanzata…")
+        adv_b = Gtk.Button(label=_t("pn.bt.advanced"))
         adv_b.get_style_context().add_class("vesper-menu-item")
         adv_b.connect("clicked", lambda _w: (
             self._close_popup("bt"),
@@ -1839,7 +1838,7 @@ class Panel(Gtk.Window):
         self._bt_ui = {"status": status, "render": render_devs}
 
         def do_scan(_w=None):
-            status.set_text("Scansione in corso (qualche secondo)...")
+            status.set_text(_t("pn.bt.scanning"))
             def worker():
                 devs = []
                 for line in self._run_out(["vesper-bluetooth", "scan", "12"], 45).splitlines():
@@ -1847,8 +1846,8 @@ class Panel(Gtk.Window):
                     if len(p) >= 2:
                         devs.append((p[0], p[1], p[2] if len(p) > 2 else ""))
                 GLib.idle_add(lambda: (status.set_text(
-                    "Clic su un dispositivo per connettere/disconnettere:"
-                    if devs else "Nessun dispositivo trovato."), render_devs(devs)))
+                    _t("pn.bt.click_dev") if devs else _t("pn.bt.nodev")),
+                    render_devs(devs)))
             threading.Thread(target=worker, daemon=True).start()
         scan_b.connect("clicked", do_scan)
 
@@ -1873,14 +1872,13 @@ class Panel(Gtk.Window):
                 if "bt" not in self._popups:
                     return False
                 if st == "noadapter":
-                    status.set_text("Nessun adattatore Bluetooth rilevato. In VM "
-                                    "non e' disponibile: usa un dongle USB.")
+                    status.set_text(_t("pn.bt.noadapter"))
                     sw.set_sensitive(False); scan_b.set_sensitive(False)
                     return False
                 sw.set_active(st == "on")
                 sw.connect("state-set", on_switch)
-                status.set_text("Bluetooth acceso." if st == "on"
-                                else "Bluetooth spento.")
+                status.set_text(_t("pn.bt.on") if st == "on"
+                                else _t("pn.bt.off"))
                 render_devs(devs)
                 return False
             GLib.idle_add(apply)
@@ -1890,8 +1888,8 @@ class Panel(Gtk.Window):
         act = "disconnect" if st == "conn" else "connect"
         ui = getattr(self, "_bt_ui", None)
         if ui and "bt" in self._popups:
-            ui["status"].set_text("Disconnessione in corso..." if act == "disconnect"
-                                  else "Connessione in corso...")
+            ui["status"].set_text(_t("pn.bt.disconnecting") if act == "disconnect"
+                                  else _t("pn.bt.connecting"))
 
         def worker():
             # 70s: pair/connect ora attendono fino a 60s la conferma sul
@@ -1912,8 +1910,8 @@ class Panel(Gtk.Window):
                 u = getattr(self, "_bt_ui", None)
                 if u and "bt" in self._popups:
                     conn = any(s == "conn" for _m, _n, s in devs)
-                    u["status"].set_text("Dispositivo connesso." if conn
-                                         else "Nessun dispositivo connesso.")
+                    u["status"].set_text(_t("pn.bt.connected") if conn
+                                         else _t("pn.bt.noconn"))
                     u["render"](devs)
                 return False
             GLib.idle_add(apply)
@@ -1924,7 +1922,7 @@ class Panel(Gtk.Window):
         box.get_style_context().add_class("vesper-calbox")
         box.set_size_request(320, -1)
         head = Gtk.Box(orientation=Gtk.Orientation.HORIZONTAL, spacing=8)
-        title = Gtk.Label(); title.set_markup("<b>Reti WiFi</b>"); title.set_xalign(0)
+        title = Gtk.Label(); title.set_markup("<b>%s</b>" % _t("pn.wifi.title")); title.set_xalign(0)
         head.pack_start(title, True, True, 0)
         rescan = Gtk.Button(); rescan.set_relief(Gtk.ReliefStyle.NONE)
         rescan.set_tooltip_text(_t("pn.wifi.rescan"))
@@ -1933,7 +1931,7 @@ class Panel(Gtk.Window):
         rescan.connect("clicked", lambda _w: self._wifi_scan())
         head.pack_end(rescan, False, False, 0)
         box.pack_start(head, False, False, 0)
-        status = Gtk.Label(label="Scansione in corso..."); status.set_xalign(0)
+        status = Gtk.Label(label=_t("pn.wifi.scanning")); status.set_xalign(0)
         status.set_line_wrap(True)
         status.get_style_context().add_class("vesper-clock-date")
         box.pack_start(status, False, False, 0)
@@ -1973,17 +1971,13 @@ class Panel(Gtk.Window):
         for c in listbox.get_children():
             listbox.remove(c)
         if not iface:
-            status.set_text("Nessuna scheda WiFi rilevata. In una macchina "
-                            "virtuale il WiFi non e' disponibile: usa Ethernet "
-                            "o passa un adattatore WiFi USB.")
+            status.set_text(_t("pn.wifi.nocard"))
             return False
         if not nets:
-            status.set_text("Nessuna rete in portata (WiFi acceso, nessuna rete "
-                            "trovata).")
+            status.set_text(_t("pn.wifi.nonet"))
             return False
-        status.set_text("Connesso a «%s». Clic per disconnettere o scegliere "
-                        "un'altra rete:" % connected if connected
-                        else "Clic su una rete per connetterti:")
+        status.set_text(_t("pn.wifi.connected_click") % connected if connected
+                        else _t("pn.wifi.click_net"))
         # rete connessa in cima
         nets = sorted(nets, key=lambda n: (n[0] != connected))
         for ssid, sig, flags in nets:
@@ -2007,11 +2001,11 @@ class Panel(Gtk.Window):
                 lab.set_text(ssid)
             hb.pack_start(lab, True, True, 0)
             if is_conn:
-                tag = Gtk.Label(label="✓ connesso")
+                tag = Gtk.Label(label=_t("pn.wifi.tag_conn"))
                 tag.get_style_context().add_class("vesper-ok")
                 hb.pack_start(tag, False, False, 0)
             else:
-                sg = Gtk.Label(label="%s dBm" % sig)
+                sg = Gtk.Label(label=_t("pn.wifi.dbm") % sig)
                 sg.get_style_context().add_class("vesper-clock-date")
                 hb.pack_start(sg, False, False, 0)
             b.add(hb)
@@ -2027,7 +2021,7 @@ class Panel(Gtk.Window):
     def _wifi_disconnect(self, ssid):
         ui = getattr(self, "_wifi_ui", None)
         if ui and "wifi" in self._popups:
-            ui[0].set_text("Disconnessione da «%s»..." % ssid)
+            ui[0].set_text(_t("pn.wifi.disconnecting") % ssid)
         def worker():
             self._run_out(["vesper-wifi", "disconnect"], 10)
             GLib.idle_add(self._refresh_media_once)
@@ -2037,12 +2031,12 @@ class Panel(Gtk.Window):
     def _wifi_connect(self, ssid, locked):
         psk = ""
         if locked:
-            psk = self._ask_password("Password per la rete «%s»" % ssid)
+            psk = self._ask_password(_t("pn.wifi.ask_pw") % ssid)
             if psk is None:
                 return
         ui = getattr(self, "_wifi_ui", None)
         if ui and "wifi" in self._popups:
-            ui[0].set_text("Connessione a «%s»..." % ssid)
+            ui[0].set_text(_t("pn.wifi.connecting") % ssid)
 
         def worker():
             # La passphrase va su STDIN, non tra gli argomenti (niente password
@@ -2073,22 +2067,20 @@ class Panel(Gtk.Window):
                 # Associato (COMPLETED): distingue il caso "senza IP" (dhcp)
                 # da una connessione pienamente riuscita.
                 if out == "err-dhcp":
-                    ui[0].set_text("Associato a «%s» ma senza IP (DHCP)." % ssid)
+                    ui[0].set_text(_t("pn.wifi.no_ip") % ssid)
                 else:
-                    ui[0].set_text("Connesso a «%s»." % ssid)
+                    ui[0].set_text(_t("pn.wifi.ok") % ssid)
                 self._wifi_scan()    # ridisegna con il badge "✓ connesso"
             else:
                 ui[0].set_text({
-                    "err-auth":  "Password errata per «%s»." % ssid,
-                    "err-assoc": ("Associazione a «%s» non riuscita (rete lontana "
-                                  "o crittografia non supportata)." % ssid),
-                    "err-dhcp":  "Associato a «%s» ma senza IP (DHCP)." % ssid,
-                }.get(out, "Connessione a «%s» non riuscita (password errata "
-                           "o rete non raggiungibile)." % ssid))
+                    "err-auth":  _t("pn.wifi.err_auth") % ssid,
+                    "err-assoc": _t("pn.wifi.err_assoc") % ssid,
+                    "err-dhcp":  _t("pn.wifi.no_ip") % ssid,
+                }.get(out, _t("pn.wifi.err") % ssid))
         return False
 
     def _ask_password(self, prompt):
-        d = Gtk.Dialog(title="Connessione WiFi", modal=True)
+        d = Gtk.Dialog(title=_t("pn.wifi.dlg"), modal=True)
         # Ancorato al pannello: il dialogo compare sul MONITOR del pannello da
         # cui si e' cliccato (quello attivo), mai su un eventuale schermo spento.
         try:
@@ -2097,8 +2089,8 @@ class Panel(Gtk.Window):
             pass
         self._center_dialog(d)
         d.set_keep_above(True)
-        d.add_button("Annulla", Gtk.ResponseType.CANCEL)
-        d.add_button("Connetti", Gtk.ResponseType.OK)
+        d.add_button(_t("pn.cancel"), Gtk.ResponseType.CANCEL)
+        d.add_button(_t("pn.wifi.connect"), Gtk.ResponseType.OK)
         d.set_default_response(Gtk.ResponseType.OK)
         area = d.get_content_area()
         area.set_spacing(8); area.set_border_width(12)
@@ -2108,7 +2100,7 @@ class Panel(Gtk.Window):
         e.set_icon_from_icon_name(Gtk.EntryIconPosition.SECONDARY,
                                   "view-reveal-symbolic")
         e.set_icon_tooltip_text(Gtk.EntryIconPosition.SECONDARY,
-                                "Mostra/nascondi la password")
+                                _t("pn.wifi.show_pw"))
 
         def _toggle_eye(entry, _pos, _ev):
             vis = not entry.get_visibility()
@@ -2129,7 +2121,7 @@ class Panel(Gtk.Window):
         box = Gtk.Box(orientation=Gtk.Orientation.VERTICAL, spacing=6)
         box.get_style_context().add_class("vesper-calbox")
         box.set_size_request(300, -1)
-        title = Gtk.Label(); title.set_markup("<b>Schermi</b>"); title.set_xalign(0)
+        title = Gtk.Label(); title.set_markup("<b>%s</b>" % _t("pn.scr.title")); title.set_xalign(0)
         box.pack_start(title, False, False, 0)
 
         outs = []
@@ -2139,12 +2131,13 @@ class Panel(Gtk.Window):
                 outs.append((p[0], p[2], p[3]))       # nome, primary?, WxH
 
         if not outs:
-            lbl = Gtk.Label(label="Nessuno schermo rilevato."); lbl.set_xalign(0)
+            lbl = Gtk.Label(label=_t("pn.scr.none")); lbl.set_xalign(0)
             box.pack_start(lbl, False, False, 0)
         else:
             if len(outs) >= 2:
                 row = Gtk.Box(orientation=Gtk.Orientation.HORIZONTAL, spacing=4)
-                for lbl, act in (("Estendi", ["extend"]), ("Duplica", ["mirror"])):
+                for lbl, act in ((_t("pn.scr.extend"), ["extend"]),
+                                 (_t("pn.scr.mirror"), ["mirror"])):
                     b = Gtk.Button(label=lbl)
                     b.get_style_context().add_class("vesper-menu-item")
                     b.connect("clicked", lambda _w, a=act: self._screens_apply(a))
@@ -2155,7 +2148,7 @@ class Panel(Gtk.Window):
                 oc.get_style_context().add_class("vesper-dt-row")
                 hdr = Gtk.Label(); hdr.set_xalign(0)
                 hdr.set_markup("<b>%s</b>%s  <small>%s</small>" % (
-                    name, "  (principale)" if prim == "primary" else "", res))
+                    name, _t("pn.scr.primary") if prim == "primary" else "", res))
                 oc.pack_start(hdr, False, False, 0)
                 # Risoluzioni: Gtk.ComboBoxText nativa (ripristinata) - scorre in
                 # modo affidabile, anche col touchpad. Scegli la risoluzione e
@@ -2168,14 +2161,14 @@ class Panel(Gtk.Window):
                 if modes:
                     combo.set_active(0)
                 r.pack_start(combo, True, True, 0)
-                ba = Gtk.Button(label="Applica")
+                ba = Gtk.Button(label=_t("pn.scr.apply"))
                 ba.get_style_context().add_class("vesper-menu-item")
                 ba.connect("clicked", lambda _w, n=name, c=combo:
                            self._screens_apply(["mode", n, c.get_active_text() or ""]))
                 r.pack_start(ba, False, False, 0)
                 oc.pack_start(r, False, False, 0)
                 if len(outs) >= 2:
-                    bo = Gtk.Button(label="Usa solo questo")
+                    bo = Gtk.Button(label=_t("pn.scr.only"))
                     bo.get_style_context().add_class("vesper-menu-item")
                     bo.connect("clicked",
                                lambda _w, n=name: self._screens_apply(["only", n]))
@@ -2247,7 +2240,7 @@ class Panel(Gtk.Window):
         self.calendar.get_style_context().add_class("vesper-calendar")
         cal_box.pack_start(self.calendar, True, True, 0)
 
-        btn_today = Gtk.Button(label="Oggi")
+        btn_today = Gtk.Button(label=_t("pn.cal.today"))
         btn_today.get_style_context().add_class("vesper-menu-item")
         btn_today.connect("clicked", self._on_today)
         cal_box.pack_start(btn_today, False, False, 0)
@@ -2259,7 +2252,7 @@ class Panel(Gtk.Window):
         t = time.localtime()
         time_row = Gtk.Box(orientation=Gtk.Orientation.HORIZONTAL, spacing=4)
         time_row.get_style_context().add_class("vesper-dt-row")
-        time_row.pack_start(Gtk.Label(label="Ora"), False, False, 0)
+        time_row.pack_start(Gtk.Label(label=_t("pn.cal.time")), False, False, 0)
         self.spin_h = Gtk.SpinButton.new_with_range(0, 23, 1)
         self.spin_h.set_value(t.tm_hour)
         self.spin_m = Gtk.SpinButton.new_with_range(0, 59, 1)
@@ -2267,7 +2260,7 @@ class Panel(Gtk.Window):
         time_row.pack_start(self.spin_h, False, False, 0)
         time_row.pack_start(Gtk.Label(label=":"), False, False, 0)
         time_row.pack_start(self.spin_m, False, False, 0)
-        apply_dt = Gtk.Button(label="Imposta")
+        apply_dt = Gtk.Button(label=_t("pn.cal.set"))
         apply_dt.get_style_context().add_class("vesper-menu-item")
         apply_dt.connect("clicked", self._apply_datetime)
         time_row.pack_end(apply_dt, False, False, 0)
@@ -2276,7 +2269,7 @@ class Panel(Gtk.Window):
         # Riga FUSO: combo + Imposta.
         tz_row = Gtk.Box(orientation=Gtk.Orientation.HORIZONTAL, spacing=4)
         tz_row.get_style_context().add_class("vesper-dt-row")
-        tz_row.pack_start(Gtk.Label(label="Fuso"), False, False, 0)
+        tz_row.pack_start(Gtk.Label(label=_t("pn.cal.tz")), False, False, 0)
         self.tz_combo = Gtk.ComboBoxText()
         cur = self._current_tz()
         zones = list(COMMON_TZ)
@@ -2289,7 +2282,7 @@ class Panel(Gtk.Window):
         except ValueError:
             self.tz_combo.set_active(0)
         tz_row.pack_start(self.tz_combo, True, True, 0)
-        apply_tz = Gtk.Button(label="Imposta")
+        apply_tz = Gtk.Button(label=_t("pn.cal.set"))
         apply_tz.get_style_context().add_class("vesper-menu-item")
         apply_tz.connect("clicked", self._apply_tz)
         tz_row.pack_end(apply_tz, False, False, 0)
@@ -2401,11 +2394,10 @@ class Panel(Gtk.Window):
     def _tick_clock(self):
         t = time.localtime()
         self.clock.set_text(time.strftime("%H:%M", t))
-        giorni = ["lun", "mar", "mer", "gio", "ven", "sab", "dom"]
-        mesi = ["gen", "feb", "mar", "apr", "mag", "giu",
-                "lug", "ago", "set", "ott", "nov", "dic"]
-        self.date.set_text("%s %d %s" % (giorni[t.tm_wday], t.tm_mday,
-                                         mesi[t.tm_mon - 1]))
+        giorni = _t("pn.days").split()
+        mesi = _t("pn.months").split()
+        self.date.set_text(_t("pn.date_fmt") % (giorni[t.tm_wday], t.tm_mday,
+                                                mesi[t.tm_mon - 1]))
         return self._alive
 
 

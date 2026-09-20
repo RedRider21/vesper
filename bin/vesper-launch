@@ -1,7 +1,7 @@
 #!/bin/sh
 # SPDX-License-Identifier: AGPL-3.0-or-later
 # Copyright (C) 2026 Daniele Deplano (RedRider21). Parte di Vesper.
-# vesper-launch <cc|profile|files|disks> [argomenti]
+# vesper-launch <cc|profile|files|disks|viewer> [argomenti]
 #
 # Chiede al servizio vesper-launcherd di aprire una finestra gia' "calda".
 # Esce 0 se il servizio l'ha presa in carico, 1 se non c'e': in quel caso e' il

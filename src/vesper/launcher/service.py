@@ -12,9 +12,10 @@ Perche' non con la fork: dopo che GLib/gio hanno avviato i loro thread, il
 figlio di una fork si pianta. Si lavora in-process e basta.
 
 Cosa passa di qui: Centro di Controllo (e le sue viste), preset di aspetto,
-file manager, dischi. NON l'editor ne' i lettori multimediali: l'editor puo'
-avere documenti non salvati e i lettori portano dentro le pipeline native di
-GStreamer; se il servizio cadesse, si porterebbe dietro anche loro.
+file manager, dischi, visualizzatore di immagini. NON l'editor ne' i lettori
+multimediali: l'editor puo' avere documenti non salvati e i lettori portano
+dentro le pipeline native di GStreamer; se il servizio cadesse, si porterebbe
+dietro anche loro.
 
 Robustezza:
 - chiudere una finestra NON spegne il servizio (si scollega `Gtk.main_quit`);
@@ -52,11 +53,12 @@ from vesper import common                                    # noqa: E402
 from vesper.launcher.client import chiedi, socket_path       # noqa: E402
 
 # app -> (modulo da importare, funzione che apre la finestra)
-APP_SUPPORTATE = ("cc", "profile", "files", "disks")
+APP_SUPPORTATE = ("cc", "profile", "files", "disks", "viewer")
 # Cosa vale la pena scaldare da soli, appena il servizio e' libero: sono i
 # moduli grossi, quelli che all'apertura fanno aspettare.
 PREWARM = ("vesper.control_center.views", "vesper.control_center.main",
-           "vesper.profiles.selector", "vesper.filemanager.window")
+           "vesper.profiles.selector", "vesper.filemanager.window",
+           "vesper.viewer.app")
 
 
 def _log(msg: str) -> None:
@@ -125,6 +127,12 @@ def _apri_files(args):
     win.show_all()
 
 
+def _apri_viewer(args):
+    from vesper.viewer.app import Visualizzatore
+    win = Visualizzatore(list(args))
+    _scollega_quit(win)
+
+
 def _apri_disks(_args):
     from vesper.disks import view
     win = view.open_disks()                  # apre gia' la finestra
@@ -132,7 +140,8 @@ def _apri_disks(_args):
 
 
 APERTURE = {"cc": _apri_cc, "profile": _apri_profile,
-            "files": _apri_files, "disks": _apri_disks}
+            "files": _apri_files, "disks": _apri_disks,
+            "viewer": _apri_viewer}
 
 
 def _apri(app, args):

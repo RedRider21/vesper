@@ -1,0 +1,11 @@
+[Desktop Entry]
+Type=Application
+Name=Immagini
+Comment=Visualizza le immagini, le ruota e le imposta come sfondo
+Exec=vesper-viewer %f
+TryExec=vesper-viewer
+Icon=multimedia-photo-viewer
+Terminal=false
+Categories=Graphics;Viewer;2DGraphics;
+MimeType=image/png;image/jpeg;image/gif;image/bmp;image/webp;image/tiff;image/svg+xml;image/x-portable-pixmap;image/x-xpixmap;image/avif;image/heif;
+StartupNotify=true

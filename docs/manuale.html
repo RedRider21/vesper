@@ -42,7 +42,7 @@
   <h2>1. Installare</h2>
 
   <h3>Debian, Ubuntu, Linux Mint</h3>
-<pre>sudo apt install ./vesper_0.2.2_all.deb</pre>
+<pre>sudo apt install ./vesper_0.3.0_all.deb</pre>
   <p class="intro">
     Il pacchetto tira dietro le dipendenze da solo. Per toglierlo:
     <code>sudo apt remove vesper</code> (la configurazione in
@@ -50,7 +50,7 @@
   </p>
 
   <h3>Qualsiasi distribuzione, dai sorgenti</h3>
-<pre>tar xzf vesper-0.2.2.tar.gz &amp;&amp; cd vesper-0.2.2
+<pre>tar xzf vesper-0.3.0.tar.gz &amp;&amp; cd vesper-0.3.0
 sudo ./install.sh --prefix=/usr     # come i pacchetti della distro
 sudo ./install.sh                   # in /usr/local
 ./install.sh --user                 # in ~/.local, senza root
@@ -199,6 +199,19 @@ vesper-wm auto       # lascia decidere a Vesper (predefinito)</pre>
     quale dei due è attivo.
   </p>
 
+  <h3>Nel visualizzatore di immagini</h3>
+  <p class="intro">
+    <code>vesper-viewer</code> sfoglia la cartella dell'immagine aperta:
+    <kbd>Pag su</kbd>/<kbd>Pag giù</kbd> (o la rotella) per cambiare foto,
+    <kbd>Ctrl</kbd>+rotella per lo zoom, <kbd>Ctrl</kbd>+<kbd>0</kbd> per
+    adattarla e <kbd>Ctrl</kbd>+<kbd>1</kbd> per la dimensione reale,
+    <kbd>Ctrl</kbd>+<kbd>R</kbd> per ruotare, <kbd>F5</kbd> per la
+    presentazione, <kbd>F11</kbd> per lo schermo intero,
+    <kbd>Ctrl</kbd>+<kbd>B</kbd> per metterla come sfondo del desktop e
+    <kbd>Canc</kbd> per spostarla nel cestino. L'elenco completo è dentro il
+    programma con <kbd>Ctrl</kbd>+<kbd>Maiusc</kbd>+<kbd>H</kbd>.
+  </p>
+
   <h3>Nell'editor di testo</h3>
   <p class="intro">
     <code>vesper-editor</code> ha le sue, tutte elencate dentro il programma
@@ -233,6 +246,7 @@ vesper-wm auto       # lascia decidere a Vesper (predefinito)</pre>
     <tr><td><code>vesper-screensaver</code></td><td>salvaschermo e blocco schermo</td></tr>
     <tr><td><code>vesper-logout</code></td><td>dialogo di fine sessione</td></tr>
     <tr><td><code>vesper-editor [+riga] [file…]</code></td><td>editor di testo con colorazione della sintassi</td></tr>
+    <tr><td><code>vesper-viewer [file o cartella]</code></td><td>visualizzatore di immagini</td></tr>
     <tr><td><code>vesper-player</code>, <code>vesper-video</code></td><td>lettore audio e riproduttore video</td></tr>
     <tr><td><code>vesper-recorder</code></td><td>registratore vocale (salva in ~/Musica/Registrazioni)</td></tr>
     <tr><td><code>vesper-disks</code></td><td>dischi e chiavette: elenco, montaggio, smontaggio</td></tr>
@@ -287,7 +301,8 @@ vesper-wm auto       # lascia decidere a Vesper (predefinito)</pre>
   <p class="intro">
     La sessione avvia <code>vesper-launcherd</code>, un processo che tiene GTK
     e i moduli del desktop gia' importati e apre le finestre dentro di se':
-    Centro di Controllo, preset, file manager e dischi partono in qualche
+    Centro di Controllo, preset, file manager, visualizzatore di immagini e
+    dischi partono in qualche
     decina di millisecondi invece di ripagare ogni volta il costo degli
     import — si sente soprattutto su live, VM e dischi lenti. Se il servizio
     non gira, i comandi partono nel modo normale: non e' mai una dipendenza.

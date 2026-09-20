@@ -23,13 +23,13 @@ login.
 **Debian, Ubuntu, Linux Mint** — pacchetto `.deb`:
 
 ```sh
-sudo apt install ./vesper_0.2.2_all.deb     # scarica il .deb dalle release
+sudo apt install ./vesper_0.3.0_all.deb     # scarica il .deb dalle release
 ```
 
 **Da sorgenti, su qualsiasi distribuzione:**
 
 ```sh
-tar xzf vesper-0.2.2.tar.gz && cd vesper-0.2.2
+tar xzf vesper-0.3.0.tar.gz && cd vesper-0.3.0
 sudo ./install.sh                 # in /usr/local
 sudo ./install.sh --prefix=/usr   # in /usr (come i pacchetti della distro)
 ./install.sh --user               # in ~/.local, senza root
@@ -88,6 +88,7 @@ comando giusto per Debian/Ubuntu, Fedora, Arch e Alpine.
 | `vesper-screensaver` | salvaschermo animato + blocco schermo con password |
 | `vesper-logout` | dialogo di fine sessione (blocca/esci/riavvia/spegni) |
 | `vesper-editor` | editor di testo: schede, colorazione della sintassi, cerca/sostituisci, stampa |
+| `vesper-viewer` | visualizzatore di immagini: zoom, rotazione, presentazione, «imposta come sfondo» |
 | `vesper-player`, `vesper-video` | lettore audio (playlist) e riproduttore video |
 | `vesper-recorder` | registratore vocale |
 | `vesper-disks` | dischi e chiavette: elenco, montaggio, smontaggio |

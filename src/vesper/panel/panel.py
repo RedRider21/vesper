@@ -1114,6 +1114,8 @@ class Panel(Gtk.Window):
              ["vesper-editor"], None, None),
             (None, None, None, None, None),
             # --- strumenti di Vesper ---
+            ("multimedia-photo-viewer-symbolic", _t("app.viewer"),
+             ["vesper-viewer"], None, None),
             ("multimedia-player-symbolic", _t("app.player"),
              ["vesper-player"], None, None),
             ("video-x-generic-symbolic", _t("app.video"),

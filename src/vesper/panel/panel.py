@@ -713,10 +713,9 @@ class Panel(Gtk.Window):
         self.connect("realize", self._on_realize)
 
         self._tick_clock()
-        # Se la barra è più bassa di quanto serve alle due righe dell'orologio,
-        # la data sparisce (resta nel tooltip): meglio senza che tagliata a
-        # metà. Si misura dopo il primo disegno, quando lo stile è applicato.
-        GLib.idle_add(self._adatta_orologio)
+        # La barra si alza da sé se il contenuto chiede più spazio di quello
+        # configurato. Si misura dopo il primo disegno, a stile applicato.
+        GLib.idle_add(self._adatta_altezza)
         self._refresh_tasks()
         GLib.timeout_add(POLL_MS, self._refresh_tasks)
         GLib.timeout_add(1000, self._tick_clock)
@@ -2424,20 +2423,22 @@ class Panel(Gtk.Window):
             run_bg(["wmctrl", "-i", "-a", wid])
 
     # --- orologio ---
-    def _adatta_orologio(self):
-        """Nasconde la riga della data se non ci sta nell'altezza della barra."""
+    def _adatta_altezza(self):
+        """La barra non può essere più bassa del suo contenuto.
+
+        Le due righe dell'orologio (ora + data) chiedono una trentina di
+        pixel: se la configurazione ne concede meno, la barra si alza quel
+        tanto che basta. Nascondere la data sarebbe peggio che mostrarla, e
+        mostrarla tagliata peggio ancora.
+        """
+        global PANEL_HEIGHT
         try:
-            serve = self.clock_btn.get_preferred_height()[1]
-            altezza = panelcfg.get_height()
+            serve = self.clock_btn.get_preferred_height()[1] + 2
         except Exception:                            # noqa: BLE001
             return False
-        ci_sta = serve <= altezza
-        self.date.set_visible(ci_sta)
-        self.date.set_no_show_all(not ci_sta)
-        if not ci_sta:
-            # la data non si perde: finisce accanto al nome del calendario
-            self.clock_btn.set_tooltip_text(
-                "%s - %s" % (_t("tray.calendar"), self.date.get_text()))
+        if serve > PANEL_HEIGHT:
+            PANEL_HEIGHT = serve
+            self._place()
         return False
 
     def _tick_clock(self):

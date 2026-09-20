@@ -239,3 +239,8 @@ inclusi (temi finestre) restano soggetti alle loro licenze: l'elenco è in
 
 Il nome «Vesper» e il marchio (la stella della sera) sono di Daniele Deplano
 (RedRider21).
+
+**Contribuire**: le pull request sono benvenute e richiedono l'accettazione del
+[CLA](CLA.md) — serve a tenere in piedi la doppia licenza, non cede la
+proprietà del tuo codice. Le regole pratiche sono in
+[`CONTRIBUTING.md`](CONTRIBUTING.md).

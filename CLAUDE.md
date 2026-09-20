@@ -54,8 +54,21 @@ vesper/
   su una copia isolata senza toccare la configurazione vera.
 - **Comandi**: ogni script in `bin/` include `env.sh`, che trova pacchetto
   Python, dati e interprete partendo da dove è installato.
-- **Openbox**: Vesper usa il PROPRIO `~/.config/vesper/openbox-rc.xml` e lo
-  passa con `--config-file`. Non si tocca `~/.config/openbox` dell'utente.
+- **Isolamento, regola non negoziabile**: Vesper scrive SOLO dentro
+  `~/.config/vesper`, `~/.cache/vesper`, `~/.local/share/vesper`. Openbox
+  compreso: il nostro è `~/.config/vesper/openbox-rc.xml` (più
+  `openbox-menu.xml` e `autostart`), e `openbox` parte SEMPRE con
+  `--config-file` — mai nudo, leggerebbe quello dell'utente. Niente ripieghi
+  su `~/.config/openbox/*`: la sua sessione Openbox deve restare intatta.
+- **Impostazioni condivise con gli altri desktop** (`~/.config/gtk-3.0/settings.ini`,
+  `~/.gtkrc-2.0`, gsettings di marco/metacity e dell'interfaccia): si toccano
+  solo se `paths.sessione_vesper()` è vera, cioè dentro la sessione vera
+  (marcatore `VESPER_SESSION=1`, lo esporta solo `vesper-session`; `env.sh`
+  falsa `XDG_CURRENT_DESKTOP`, che quindi non vale come guardia). La sessione
+  le fotografa all'avvio (`vesper.sessionstate salva`) e le rimette all'uscita:
+  chi rientra in MATE o XFCE deve ritrovare il suo desktop. Su Mint MATE marco
+  È il window manager della sessione: scriverci significa cambiargli tema,
+  decorazioni e le 12 scorciatoie globali.
 - **Niente dipendenze pesanti**: minimale, estetico, a basso consumo. Niente
   GTK4, niente pcmanfm, niente componenti di altri DE.
 - **Distro-agnostico**: nome sistema da `/etc/os-release`, pacchetti con
@@ -79,6 +92,9 @@ vesper/
   con il parser nostro e si spiega il problema al clic.
 - **Sfondo del greeter/finestre a schermo intero**: disegnare in Cairo, non con
   `background-image` CSS (in GTK3 su window non dipinge).
+- **Uscita dalla sessione**: mai `openbox --exit` (non fa nulla con marco o
+  metacity, che in `auto` Vesper preferisce). Si usa `vesper-session --logout`,
+  che manda TERM al processo di sessione: lui ferma il WM vero e ripristina.
 - **Luce blu**: gamma via `xrandr`. L'overlay traslucido è stato SCARTATO: in VM
   senza compositore diventa opaco e copre lo schermo.
 

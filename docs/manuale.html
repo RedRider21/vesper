@@ -343,6 +343,30 @@ vesper-wm auto       # lascia decidere a Vesper (predefinito)</pre>
 <section id="problemi">
   <h2>9. Se qualcosa non va</h2>
 
+  <h3>Tornando in MATE o XFCE trovo tema e scorciatoie cambiati</h3>
+  <p class="intro">
+    Succedeva con le versioni fino alla 0.4.1: Vesper scriveva il tema GTK, le
+    icone e — con marco o metacity — decorazioni e scorciatoie globali, che
+    sono impostazioni dell'<em>utente</em>, condivise con gli altri desktop, e
+    non le salvava prima. Da questa versione la sessione le fotografa
+    all'avvio e le rimette all'uscita, e fuori dalla sessione Vesper non tocca
+    nulla. Per rimediare a un'installazione precedente:
+  </p>
+  <pre><code>vesper-ripara</code></pre>
+  <p class="intro">
+    Rimette i valori della fotografia, se c'è, altrimenti riporta tutto ai
+    valori della distribuzione. Poi si rientra nella propria sessione.
+  </p>
+
+  <h3>Il pulsante «Esci» non chiude la sessione</h3>
+  <p class="intro">
+    Anche questo è risolto: prima si eseguiva <code>openbox --exit</code>, che
+    non ha effetto se il gestore finestre è marco o metacity (e in
+    <em>auto</em> Vesper li preferisce, per le decorazioni Mint). Ora l'uscita
+    passa da <code>vesper-session --logout</code>, che chiude la sessione
+    qualunque sia il gestore in uso.
+  </p>
+
   <h3>La sessione non parte</h3>
   <p class="intro">
     Guarda <code>~/.cache/vesper/session.log</code>. Il caso più comune è il

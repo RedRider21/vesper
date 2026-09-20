@@ -119,6 +119,7 @@ serve.
 | `vesper-disks` | dischi e chiavette: elenco, montaggio, smontaggio |
 | `vesper-launcherd` | avvio «caldo»: tiene GTK importato e apre le finestre senza ripagare gli import (`--off` per spegnerlo e liberare ~33 MiB) |
 | `vesper-ram` | dove va la memoria: quanto il desktop, quanto gli altri programmi, quanto la cache |
+| `vesper-ripara` | rimette il tema, le icone e le scorciatoie che c'erano prima di Vesper |
 | `vesper-zram` | memoria compressa: stato e attivazione, sempre su richiesta esplicita |
 | altri `vesper-*` | audio, batteria, bluetooth, luminosità, appunti, data/ora, scorciatoie, lingua, luce blu, schermi, schermate, sfondo, terminale, wifi |
 
@@ -175,6 +176,28 @@ generati, sfondo scelto, skin del pannello, layout della barra, posizioni delle
 icone del desktop, lingua, e il **proprio** `openbox-rc.xml` (Vesper avvia
 Openbox con `--config-file`, quindi non tocca `~/.config/openbox` di chi usa
 Openbox per conto suo).
+
+## Convive con gli altri desktop
+
+Vesper si installa accanto a MATE, XFCE o Cinnamon e **non tocca la loro
+configurazione**. Tutto ciò che è suo sta in `~/.config/vesper`, Openbox
+compreso: usa il proprio `openbox-rc.xml`, il proprio menu del tasto destro e
+il proprio autostart, e avvia Openbox sempre con `--config-file`. La
+configurazione Openbox dell'utente (`~/.config/openbox`) resta intatta.
+
+Alcune impostazioni, però, sono dell'utente e le condividono tutti i desktop
+GTK installati: il tema e le icone in `~/.config/gtk-3.0/settings.ini` e
+`~/.gtkrc-2.0`, e — per chi usa marco o metacity — tema delle decorazioni,
+disposizione dei pulsanti e scorciatoie globali, che stanno nelle gsettings.
+Vesper le cambia perché è un ambiente desktop e deve vestirsi, ma:
+
+- le tocca **solo quando è la sessione attiva**: il pannello di Vesper avviato
+  dentro XFCE o MATE non modifica niente;
+- la sessione **fotografa i valori all'avvio e li rimette all'uscita**, così
+  rientrando nel proprio desktop lo si ritrova com'era.
+
+Chi ha provato una versione fino alla 0.4.1, che scriveva senza salvare prima,
+rimette le cose a posto con **`vesper-ripara`**.
 
 ## Dove finiscono i file
 

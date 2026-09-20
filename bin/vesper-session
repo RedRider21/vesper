@@ -58,8 +58,9 @@ if [ "${1:-}" = "--logout" ] || [ "${1:-}" = "--esci" ]; then
     kill -TERM "$PID" 2>/dev/null && exit 0
   fi
   # Nessuna sessione Vesper viva: non si chiude la sessione di qualcun altro.
-  echo "vesper-session: nessuna sessione Vesper in corso (qui il desktop e'" \
-       "${XDG_CURRENT_DESKTOP:-sconosciuto}): esci dal menu del tuo desktop." >&2
+  echo "vesper-session: nessuna sessione Vesper in corso (sessione:" \
+       "${DESKTOP_SESSION:-${XDG_SESSION_DESKTOP:-sconosciuta}}):" \
+       "esci dal menu del desktop che stai usando." >&2
   exit 1
 fi
 

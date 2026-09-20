@@ -12,6 +12,7 @@ from __future__ import annotations
 
 import json
 import os
+import re
 from pathlib import Path
 
 LANGS = ("it", "en", "fr", "es", "de")
@@ -87,3 +88,29 @@ def t(key: str, **kw) -> str:
         except (KeyError, IndexError, ValueError):
             pass
     return s
+
+
+# --- nomi dei tasti ------------------------------------------------------
+# Le scorciatoie nei sorgenti si scrivono sempre all'italiana ("Ctrl+Maiusc+S")
+# e si traducono qui, al momento di mostrarle: cosi' i sorgenti restano
+# leggibili e nessuno deve ricordarsi 30 chiavi per le combinazioni.
+_TASTI = {
+    "ctrl": "ctrl", "maiusc": "shift", "alt": "alt", "super": "super",
+    "invio": "enter", "esc": "esc", "spazio": "space", "tab": "tab",
+    "backspace": "backspace", "canc": "delete", "ins": "insert",
+    "su": "up", "giu": "down", "giù": "down",
+    "sinistra": "left", "destra": "right",
+    "pagsu": "pageup", "paggiu": "pagedown", "paggiù": "pagedown",
+    "inizio": "home", "fine": "end",
+}
+
+_RX_TASTI = re.compile(
+    r"(?<![^\W\d_])(?:%s)(?![^\W\d_])" % "|".join(
+        sorted((re.escape(k) for k in _TASTI), key=len, reverse=True)),
+    re.IGNORECASE)
+
+
+def taccel(etichetta: str) -> str:
+    """Traduce i nomi dei tasti dentro una scorciatoia ("Ctrl+Maiusc+S")."""
+    return _RX_TASTI.sub(
+        lambda m: t("k." + _TASTI[m.group(0).lower()]), etichetta or "")

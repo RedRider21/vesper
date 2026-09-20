@@ -25,7 +25,16 @@ except Exception:                                   # noqa: BLE001
     def apply_css():
         return
 
-APP_NAME = "Immagini"
+try:
+    from vesper.i18n import t as _t, taccel as _ta
+except Exception:                                   # noqa: BLE001
+    def _t(chiave, **kw):                           # ripiego: mostra la chiave
+        return chiave
+
+    def _ta(etichetta):
+        return etichetta
+
+APP_NAME = _t("iv.app")
 
 # Estensioni riconosciute: quelle che GdkPixbuf sa caricare quasi ovunque.
 ESTENSIONI = (".png", ".jpg", ".jpeg", ".jpe", ".gif", ".bmp", ".webp",
@@ -145,24 +154,24 @@ class Visualizzatore(Gtk.Window):
         barra = Gtk.Box(orientation=Gtk.Orientation.HORIZONTAL, spacing=2)
         barra.set_border_width(4)
         for icona, testo, cb in (
-                ("document-open-symbolic", "Apri (Ctrl+O)", self.apri_dialogo),
-                ("go-previous-symbolic", "Precedente (Pag su)", self.precedente),
-                ("go-next-symbolic", "Successiva (Pag giù)", self.successiva),
-                ("zoom-out-symbolic", "Riduci (Ctrl+-)",
+                ("document-open-symbolic", _t("iv.tt.open"), self.apri_dialogo),
+                ("go-previous-symbolic", _t("iv.tt.prev"), self.precedente),
+                ("go-next-symbolic", _t("iv.tt.next"), self.successiva),
+                ("zoom-out-symbolic", _t("iv.tt.zoomout"),
                  lambda: self.cambia_zoom(1 / PASSI_ZOOM)),
-                ("zoom-fit-best-symbolic", "Adatta alla finestra (Ctrl+0)",
+                ("zoom-fit-best-symbolic", _t("iv.tt.fit"),
                  self.adatta_finestra),
-                ("zoom-original-symbolic", "Dimensione reale (Ctrl+1)",
+                ("zoom-original-symbolic", _t("iv.tt.real"),
                  self.dimensione_reale),
-                ("zoom-in-symbolic", "Ingrandisci (Ctrl++)",
+                ("zoom-in-symbolic", _t("iv.tt.zoomin"),
                  lambda: self.cambia_zoom(PASSI_ZOOM)),
-                ("object-rotate-left-symbolic", "Ruota a sinistra (Ctrl+Maiusc+R)",
+                ("object-rotate-left-symbolic", _t("iv.tt.rotleft"),
                  lambda: self.ruota(-90)),
-                ("object-rotate-right-symbolic", "Ruota a destra (Ctrl+R)",
+                ("object-rotate-right-symbolic", _t("iv.tt.rotright"),
                  lambda: self.ruota(90)),
-                ("view-fullscreen-symbolic", "Schermo intero (F11)",
+                ("view-fullscreen-symbolic", _t("iv.tt.full"),
                  self.schermo_intero),
-                ("media-playback-start-symbolic", "Presentazione (F5)",
+                ("media-playback-start-symbolic", _t("iv.tt.slideshow"),
                  self.presenta)):
             barra.pack_start(self._bottone(icona, testo, cb), False, False, 0)
 
@@ -170,7 +179,7 @@ class Visualizzatore(Gtk.Window):
         menu_b.set_relief(Gtk.ReliefStyle.NONE)
         menu_b.add(Gtk.Image.new_from_icon_name("open-menu-symbolic",
                                                 Gtk.IconSize.LARGE_TOOLBAR))
-        menu_b.set_tooltip_text("Opzioni")
+        menu_b.set_tooltip_text(_t("iv.options"))
         menu_b.set_popup(self._menu())
         barra.pack_end(menu_b, False, False, 0)
         return barra
@@ -181,7 +190,7 @@ class Visualizzatore(Gtk.Window):
         lab = Gtk.Label(label=etichetta); lab.set_xalign(0)
         riga.pack_start(lab, True, True, 0)
         if scorciatoia:
-            acc = Gtk.Label(label=scorciatoia)
+            acc = Gtk.Label(label=_ta(scorciatoia))
             acc.get_style_context().add_class("vesper-val")
             riga.pack_end(acc, False, False, 0)
         it.add(riga)
@@ -190,16 +199,16 @@ class Visualizzatore(Gtk.Window):
 
     def _menu(self):
         m = Gtk.Menu()
-        self._voce(m, "Imposta come sfondo", self.come_sfondo, "Ctrl+B")
-        self._voce(m, "Apri la cartella", self.apri_cartella, "Ctrl+E")
-        self._voce(m, "Copia negli appunti", self.copia, "Ctrl+C")
+        self._voce(m, _t("iv.wallpaper"), self.come_sfondo, "Ctrl+B")
+        self._voce(m, _t("iv.openfolder"), self.apri_cartella, "Ctrl+E")
+        self._voce(m, _t("iv.copy"), self.copia, "Ctrl+C")
         m.append(Gtk.SeparatorMenuItem())
-        self._voce(m, "Sposta nel cestino", self.cestina, "Canc")
-        self._voce(m, "Proprietà", self.proprieta, "Ctrl+I")
+        self._voce(m, _t("iv.trash"), self.cestina, "Canc")
+        self._voce(m, _t("iv.props"), self.proprieta, "Ctrl+I")
         m.append(Gtk.SeparatorMenuItem())
-        self._voce(m, "Scorciatoie da tastiera", self.mostra_scorciatoie,
+        self._voce(m, _t("iv.shortcuts"), self.mostra_scorciatoie,
                    "Ctrl+Maiusc+H")
-        self._voce(m, "Chiudi", lambda: self.destroy(), "Ctrl+Q")
+        self._voce(m, _t("iv.close"), lambda: self.destroy(), "Ctrl+Q")
         m.show_all()
         return m
 
@@ -256,7 +265,7 @@ class Visualizzatore(Gtk.Window):
                 self.pixbuf = GdkPixbuf.Pixbuf.new_from_file(percorso)
         except GLib.Error as e:
             self.pixbuf = None
-            self.lbl_nome.set_text("%s - non riesco ad aprirla (%s)"
+            self.lbl_nome.set_text(_t("iv.cantopen")
                                    % (os.path.basename(percorso), e.message))
         self.rotazione = 0
         self.offset = [0.0, 0.0]
@@ -373,7 +382,7 @@ class Visualizzatore(Gtk.Window):
         cr.stroke()
         cr.select_font_face("Sans")
         cr.set_font_size(14)
-        testo = "Apri un'immagine o trascinala qui"
+        testo = _t("iv.drophere")
         est = cr.text_extents(testo)
         cr.move_to((a.width - est.width) / 2, y + lato + 26)
         cr.show_text(testo)
@@ -523,11 +532,11 @@ class Visualizzatore(Gtk.Window):
             else None
 
     def apri_dialogo(self):
-        dlg = Gtk.FileChooserDialog(title="Apri un'immagine", transient_for=self,
+        dlg = Gtk.FileChooserDialog(title=_t("iv.open"), transient_for=self,
                                     action=Gtk.FileChooserAction.OPEN)
-        dlg.add_buttons("Annulla", Gtk.ResponseType.CANCEL,
-                        "Apri", Gtk.ResponseType.ACCEPT)
-        f = Gtk.FileFilter(); f.set_name("Immagini")
+        dlg.add_buttons(_t("iv.cancel"), Gtk.ResponseType.CANCEL,
+                        _t("iv.openbtn"), Gtk.ResponseType.ACCEPT)
+        f = Gtk.FileFilter(); f.set_name(_t("iv.app"))
         f.add_pixbuf_formats()
         dlg.add_filter(f)
         attuale = self.percorso()
@@ -548,9 +557,9 @@ class Visualizzatore(Gtk.Window):
             subprocess.Popen(["vesper-wallpaper", "set", p],
                              stdout=subprocess.DEVNULL,
                              stderr=subprocess.DEVNULL)
-            self.messaggio("Impostata come sfondo del desktop")
+            self.messaggio(_t("iv.wallpaper_done"))
         except OSError as e:
-            self.messaggio("Non riesco a impostarla come sfondo (%s)" % e)
+            self.messaggio(_t("iv.wallpaper_fail") % e)
 
     def apri_cartella(self):
         p = self.percorso()
@@ -566,7 +575,7 @@ class Visualizzatore(Gtk.Window):
         if self.pixbuf is None:
             return
         Gtk.Clipboard.get(Gdk.SELECTION_CLIPBOARD).set_image(self.pixbuf)
-        self.messaggio("Immagine copiata negli appunti")
+        self.messaggio(_t("iv.copied"))
 
     def cestina(self):
         p = self.percorso()
@@ -575,7 +584,7 @@ class Visualizzatore(Gtk.Window):
         d = Gtk.MessageDialog(transient_for=self, modal=True,
                               message_type=Gtk.MessageType.QUESTION,
                               buttons=Gtk.ButtonsType.OK_CANCEL,
-                              text="Spostare «%s» nel cestino?"
+                              text=_t("iv.trash_q")
                                    % os.path.basename(p))
         risposta = d.run()
         d.destroy()
@@ -584,7 +593,7 @@ class Visualizzatore(Gtk.Window):
         try:
             Gio.File.new_for_path(p).trash(None)
         except GLib.Error as e:
-            self.messaggio("Non riesco a cestinarla (%s)" % e.message)
+            self.messaggio(_t("iv.trash_fail") % e.message)
             return
         del self.elenco[self.indice]
         if self.indice >= len(self.elenco):
@@ -601,14 +610,14 @@ class Visualizzatore(Gtk.Window):
                 int(st.st_mtime)).format("%d/%m/%Y %H:%M")
         except OSError:
             peso, quando = "?", "?"
-        righe = [("Nome", os.path.basename(p)),
-                 ("Cartella", os.path.dirname(p)),
-                 ("Dimensioni", "%d x %d punti" % (self.pixbuf.get_width(),
+        righe = [(_t("iv.p.name"), os.path.basename(p)),
+                 (_t("iv.p.folder"), os.path.dirname(p)),
+                 (_t("iv.p.size"), _t("iv.p.pixels") % (self.pixbuf.get_width(),
                                                    self.pixbuf.get_height())),
-                 ("Peso", peso), ("Modificata", quando),
-                 ("Trasparenza", "sì" if self.pixbuf.get_has_alpha() else "no")]
-        dlg = Gtk.Dialog(title="Proprietà", transient_for=self, modal=True)
-        dlg.add_button("Chiudi", Gtk.ResponseType.CLOSE)
+                 (_t("iv.p.weight"), peso), (_t("iv.p.changed"), quando),
+                 (_t("iv.p.alpha"), _t("iv.yes") if self.pixbuf.get_has_alpha() else _t("iv.no"))]
+        dlg = Gtk.Dialog(title=_t("iv.props"), transient_for=self, modal=True)
+        dlg.add_button(_t("iv.close"), Gtk.ResponseType.CLOSE)
         griglia = Gtk.Grid(column_spacing=16, row_spacing=6)
         griglia.set_border_width(14)
         for r, (k, v) in enumerate(righe):
@@ -632,12 +641,12 @@ class Visualizzatore(Gtk.Window):
         p = self.percorso()
         if not p:
             self.set_title(APP_NAME)
-            self.lbl_nome.set_text("Nessuna immagine")
+            self.lbl_nome.set_text(_t("iv.none"))
             self.lbl_info.set_text("")
             return False
         nome = os.path.basename(p)
         self.set_title("%s - %s" % (nome, APP_NAME))
-        posizione = ("%d di %d   " % (self.indice + 1, len(self.elenco))
+        posizione = (_t("iv.counter") % (self.indice + 1, len(self.elenco))
                      if len(self.elenco) > 1 else "")
         self.lbl_nome.set_text(posizione + nome)
         if self.pixbuf is not None:
@@ -649,7 +658,7 @@ class Visualizzatore(Gtk.Window):
                                   self.pixbuf.get_height()),
                      peso, "%d%%" % round(self._zoom_effettivo() * 100)]
             if self.presentazione:
-                pezzi.append("presentazione")
+                pezzi.append(_t("iv.slideshow"))
             self.lbl_info.set_text("   ".join(pezzi))
         return False
 
@@ -667,41 +676,41 @@ class Visualizzatore(Gtk.Window):
         C = Gdk.ModifierType.CONTROL_MASK
         S = Gdk.ModifierType.SHIFT_MASK
         return [
-            ("Sfogliare", [
-                ("o", C, "Ctrl+O", "Apri un'immagine", self.apri_dialogo),
-                ("Page_Down", 0, "Pag giù", "Immagine successiva", self.successiva),
-                ("Page_Up", 0, "Pag su", "Immagine precedente", self.precedente),
-                ("space", 0, "Spazio", "Immagine successiva", self.successiva),
-                ("BackSpace", 0, "Backspace", "Immagine precedente",
+            (_t("iv.g.browse"), [
+                ("o", C, "Ctrl+O", _t("iv.open"), self.apri_dialogo),
+                ("Page_Down", 0, "PagGiù", _t("iv.a.next"), self.successiva),
+                ("Page_Up", 0, "PagSu", _t("iv.a.prev"), self.precedente),
+                ("space", 0, "Spazio", _t("iv.a.next"), self.successiva),
+                ("BackSpace", 0, "Backspace", _t("iv.a.prev"),
                  self.precedente),
-                ("Home", 0, "Inizio", "Prima immagine", self.prima),
-                ("End", 0, "Fine", "Ultima immagine", self.ultima),
+                ("Home", 0, "Inizio", _t("iv.a.first"), self.prima),
+                ("End", 0, "Fine", _t("iv.a.last"), self.ultima),
             ]),
-            ("Vedere", [
-                ("plus", C, "Ctrl++", "Ingrandisci",
+            (_t("iv.g.see"), [
+                ("plus", C, "Ctrl++", _t("iv.a.zoomin"),
                  lambda: self.cambia_zoom(PASSI_ZOOM)),
-                ("equal", C, "Ctrl+=", "Ingrandisci",
+                ("equal", C, "Ctrl+=", _t("iv.a.zoomin"),
                  lambda: self.cambia_zoom(PASSI_ZOOM)),
-                ("minus", C, "Ctrl+-", "Riduci",
+                ("minus", C, "Ctrl+-", _t("iv.a.zoomout"),
                  lambda: self.cambia_zoom(1 / PASSI_ZOOM)),
-                ("0", C, "Ctrl+0", "Adatta alla finestra", self.adatta_finestra),
-                ("1", C, "Ctrl+1", "Dimensione reale", self.dimensione_reale),
-                ("r", C, "Ctrl+R", "Ruota a destra", lambda: self.ruota(90)),
-                ("r", C | S, "Ctrl+Maiusc+R", "Ruota a sinistra",
+                ("0", C, "Ctrl+0", _t("iv.a.fit"), self.adatta_finestra),
+                ("1", C, "Ctrl+1", _t("iv.a.real"), self.dimensione_reale),
+                ("r", C, "Ctrl+R", _t("iv.a.rotright"), lambda: self.ruota(90)),
+                ("r", C | S, "Ctrl+Maiusc+R", _t("iv.a.rotleft"),
                  lambda: self.ruota(-90)),
-                ("F11", 0, "F11", "Schermo intero", self.schermo_intero),
-                ("F5", 0, "F5", "Presentazione", self.presenta),
+                ("F11", 0, "F11", _t("iv.a.full"), self.schermo_intero),
+                ("F5", 0, "F5", _t("iv.a.slideshow"), self.presenta),
             ]),
-            ("Fare", [
-                ("b", C, "Ctrl+B", "Imposta come sfondo", self.come_sfondo),
-                ("e", C, "Ctrl+E", "Apri la cartella", self.apri_cartella),
-                ("c", C, "Ctrl+C", "Copia negli appunti", self.copia),
-                ("Delete", 0, "Canc", "Sposta nel cestino", self.cestina),
-                ("i", C, "Ctrl+I", "Proprietà", self.proprieta),
-                ("h", C | S, "Ctrl+Maiusc+H", "Questo elenco",
+            (_t("iv.g.do"), [
+                ("b", C, "Ctrl+B", _t("iv.wallpaper"), self.come_sfondo),
+                ("e", C, "Ctrl+E", _t("iv.openfolder"), self.apri_cartella),
+                ("c", C, "Ctrl+C", _t("iv.copy"), self.copia),
+                ("Delete", 0, "Canc", _t("iv.trash"), self.cestina),
+                ("i", C, "Ctrl+I", _t("iv.props"), self.proprieta),
+                ("h", C | S, "Ctrl+Maiusc+H", _t("iv.a.thislist"),
                  self.mostra_scorciatoie),
-                ("q", C, "Ctrl+Q", "Chiudi", lambda: self.destroy()),
-                ("w", C, "Ctrl+W", "Chiudi", lambda: self.destroy()),
+                ("q", C, "Ctrl+Q", _t("iv.close"), lambda: self.destroy()),
+                ("w", C, "Ctrl+W", _t("iv.close"), lambda: self.destroy()),
             ]),
         ]
 
@@ -733,9 +742,9 @@ class Visualizzatore(Gtk.Window):
         return False
 
     def mostra_scorciatoie(self):
-        dlg = Gtk.Dialog(title="Scorciatoie da tastiera", transient_for=self,
+        dlg = Gtk.Dialog(title=_t("iv.shortcuts"), transient_for=self,
                          modal=True)
-        dlg.add_button("Chiudi", Gtk.ResponseType.CLOSE)
+        dlg.add_button(_t("iv.close"), Gtk.ResponseType.CLOSE)
         dlg.set_default_size(460, 520)
         box = Gtk.Box(orientation=Gtk.Orientation.VERTICAL, spacing=6)
         box.set_border_width(12)
@@ -749,7 +758,7 @@ class Visualizzatore(Gtk.Window):
                 if desc in visti:
                     continue
                 visti.add(desc)
-                a = Gtk.Label(label=testo); a.set_xalign(1)
+                a = Gtk.Label(label=_ta(testo)); a.set_xalign(1)
                 a.get_style_context().add_class("vesper-val")
                 b = Gtk.Label(label=desc); b.set_xalign(0)
                 griglia.attach(a, 0, r, 1, 1)

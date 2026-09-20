@@ -1,0 +1,44 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!-- Menu root di Openbox: compare col TASTO DESTRO sul DESKTOP (il desktop di
+     Vesper inoltra il clic al window manager). Raccoglie le azioni più
+     frequenti, così non serve aprire il menu dal pannello. -->
+<openbox_menu xmlns="http://openbox.org/3.4/menu">
+
+  <menu id="vesper-tools" label="Werkzeuge">
+    <item label="Terminal"><action name="Execute"><command>vesper-terminal</command></action></item>
+    <item label="Dateiverwaltung"><action name="Execute"><command>vesper-files</command></action></item>
+    <item label="Zwischenablage (Verlauf)"><action name="Execute"><command>vesper-clipboard menu</command></action></item>
+    <item label="Blaulichtfilter (an/aus)"><action name="Execute"><command>vesper-nightlight toggle</command></action></item>
+    <item label="Tastenkürzel"><action name="Execute"><command>vesper-control-center hotkey</command></action></item>
+    <item label="Kontrollzentrum"><action name="Execute"><command>vesper-control-center</command></action></item>
+  </menu>
+
+  <menu id="vesper-screen" label="Bildschirm">
+    <item label="Bildschirm sperren"><action name="Execute"><command>vesper-screensaver</command></action></item>
+    <item label="Bildschirmfoto (ganzer Bildschirm)"><action name="Execute"><command>vesper-screenshot full 1</command></action></item>
+    <item label="Bildschirmfoto (Bereich)"><action name="Execute"><command>vesper-screenshot area 0</command></action></item>
+    <separator/>
+    <item label="Bildschirmanordnung"><action name="Execute"><command>vesper-control-center schermi</command></action></item>
+  </menu>
+
+  <menu id="vesper-look" label="Aussehen">
+    <item label="Voreinstellungen (Farbe, Hintergrund, Symbole)"><action name="Execute"><command>vesper-profile</command></action></item>
+    <item label="Schreibtischhintergrund"><action name="Execute"><command>vesper-control-center sfondo</command></action></item>
+    <item label="Leisten-Skin"><action name="Execute"><command>vesper-control-center aspetto</command></action></item>
+  </menu>
+
+  <menu id="root-menu" label="Vesper">
+    <item label="Terminal"><action name="Execute"><command>vesper-terminal</command></action></item>
+    <item label="Dateiverwaltung"><action name="Execute"><command>vesper-files</command></action></item>
+    <separator/>
+    <menu id="vesper-tools"/>
+    <menu id="vesper-screen"/>
+    <menu id="vesper-look"/>
+    <separator/>
+    <item label="Fenstermanager neu laden"><action name="Reconfigure"/></item>
+    <item label="Leiste neu starten"><action name="Execute"><command>vesper-panel-restart</command></action></item>
+    <separator/>
+    <item label="Abmelden / Ausschalten…"><action name="Execute"><command>vesper-logout</command></action></item>
+  </menu>
+
+</openbox_menu>

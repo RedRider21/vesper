@@ -36,6 +36,25 @@ for c in i18n.LANGS: print(c, i18n.LANG_NAMES[c])'
       en) LC=en_US ;; fr) LC=fr_FR ;; es) LC=es_ES ;; de) LC=de_DE ;; *) LC=it_IT ;;
     esac
     export LANGUAGE="$2" LANG="${LC}.UTF-8"
+    # Menu del tasto destro (Openbox): si sostituisce con quello della nuova
+    # lingua SOLO se e' ancora uno dei nostri (se l'utente lo ha modificato,
+    # con l'editor del menu o a mano, non si tocca).
+    MENU="${VESPER_CONFIG_HOME:-$HOME/.config/vesper}/openbox-menu.xml"
+    if [ -f "$MENU" ]; then
+      for d in ${VESPER_DATA_DIRS:-} /usr/local/share/vesper /usr/share/vesper; do
+        [ -d "$d/skel/openbox" ] || continue
+        for sk in "$d/skel/openbox"/openbox-menu*.xml; do
+          [ -f "$sk" ] || continue
+          if cmp -s "$MENU" "$sk"; then
+            cp "$d/skel/openbox/openbox-menu.$2.xml" "$MENU" 2>/dev/null ||
+              cp "$d/skel/openbox/openbox-menu.xml" "$MENU" 2>/dev/null
+            command -v openbox >/dev/null 2>&1 && openbox --reconfigure 2>/dev/null || true
+            break
+          fi
+        done
+        break
+      done
+    fi
     # 1) Demone "caldo" (vesper.launcherd): e' RESIDENTE e ha importato i moduli
     #    (e la lingua) al boot -> Centro di Controllo, viste e selettore profili
     #    resterebbero nella vecchia lingua. Va RIAVVIATO perche' riparta pulito.

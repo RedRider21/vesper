@@ -56,10 +56,16 @@ echo "=== sessione Vesper avviata $(date) ==="
 # in un'altra sessione se lo ritrova intatto.
 RC="$CONF/openbox-rc.xml"
 MENU="$CONF/openbox-menu.xml"
+# Il menu del tasto destro esiste in cinque lingue: si copia quello della
+# lingua scelta (~/.config/vesper/lang), con ripiego sull'italiano.
+VLANG=$(head -1 "$CONF/lang" 2>/dev/null || echo it)
 for d in ${VESPER_DATA_DIRS:-} /usr/local/share/vesper /usr/share/vesper; do
   [ -d "$d/skel/openbox" ] || continue
   [ -f "$RC" ]   || cp "$d/skel/openbox/rc.xml" "$RC" 2>/dev/null
-  [ -f "$MENU" ] || cp "$d/skel/openbox/openbox-menu.xml" "$MENU" 2>/dev/null
+  if [ ! -f "$MENU" ]; then
+    cp "$d/skel/openbox/openbox-menu.$VLANG.xml" "$MENU" 2>/dev/null ||
+      cp "$d/skel/openbox/openbox-menu.xml" "$MENU" 2>/dev/null
+  fi
   break
 done
 # Tutti i componenti che modificano rc.xml (margini del pannello, editor

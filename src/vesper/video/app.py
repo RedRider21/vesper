@@ -25,6 +25,12 @@ except Exception:                       # noqa: BLE001
     def apply_css():
         return
 
+try:
+    from vesper.i18n import t as _t
+except Exception:                       # noqa: BLE001
+    def _t(chiave, **kw):               # ripiego: mostra la chiave
+        return chiave
+
 
 def _accent():
     """Accent del profilo attivo (#rrggbb); default ciano fuori dalla live."""
@@ -50,7 +56,7 @@ def _mix(hex_color, factor):
                               min(255, int(b * factor)))
 
 
-APP_NAME = "Visualizzatore video"
+APP_NAME = _t("vd.app")
 VIDEO_EXT = (".mp4", ".mkv", ".webm", ".avi", ".mov", ".m4v", ".mpg", ".mpeg",
              ".wmv", ".flv", ".ogv", ".ts", ".3gp", ".m2ts")
 
@@ -212,7 +218,7 @@ class Video(Gtk.Window):
             self.hint = self._make_hint()
         else:
             self.hint = self._make_hint(
-                "gtksink non disponibile: installa gst-plugins-good-gtk")
+                _t("vd.no_gtksink"))
         self.hint.set_halign(Gtk.Align.CENTER)
         self.hint.set_valign(Gtk.Align.CENTER)
         overlay.add_overlay(self.hint)
@@ -240,18 +246,21 @@ class Video(Gtk.Window):
 
         ctl = Gtk.Box(orientation=Gtk.Orientation.HORIZONTAL, spacing=6)
         ctl.pack_start(self._icon_btn("media-skip-backward-symbolic",
-                                      "Precedente", self.prev), False, False, 0)
+                                      _t("vd.tt.prev"), self.prev),
+                       False, False, 0)
         self.play_btn = self._icon_btn("media-playback-start-symbolic",
-                                       "Riproduci/Pausa", self.toggle_play,
+                                       _t("vd.tt.play"), self.toggle_play,
                                        cls="vesper-play")
         ctl.pack_start(self.play_btn, False, False, 0)
         ctl.pack_start(self._icon_btn("media-playback-stop-symbolic",
-                                      "Ferma", self.stop), False, False, 0)
+                                      _t("vd.tt.stop"), self.stop),
+                       False, False, 0)
         ctl.pack_start(self._icon_btn("media-skip-forward-symbolic",
-                                      "Successivo", self.next), False, False, 0)
+                                      _t("vd.tt.next"), self.next),
+                       False, False, 0)
 
         # titolo brano al centro
-        self.title_lbl = Gtk.Label(label="Nessun video")
+        self.title_lbl = Gtk.Label(label=_t("vd.novideo"))
         self.title_lbl.get_style_context().add_class("title")
         self.title_lbl.set_ellipsize(3)
         ctl.pack_start(self.title_lbl, True, True, 8)
@@ -268,20 +277,20 @@ class Video(Gtk.Window):
         ctl.pack_start(self.vol, False, False, 0)
 
         ctl.pack_start(self._icon_btn("document-open-symbolic",
-                                      "Apri file video", self.open_files),
+                                      _t("vd.open_title"), self.open_files),
                        False, False, 0)
         ctl.pack_start(self._icon_btn("folder-open-symbolic",
-                                      "Apri una cartella", self.open_folder),
+                                      _t("vd.tt.openfolder"), self.open_folder),
                        False, False, 0)
         self.fs_btn = self._icon_btn("view-fullscreen-symbolic",
-                                     "Schermo intero (F11)",
+                                     _t("vd.tt.full"),
                                      self.toggle_fullscreen)
         ctl.pack_start(self.fs_btn, False, False, 0)
         self.bar.pack_start(ctl, False, False, 0)
 
         root.pack_start(self.bar, False, False, 0)
 
-    def _make_hint(self, text="Apri un video o trascinalo qui"):
+    def _make_hint(self, text=None):
         box = Gtk.Box(orientation=Gtk.Orientation.VERTICAL, spacing=16)
         box.set_halign(Gtk.Align.CENTER)
         box.set_valign(Gtk.Align.CENTER)
@@ -297,7 +306,7 @@ class Video(Gtk.Window):
         note.set_halign(Gtk.Align.CENTER)
         note.set_valign(Gtk.Align.CENTER)
         cover.pack_start(note, True, True, 0)
-        lab = Gtk.Label(label=text)
+        lab = Gtk.Label(label=text or _t("vd.drophere"))
         lab.get_style_context().add_class("vesper-hint")
         box.pack_start(cover, False, False, 0)
         box.pack_start(lab, False, False, 0)
@@ -317,7 +326,7 @@ class Video(Gtk.Window):
     # --------------------------------------------------------- open dialogs
     def _video_filter(self):
         f = Gtk.FileFilter()
-        f.set_name("File video")
+        f.set_name(_t("vd.videofiles"))
         for ext in VIDEO_EXT:
             f.add_pattern("*" + ext)
             f.add_pattern("*" + ext.upper())
@@ -325,10 +334,10 @@ class Video(Gtk.Window):
 
     def open_files(self):
         d = Gtk.FileChooserDialog(
-            title="Apri file video", transient_for=self,
+            title=_t("vd.open_title"), transient_for=self,
             action=Gtk.FileChooserAction.OPEN)
-        d.add_buttons(Gtk.STOCK_CANCEL, Gtk.ResponseType.CANCEL,
-                      Gtk.STOCK_OPEN, Gtk.ResponseType.OK)
+        d.add_buttons(_t("vd.cancel"), Gtk.ResponseType.CANCEL,
+                      _t("vd.open"), Gtk.ResponseType.OK)
         d.set_select_multiple(True)
         d.add_filter(self._video_filter())
         vids = os.path.expanduser("~/Videos")
@@ -343,10 +352,10 @@ class Video(Gtk.Window):
 
     def open_folder(self):
         d = Gtk.FileChooserDialog(
-            title="Apri una cartella di video", transient_for=self,
+            title=_t("vd.folder_title"), transient_for=self,
             action=Gtk.FileChooserAction.SELECT_FOLDER)
-        d.add_buttons(Gtk.STOCK_CANCEL, Gtk.ResponseType.CANCEL,
-                      Gtk.STOCK_OPEN, Gtk.ResponseType.OK)
+        d.add_buttons(_t("vd.cancel"), Gtk.ResponseType.CANCEL,
+                      _t("vd.open"), Gtk.ResponseType.OK)
         if d.run() == Gtk.ResponseType.OK:
             folder = d.get_filename()
             found = []
@@ -475,10 +484,10 @@ class Video(Gtk.Window):
         self.fullscreen_on = bool(
             ev.new_window_state & Gdk.WindowState.FULLSCREEN)
         if self.fullscreen_on:
-            self.fs_btn.set_tooltip_text("Esci da schermo intero (F11)")
+            self.fs_btn.set_tooltip_text(_t("vd.tt.unfull"))
             self._arm_autohide()
         else:
-            self.fs_btn.set_tooltip_text("Schermo intero (F11)")
+            self.fs_btn.set_tooltip_text(_t("vd.tt.full"))
             self._show_bar()
         return False
 
@@ -541,7 +550,7 @@ class Video(Gtk.Window):
 
     def _on_error(self, _bus, msg):
         err, _dbg = msg.parse_error()
-        self.title_lbl.set_text("Errore: %s" % err.message)
+        self.title_lbl.set_text(_t("vd.error") % err.message)
         self.stop()
 
     def _on_state(self, _bus, msg):

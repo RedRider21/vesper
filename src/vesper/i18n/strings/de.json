@@ -737,5 +737,22 @@
  "v.zram.swap": "Auslagerung gesamt",
  "v.zram.title": "Komprimierter Speicher (zram)",
  "v.zram.used": "belegt",
- "v.zram.working": "Einen Moment..."
+ "v.zram.working": "Einen Moment...",
+ "vd.app": "Video-Player",
+ "vd.cancel": "Abbrechen",
+ "vd.drophere": "Öffne ein Video oder zieh es hierher",
+ "vd.error": "Fehler: %s",
+ "vd.folder_title": "Videoordner öffnen",
+ "vd.no_gtksink": "gtksink nicht verfügbar: installiere gst-plugins-good-gtk",
+ "vd.novideo": "Kein Video",
+ "vd.open": "Öffnen",
+ "vd.open_title": "Videodateien öffnen",
+ "vd.tt.full": "Vollbild (F11)",
+ "vd.tt.next": "Weiter",
+ "vd.tt.openfolder": "Ordner öffnen",
+ "vd.tt.play": "Wiedergabe/Pause",
+ "vd.tt.prev": "Zurück",
+ "vd.tt.stop": "Stopp",
+ "vd.tt.unfull": "Vollbild verlassen (F11)",
+ "vd.videofiles": "Videodateien"
 }

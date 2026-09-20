@@ -737,5 +737,22 @@
  "v.zram.swap": "Échange total",
  "v.zram.title": "Mémoire compressée (zram)",
  "v.zram.used": "utilisés",
- "v.zram.working": "Patience..."
+ "v.zram.working": "Patience...",
+ "vd.app": "Lecteur vidéo",
+ "vd.cancel": "Annuler",
+ "vd.drophere": "Ouvrez une vidéo ou déposez-la ici",
+ "vd.error": "Erreur : %s",
+ "vd.folder_title": "Ouvrir un dossier de vidéos",
+ "vd.no_gtksink": "gtksink indisponible : installez gst-plugins-good-gtk",
+ "vd.novideo": "Aucune vidéo",
+ "vd.open": "Ouvrir",
+ "vd.open_title": "Ouvrir des fichiers vidéo",
+ "vd.tt.full": "Plein écran (F11)",
+ "vd.tt.next": "Suivant",
+ "vd.tt.openfolder": "Ouvrir un dossier",
+ "vd.tt.play": "Lecture/Pause",
+ "vd.tt.prev": "Précédent",
+ "vd.tt.stop": "Arrêter",
+ "vd.tt.unfull": "Quitter le plein écran (F11)",
+ "vd.videofiles": "Fichiers vidéo"
 }

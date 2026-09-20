@@ -145,5 +145,8 @@ DEB="$OUT/vesper_${VER}_all.deb"
 # --root-owner-group: dentro il pacchetto tutto risulta di root:root anche
 # costruendo da utente normale.
 dpkg-deb --root-owner-group --build "$STAGE" "$DEB" >/dev/null
+# impronta accanto al pacchetto, come fa make-tarball.sh: va allegata alla release
+( cd "$OUT" && sha256sum "vesper_${VER}_all.deb" > "vesper_${VER}_all.deb.sha256" )
 echo "pacchetto: $DEB"
+cat "$OUT/vesper_${VER}_all.deb.sha256"
 command -v lintian >/dev/null 2>&1 && lintian --no-tag-display-limit "$DEB" 2>&1 | head -20 || true

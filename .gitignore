@@ -17,3 +17,5 @@ packaging/*.sha256
 
 # appunti solo miei: non vanno nel repo pubblico né sul sito
 docs/privato/
+Appunti*.txt
+*.appunti.txt

@@ -32,7 +32,16 @@ except Exception:                                   # noqa: BLE001
     def apply_css():
         return
 
-APP_NAME = "Editor di testo"
+try:
+    from vesper.i18n import t as _t, taccel as _ta
+except Exception:                                   # noqa: BLE001
+    def _t(chiave, **kw):                           # ripiego: mostra la chiave
+        return chiave
+
+    def _ta(etichetta):
+        return etichetta
+
+APP_NAME = _t("ed.app")
 
 # Impostazioni predefinite (le stesse chiavi finiscono in editor.json).
 DEFAULTS = {
@@ -190,7 +199,7 @@ def leggi_file(percorso: str):
     with open(percorso, "rb") as f:
         crudo = f.read()
     if b"\x00" in crudo[:4096]:
-        raise ValueError("sembra un file binario, non di testo")
+        raise ValueError(_t("ed.binary"))
     for cod in CODIFICHE:
         try:
             return crudo.decode(cod), ("utf-8" if cod == "utf-8-sig" else cod)
@@ -286,7 +295,7 @@ class Documento(Gtk.Box):
         chiudi.set_focus_on_click(False)
         chiudi.set_image(Gtk.Image.new_from_icon_name("window-close-symbolic",
                                                       Gtk.IconSize.MENU))
-        chiudi.set_tooltip_text("Chiudi la scheda (Ctrl+W)")
+        chiudi.set_tooltip_text(_t("ed.tabclose"))
         chiudi.connect("clicked", lambda _b: editor.chiudi_documento(self))
         self.tab.pack_start(self.tab_label, True, True, 0)
         self.tab.pack_end(chiudi, False, False, 0)
@@ -309,7 +318,7 @@ class Documento(Gtk.Box):
     # --- nomi e stato -----------------------------------------------------
     def nome(self) -> str:
         return os.path.basename(self.percorso) if self.percorso \
-            else "Senza nome"
+            else _t("ed.untitled")
 
     def titolo(self) -> str:
         stella = "*" if self.buffer.get_modified() else ""
@@ -333,7 +342,7 @@ class Documento(Gtk.Box):
         try:
             testo, cod = leggi_file(percorso)
         except Exception as e:                      # noqa: BLE001
-            self.editor.avviso("Non riesco ad aprire il file",
+            self.editor.avviso(_t("ed.cantopen"),
                                f"{percorso}\n{e}")
             return False
         self.percorso = percorso
@@ -374,7 +383,7 @@ class Documento(Gtk.Box):
                 f.write(testo)
             os.replace(tmp, dest)
         except Exception as e:                      # noqa: BLE001
-            self.editor.avviso("Non riesco a salvare", f"{dest}\n{e}")
+            self.editor.avviso(_t("ed.cantsave"), f"{dest}\n{e}")
             return False
         primo_salvataggio = dest != self.percorso
         self.percorso = dest
@@ -541,19 +550,19 @@ class Editor(Gtk.Window):
         barra = Gtk.Box(orientation=Gtk.Orientation.HORIZONTAL, spacing=2)
         barra.get_style_context().add_class("vesper-editor-barra")
         for icona, testo, cb in (
-                ("document-new-symbolic", "Nuovo (Ctrl+N)", self.nuovo),
-                ("document-open-symbolic", "Apri (Ctrl+O)", self.apri_dialogo),
-                ("document-save-symbolic", "Salva (Ctrl+S)", self.salva),
-                ("document-save-as-symbolic", "Salva come (Ctrl+Maiusc+S)",
+                ("document-new-symbolic", _t("ed.tt.new"), self.nuovo),
+                ("document-open-symbolic", _t("ed.tt.open"), self.apri_dialogo),
+                ("document-save-symbolic", _t("ed.tt.save"), self.salva),
+                ("document-save-as-symbolic", _t("ed.tt.saveas"),
                  self.salva_come)):
             barra.pack_start(self._bottone(icona, testo, cb), False, False, 0)
         barra.pack_start(Gtk.Separator(orientation=Gtk.Orientation.VERTICAL),
                          False, False, 6)
         for icona, testo, cb in (
-                ("edit-undo-symbolic", "Annulla (Ctrl+Z)", self.annulla),
-                ("edit-redo-symbolic", "Ripeti (Ctrl+Maiusc+Z)", self.ripeti),
-                ("edit-find-symbolic", "Trova (Ctrl+F)", self.mostra_trova),
-                ("edit-find-replace-symbolic", "Sostituisci (Ctrl+H)",
+                ("edit-undo-symbolic", _t("ed.tt.undo"), self.annulla),
+                ("edit-redo-symbolic", _t("ed.tt.redo"), self.ripeti),
+                ("edit-find-symbolic", _t("ed.tt.find"), self.mostra_trova),
+                ("edit-find-replace-symbolic", _t("ed.tt.replace"),
                  self.mostra_sostituisci)):
             barra.pack_start(self._bottone(icona, testo, cb), False, False, 0)
 
@@ -562,10 +571,10 @@ class Editor(Gtk.Window):
         menu_b.set_relief(Gtk.ReliefStyle.NONE)
         menu_b.add(Gtk.Image.new_from_icon_name("open-menu-symbolic",
                                                 Gtk.IconSize.LARGE_TOOLBAR))
-        menu_b.set_tooltip_text("Opzioni")
+        menu_b.set_tooltip_text(_t("ed.options"))
         menu_b.set_popup(self._menu())
         barra.pack_end(menu_b, False, False, 0)
-        self.lbl_lingua = Gtk.Label(label="Testo semplice")
+        self.lbl_lingua = Gtk.Label(label=_t("ed.plaintext"))
         self.lbl_lingua.get_style_context().add_class("vesper-val")
         barra.pack_end(self.lbl_lingua, False, False, 8)
         return barra
@@ -576,7 +585,7 @@ class Editor(Gtk.Window):
         lab = Gtk.Label(label=etichetta); lab.set_xalign(0)
         riga.pack_start(lab, True, True, 0)
         if scorciatoia:
-            acc = Gtk.Label(label=scorciatoia)
+            acc = Gtk.Label(label=_ta(scorciatoia))
             acc.get_style_context().add_class("vesper-val")
             riga.pack_end(acc, False, False, 0)
         it.add(riga)
@@ -598,35 +607,35 @@ class Editor(Gtk.Window):
 
     def _menu(self):
         m = Gtk.Menu()
-        self._voce(m, "Ricarica dal disco", self.ricarica, "Ctrl+R")
-        self._voce(m, "Stampa...", self.stampa, "Ctrl+P")
-        self._voce(m, "Vai a riga...", self.dialogo_vai_a_riga, "Ctrl+I")
+        self._voce(m, _t("ed.m.reload"), self.ricarica, "Ctrl+R")
+        self._voce(m, _t("ed.m.print"), self.stampa, "Ctrl+P")
+        self._voce(m, _t("ed.m.goto"), self.dialogo_vai_a_riga, "Ctrl+I")
         m.append(Gtk.SeparatorMenuItem())
-        self._interruttore(m, "Numeri di riga", "numeri_riga")
-        self._interruttore(m, "Evidenzia la riga corrente", "riga_corrente")
-        self._interruttore(m, "A capo automatico", "a_capo")
-        self._interruttore(m, "Spazi al posto delle tabulazioni",
+        self._interruttore(m, _t("ed.o.linenum"), "numeri_riga")
+        self._interruttore(m, _t("ed.o.curline"), "riga_corrente")
+        self._interruttore(m, _t("ed.o.wrap"), "a_capo")
+        self._interruttore(m, _t("ed.o.spaces"),
                            "spazi_invece_tab")
-        self._interruttore(m, "Rientro automatico", "rientro_automatico")
-        self._interruttore(m, "Mostra spazi e tabulazioni", "mostra_spazi")
-        self._interruttore(m, "Minimappa", "mappa")
-        self._interruttore(m, "Copia di sicurezza (file~)", "backup")
+        self._interruttore(m, _t("ed.o.autoindent"), "rientro_automatico")
+        self._interruttore(m, _t("ed.o.showspaces"), "mostra_spazi")
+        self._interruttore(m, _t("ed.o.map"), "mappa")
+        self._interruttore(m, _t("ed.o.backup"), "backup")
         m.append(Gtk.SeparatorMenuItem())
-        self._voce(m, "Linguaggio...", self.dialogo_linguaggio)
-        self._voce(m, "Carattere...", self.dialogo_font)
+        self._voce(m, _t("ed.m.language"), self.dialogo_linguaggio)
+        self._voce(m, _t("ed.m.font"), self.dialogo_font)
         sub = Gtk.Menu()
         for n in (2, 4, 8):
             v = Gtk.MenuItem(label="%d spazi" % n)
             v.connect("activate", lambda _i, n=n: self.imposta_tab(n))
             sub.append(v)
-        tab_it = Gtk.MenuItem(label="Larghezza tabulazione")
+        tab_it = Gtk.MenuItem(label=_t("ed.m.tabwidth"))
         tab_it.set_submenu(sub)
         m.append(tab_it)
         m.append(Gtk.SeparatorMenuItem())
-        self._voce(m, "Scorciatoie da tastiera", self.mostra_scorciatoie,
+        self._voce(m, _t("ed.shortcuts"), self.mostra_scorciatoie,
                    "Ctrl+Maiusc+H")
-        self._voce(m, "Chiudi scheda", self.chiudi_corrente, "Ctrl+W")
-        self._voce(m, "Esci", self.esci, "Ctrl+Q")
+        self._voce(m, _t("ed.m.closetab"), self.chiudi_corrente, "Ctrl+W")
+        self._voce(m, _t("ed.quit"), self.esci, "Ctrl+Q")
         m.show_all()
         return m
 
@@ -638,42 +647,42 @@ class Editor(Gtk.Window):
 
         riga1 = Gtk.Box(orientation=Gtk.Orientation.HORIZONTAL, spacing=6)
         self.e_trova = Gtk.SearchEntry()
-        self.e_trova.set_placeholder_text("Trova")
+        self.e_trova.set_placeholder_text(_t("ed.find"))
         self.e_trova.connect("search-changed", lambda _e: self._aggiorna_ricerca())
         self.e_trova.connect("activate", lambda _e: self.trova_avanti())
         self.e_trova.connect("stop-search", lambda _e: self.nascondi_trova())
         riga1.pack_start(self.e_trova, True, True, 0)
         riga1.pack_start(self._bottone("go-up-symbolic",
-                                       "Precedente (Maiusc+F3)",
+                                       _t("ed.tt.findprev"),
                                        self.trova_indietro), False, False, 0)
         riga1.pack_start(self._bottone("go-down-symbolic",
-                                       "Successiva (F3)",
+                                       _t("ed.tt.findnext"),
                                        self.trova_avanti), False, False, 0)
         self.lbl_occorrenze = Gtk.Label(label="")
         self.lbl_occorrenze.get_style_context().add_class("vesper-val")
         riga1.pack_start(self.lbl_occorrenze, False, False, 4)
-        self.chk_maiuscole = Gtk.CheckButton(label="Maiuscole/minuscole")
+        self.chk_maiuscole = Gtk.CheckButton(label=_t("ed.case"))
         self.chk_maiuscole.connect("toggled", lambda _c: self._aggiorna_ricerca())
         riga1.pack_start(self.chk_maiuscole, False, False, 0)
-        self.chk_parola = Gtk.CheckButton(label="Parola intera")
+        self.chk_parola = Gtk.CheckButton(label=_t("ed.word"))
         self.chk_parola.connect("toggled", lambda _c: self._aggiorna_ricerca())
         riga1.pack_start(self.chk_parola, False, False, 0)
-        self.chk_regex = Gtk.CheckButton(label="Espressione regolare")
+        self.chk_regex = Gtk.CheckButton(label=_t("ed.regex"))
         self.chk_regex.connect("toggled", lambda _c: self._aggiorna_ricerca())
         riga1.pack_start(self.chk_regex, False, False, 0)
-        riga1.pack_end(self._bottone("window-close-symbolic", "Chiudi (Esc)",
+        riga1.pack_end(self._bottone("window-close-symbolic", _t("ed.tt.closebar"),
                                      self.nascondi_trova), False, False, 0)
         box.pack_start(riga1, False, False, 0)
 
         self.riga_sost = Gtk.Box(orientation=Gtk.Orientation.HORIZONTAL,
                                  spacing=6)
         self.e_sost = Gtk.Entry()
-        self.e_sost.set_placeholder_text("Sostituisci con")
+        self.e_sost.set_placeholder_text(_t("ed.replacewith"))
         self.e_sost.connect("activate", lambda _e: self.sostituisci())
         self.riga_sost.pack_start(self.e_sost, True, True, 0)
-        b_uno = Gtk.Button(label="Sostituisci")
+        b_uno = Gtk.Button(label=_t("ed.replace"))
         b_uno.connect("clicked", lambda _b: self.sostituisci())
-        b_tutti = Gtk.Button(label="Tutte")
+        b_tutti = Gtk.Button(label=_t("ed.replaceall"))
         b_tutti.connect("clicked", lambda _b: self.sostituisci_tutto())
         self.riga_sost.pack_start(b_uno, False, False, 0)
         self.riga_sost.pack_start(b_tutti, False, False, 0)
@@ -685,7 +694,7 @@ class Editor(Gtk.Window):
     def _barra_stato(self):
         barra = Gtk.Box(orientation=Gtk.Orientation.HORIZONTAL, spacing=14)
         barra.get_style_context().add_class("vesper-editor-stato")
-        self.lbl_pos = Gtk.Label(label="Riga 1, colonna 1")
+        self.lbl_pos = Gtk.Label(label=_t("ed.pos0"))
         self.lbl_pos.set_xalign(0)
         barra.pack_start(self.lbl_pos, False, False, 0)
         self.lbl_info = Gtk.Label(label="")
@@ -700,57 +709,57 @@ class Editor(Gtk.Window):
         S = Gdk.ModifierType.SHIFT_MASK
         A = Gdk.ModifierType.MOD1_MASK
         return [
-            ("File", [
-                ("n", C, "Ctrl+N", "Nuovo documento", self.nuovo),
-                ("o", C, "Ctrl+O", "Apri un file", self.apri_dialogo),
-                ("s", C, "Ctrl+S", "Salva", self.salva),
-                ("s", C | S, "Ctrl+Maiusc+S", "Salva come", self.salva_come),
-                ("r", C, "Ctrl+R", "Ricarica dal disco", self.ricarica),
-                ("p", C, "Ctrl+P", "Stampa", self.stampa),
-                ("w", C, "Ctrl+W", "Chiudi la scheda", self.chiudi_corrente),
-                ("q", C, "Ctrl+Q", "Esci", self.esci),
+            (_t("ed.g.file"), [
+                ("n", C, "Ctrl+N", _t("ed.a.new"), self.nuovo),
+                ("o", C, "Ctrl+O", _t("ed.a.open"), self.apri_dialogo),
+                ("s", C, "Ctrl+S", _t("ed.a.save"), self.salva),
+                ("s", C | S, "Ctrl+Maiusc+S", _t("ed.a.saveas"), self.salva_come),
+                ("r", C, "Ctrl+R", _t("ed.m.reload"), self.ricarica),
+                ("p", C, "Ctrl+P", _t("ed.a.print"), self.stampa),
+                ("w", C, "Ctrl+W", _t("ed.a.closetab"), self.chiudi_corrente),
+                ("q", C, "Ctrl+Q", _t("ed.quit"), self.esci),
             ]),
-            ("Modifica", [
-                ("z", C, "Ctrl+Z", "Annulla", self.annulla),
-                ("z", C | S, "Ctrl+Maiusc+Z", "Ripeti", self.ripeti),
-                ("y", C, "Ctrl+Y", "Ripeti", self.ripeti),
-                ("d", C, "Ctrl+D", "Elimina la riga", self.elimina_riga),
-                ("d", C | S, "Ctrl+Maiusc+D", "Duplica la riga",
+            (_t("ed.g.edit"), [
+                ("z", C, "Ctrl+Z", _t("ed.a.undo"), self.annulla),
+                ("z", C | S, "Ctrl+Maiusc+Z", _t("ed.a.redo"), self.ripeti),
+                ("y", C, "Ctrl+Y", _t("ed.a.redo"), self.ripeti),
+                ("d", C, "Ctrl+D", _t("ed.a.delline"), self.elimina_riga),
+                ("d", C | S, "Ctrl+Maiusc+D", _t("ed.a.dupline"),
                  self.duplica_riga),
-                ("Up", A, "Alt+Su", "Sposta la riga in alto",
+                ("Up", A, "Alt+Su", _t("ed.a.lineup"),
                  lambda: self.sposta_riga(-1)),
-                ("Down", A, "Alt+Giu", "Sposta la riga in basso",
+                ("Down", A, "Alt+Giù", _t("ed.a.linedown"),
                  lambda: self.sposta_riga(1)),
-                ("slash", C, "Ctrl+/", "Commenta o decommenta",
+                ("slash", C, "Ctrl+/", _t("ed.a.comment"),
                  self.commenta),
             ]),
-            ("Ricerca", [
-                ("f", C, "Ctrl+F", "Trova", self.mostra_trova),
-                ("h", C, "Ctrl+H", "Sostituisci", self.mostra_sostituisci),
-                ("F3", 0, "F3", "Occorrenza successiva", self.trova_avanti),
-                ("F3", S, "Maiusc+F3", "Occorrenza precedente",
+            (_t("ed.g.search"), [
+                ("f", C, "Ctrl+F", _t("ed.find"), self.mostra_trova),
+                ("h", C, "Ctrl+H", _t("ed.replace"), self.mostra_sostituisci),
+                ("F3", 0, "F3", _t("ed.a.findnext"), self.trova_avanti),
+                ("F3", S, "Maiusc+F3", _t("ed.a.findprev"),
                  self.trova_indietro),
-                ("g", C, "Ctrl+G", "Occorrenza successiva", self.trova_avanti),
-                ("g", C | S, "Ctrl+Maiusc+G", "Occorrenza precedente",
+                ("g", C, "Ctrl+G", _t("ed.a.findnext"), self.trova_avanti),
+                ("g", C | S, "Ctrl+Maiusc+G", _t("ed.a.findprev"),
                  self.trova_indietro),
-                ("i", C, "Ctrl+I", "Vai a riga", self.dialogo_vai_a_riga),
-                ("l", C, "Ctrl+L", "Vai a riga", self.dialogo_vai_a_riga),
+                ("i", C, "Ctrl+I", _t("ed.a.goto"), self.dialogo_vai_a_riga),
+                ("l", C, "Ctrl+L", _t("ed.a.goto"), self.dialogo_vai_a_riga),
             ]),
-            ("Vista", [
-                ("plus", C, "Ctrl++", "Ingrandisci il testo",
+            (_t("ed.g.view"), [
+                ("plus", C, "Ctrl++", _t("ed.a.zoomin"),
                  lambda: self.zoom(1)),
-                ("equal", C, "Ctrl+=", "Ingrandisci il testo",
+                ("equal", C, "Ctrl+=", _t("ed.a.zoomin"),
                  lambda: self.zoom(1)),
-                ("minus", C, "Ctrl+-", "Rimpicciolisci il testo",
+                ("minus", C, "Ctrl+-", _t("ed.a.zoomout"),
                  lambda: self.zoom(-1)),
-                ("0", C, "Ctrl+0", "Dimensione originale",
+                ("0", C, "Ctrl+0", _t("ed.a.zoomreset"),
                  lambda: self.zoom(0)),
-                ("Page_Down", C, "Ctrl+PagGiu", "Scheda successiva",
+                ("Page_Down", C, "Ctrl+PagGiù", _t("ed.a.nexttab"),
                  lambda: self.cambia_scheda(1)),
-                ("Page_Up", C, "Ctrl+PagSu", "Scheda precedente",
+                ("Page_Up", C, "Ctrl+PagSu", _t("ed.a.prevtab"),
                  lambda: self.cambia_scheda(-1)),
-                ("F11", 0, "F11", "Schermo intero", self.schermo_intero),
-                ("h", C | S, "Ctrl+Maiusc+H", "Questo elenco",
+                ("F11", 0, "F11", _t("ed.a.full"), self.schermo_intero),
+                ("h", C | S, "Ctrl+Maiusc+H", _t("ed.a.thislist"),
                  self.mostra_scorciatoie),
             ]),
         ]
@@ -785,9 +794,9 @@ class Editor(Gtk.Window):
             return
         except Exception:                           # noqa: BLE001
             pass
-        dlg = Gtk.Dialog(title="Scorciatoie da tastiera", transient_for=self,
+        dlg = Gtk.Dialog(title=_t("ed.shortcuts"), transient_for=self,
                          modal=True)
-        dlg.add_button("Chiudi", Gtk.ResponseType.CLOSE)
+        dlg.add_button(_t("ed.close"), Gtk.ResponseType.CLOSE)
         dlg.set_default_size(520, 560)
         box = Gtk.Box(orientation=Gtk.Orientation.VERTICAL, spacing=6)
         box.set_border_width(12)
@@ -802,7 +811,7 @@ class Editor(Gtk.Window):
                 if desc in visti:
                     continue                        # stessa azione, altro tasto
                 visti.add(desc)
-                a = Gtk.Label(label=testo); a.set_xalign(1)
+                a = Gtk.Label(label=_ta(testo)); a.set_xalign(1)
                 a.get_style_context().add_class("vesper-val")
                 b = Gtk.Label(label=desc); b.set_xalign(0)
                 griglia.attach(a, 0, r, 1, 1)
@@ -920,11 +929,11 @@ class Editor(Gtk.Window):
         dlg = Gtk.MessageDialog(
             transient_for=self, modal=True,
             message_type=Gtk.MessageType.QUESTION, buttons=Gtk.ButtonsType.NONE,
-            text="Salvare le modifiche a «%s»?" % doc.nome())
-        dlg.format_secondary_text("Se non salvi, le modifiche vanno perse.")
-        dlg.add_button("Chiudi senza salvare", 1)
-        dlg.add_button("Annulla", 2)
-        b = dlg.add_button("Salva", 3)
+            text=_t("ed.savechanges") % doc.nome())
+        dlg.format_secondary_text(_t("ed.savechanges_body"))
+        dlg.add_button(_t("ed.closenosave"), 1)
+        dlg.add_button(_t("ed.cancel"), 2)
+        b = dlg.add_button(_t("ed.a.save"), 3)
         b.get_style_context().add_class("suggested-action")
         dlg.set_default_response(3)
         r = dlg.run()
@@ -949,15 +958,15 @@ class Editor(Gtk.Window):
 
     # --- file -------------------------------------------------------------
     def apri_dialogo(self):
-        dlg = Gtk.FileChooserDialog(title="Apri", transient_for=self,
+        dlg = Gtk.FileChooserDialog(title=_t("ed.open"), transient_for=self,
                                     action=Gtk.FileChooserAction.OPEN)
-        dlg.add_buttons("Annulla", Gtk.ResponseType.CANCEL,
-                        "Apri", Gtk.ResponseType.ACCEPT)
+        dlg.add_buttons(_t("ed.cancel"), Gtk.ResponseType.CANCEL,
+                        _t("ed.open"), Gtk.ResponseType.ACCEPT)
         dlg.set_select_multiple(True)
         doc = self.corrente()
         if doc and doc.percorso:
             dlg.set_current_folder(os.path.dirname(doc.percorso))
-        f = Gtk.FileFilter(); f.set_name("File di testo")
+        f = Gtk.FileFilter(); f.set_name(_t("ed.textfiles"))
         f.add_mime_type("text/*"); f.add_pattern("*")
         dlg.add_filter(f)
         if dlg.run() == Gtk.ResponseType.ACCEPT:
@@ -977,16 +986,16 @@ class Editor(Gtk.Window):
                 transient_for=self, modal=True,
                 message_type=Gtk.MessageType.WARNING,
                 buttons=Gtk.ButtonsType.OK_CANCEL,
-                text="Il file è cambiato sul disco dopo l'apertura")
+                text=_t("ed.changed_disk"))
             dlg.format_secondary_text(
-                "Salvando sovrascrivi le modifiche fatte da altri programmi.")
+                _t("ed.changed_disk_body"))
             r = dlg.run(); dlg.destroy()
             if r != Gtk.ResponseType.OK:
                 return False
         ok = doc.salva()
         if ok:
             self.aggiorna_titolo()
-            self.nota("Salvato: %s" % doc.percorso)
+            self.nota(_t("ed.saved") % doc.percorso)
         return ok
 
     def salva_come(self):
@@ -994,17 +1003,17 @@ class Editor(Gtk.Window):
         return self._salva_come_documento(doc) if doc else False
 
     def _salva_come_documento(self, doc) -> bool:
-        dlg = Gtk.FileChooserDialog(title="Salva come", transient_for=self,
+        dlg = Gtk.FileChooserDialog(title=_t("ed.a.saveas"), transient_for=self,
                                     action=Gtk.FileChooserAction.SAVE)
-        dlg.add_buttons("Annulla", Gtk.ResponseType.CANCEL,
-                        "Salva", Gtk.ResponseType.ACCEPT)
+        dlg.add_buttons(_t("ed.cancel"), Gtk.ResponseType.CANCEL,
+                        _t("ed.a.save"), Gtk.ResponseType.ACCEPT)
         dlg.set_do_overwrite_confirmation(True)
         if doc.percorso:
             dlg.set_current_folder(os.path.dirname(doc.percorso))
             dlg.set_current_name(doc.nome())
         else:
             dlg.set_current_folder(GLib.get_home_dir())
-            dlg.set_current_name("senza-nome.txt")
+            dlg.set_current_name(_t("ed.untitled_file"))
         ok = False
         if dlg.run() == Gtk.ResponseType.ACCEPT:
             ok = doc.salva(dlg.get_filename())
@@ -1024,8 +1033,8 @@ class Editor(Gtk.Window):
                 transient_for=self, modal=True,
                 message_type=Gtk.MessageType.QUESTION,
                 buttons=Gtk.ButtonsType.OK_CANCEL,
-                text="Ricaricare «%s» dal disco?" % doc.nome())
-            dlg.format_secondary_text("Le modifiche non salvate vanno perse.")
+                text=_t("ed.reload_q") % doc.nome())
+            dlg.format_secondary_text(_t("ed.reload_body"))
             r = dlg.run(); dlg.destroy()
             if r != Gtk.ResponseType.OK:
                 return
@@ -1044,9 +1053,9 @@ class Editor(Gtk.Window):
             riga = self._riga_cursore(doc)
             doc.carica(doc.percorso)
             self.vai_a_riga(riga)
-            self.nota("«%s» è cambiato sul disco: ricaricato" % doc.nome())
+            self.nota(_t("ed.reloaded") % doc.nome())
         else:
-            self.nota("«%s» è cambiato sul disco (hai modifiche non salvate)"
+            self.nota(_t("ed.changed_outside")
                       % doc.nome())
         return False
 
@@ -1060,7 +1069,7 @@ class Editor(Gtk.Window):
         comp.set_print_line_numbers(1 if self.conf["numeri_riga"] else 0)
         comp.set_header_format(True, doc.nome(), None, "%d/%m/%Y")
         comp.set_print_header(True)
-        comp.set_footer_format(True, None, "Pagina %N di %Q", None)
+        comp.set_footer_format(True, None, _t("ed.page_n"), None)
         comp.set_print_footer(True)
         op = Gtk.PrintOperation()
         op.set_job_name(doc.nome())
@@ -1077,7 +1086,7 @@ class Editor(Gtk.Window):
         try:
             op.run(Gtk.PrintOperationAction.PRINT_DIALOG, self)
         except Exception as e:                      # noqa: BLE001
-            self.avviso("Stampa non riuscita", str(e))
+            self.avviso(_t("ed.print_fail"), str(e))
 
     # --- modifica ---------------------------------------------------------
     def annulla(self):
@@ -1259,8 +1268,8 @@ class Editor(Gtk.Window):
         elif n < 0:
             self.lbl_occorrenze.set_text("...")     # conteggio in corso
         else:
-            self.lbl_occorrenze.set_text("%d risultati" % n if n != 1
-                                         else "1 risultato")
+            self.lbl_occorrenze.set_text(_t("ed.results") % n if n != 1
+                                         else _t("ed.result1"))
             (ctx.add_class if n == 0 else ctx.remove_class)("vesper-nulla")
         return False
 
@@ -1276,7 +1285,7 @@ class Editor(Gtk.Window):
             partenza = buf.get_iter_at_mark(buf.get_insert())
         trovato = _cerca_da(doc.ricerca, partenza, avanti)
         if trovato is None:
-            self.nota("Nessuna occorrenza di «%s»" % self.e_trova.get_text())
+            self.nota(_t("ed.nomatch") % self.e_trova.get_text())
             return
         a, b = trovato
         buf.select_range(a, b)
@@ -1314,9 +1323,9 @@ class Editor(Gtk.Window):
         try:
             n = doc.ricerca.replace_all(self.e_sost.get_text(), -1)
         except Exception as e:                      # noqa: BLE001
-            self.avviso("Sostituzione non riuscita", str(e))
+            self.avviso(_t("ed.replace_fail"), str(e))
             return
-        self.nota("%d sostituzioni" % n)
+        self.nota(_t("ed.replaced") % n)
 
     # --- navigazione ------------------------------------------------------
     def _riga_cursore(self, doc) -> int:
@@ -1338,16 +1347,16 @@ class Editor(Gtk.Window):
         doc = self.corrente()
         if not doc:
             return
-        dlg = Gtk.Dialog(title="Vai a riga", transient_for=self, modal=True)
-        dlg.add_buttons("Annulla", Gtk.ResponseType.CANCEL,
-                        "Vai", Gtk.ResponseType.ACCEPT)
+        dlg = Gtk.Dialog(title=_t("ed.a.goto"), transient_for=self, modal=True)
+        dlg.add_buttons(_t("ed.cancel"), Gtk.ResponseType.CANCEL,
+                        _t("ed.go"), Gtk.ResponseType.ACCEPT)
         dlg.set_default_response(Gtk.ResponseType.ACCEPT)
         spin = Gtk.SpinButton.new_with_range(1, doc.buffer.get_line_count(), 1)
         spin.set_value(self._riga_cursore(doc))
         spin.set_activates_default(True)
         box = dlg.get_content_area()
         box.set_border_width(12); box.set_spacing(8)
-        lab = Gtk.Label(label="Riga (1 - %d):" % doc.buffer.get_line_count())
+        lab = Gtk.Label(label=_t("ed.line_range") % doc.buffer.get_line_count())
         lab.set_xalign(0)
         box.pack_start(lab, False, False, 0)
         box.pack_start(spin, False, False, 0)
@@ -1380,10 +1389,10 @@ class Editor(Gtk.Window):
         salva_conf(self.conf)
         for i in range(self.note.get_n_pages()):
             self.note.get_nth_page(i).applica_font(self.conf["font"])
-        self.nota("Carattere: %.0f pt" % punti)
+        self.nota(_t("ed.fontsize") % punti)
 
     def dialogo_font(self):
-        dlg = Gtk.FontChooserDialog(title="Carattere dell'editor",
+        dlg = Gtk.FontChooserDialog(title=_t("ed.fontdlg"),
                                     transient_for=self)
         dlg.set_font(self.conf["font"])
         try:
@@ -1406,12 +1415,12 @@ class Editor(Gtk.Window):
         lingue = sorted(
             (lm.get_language(i) for i in (lm.get_language_ids() or [])),
             key=lambda l: (l.get_section() or "", l.get_name() or ""))
-        dlg = Gtk.Dialog(title="Linguaggio", transient_for=self, modal=True)
-        dlg.add_buttons("Annulla", Gtk.ResponseType.CANCEL,
-                        "Applica", Gtk.ResponseType.ACCEPT)
+        dlg = Gtk.Dialog(title=_t("ed.language"), transient_for=self, modal=True)
+        dlg.add_buttons(_t("ed.cancel"), Gtk.ResponseType.CANCEL,
+                        _t("ed.apply"), Gtk.ResponseType.ACCEPT)
         dlg.set_default_size(360, 460)
         store = Gtk.ListStore(str, str)
-        store.append(["Testo semplice", ""])
+        store.append([_t("ed.plaintext"), ""])
         for l in lingue:
             store.append(["%s - %s" % (l.get_section(), l.get_name()),
                           l.get_id()])
@@ -1460,18 +1469,21 @@ class Editor(Gtk.Window):
             return False
         buf = doc.buffer
         it = buf.get_iter_at_mark(buf.get_insert())
-        pezzi = ["Riga %d, colonna %d" % (it.get_line() + 1,
+        pezzi = [_t("ed.pos") % (it.get_line() + 1,
                                           it.get_line_offset() + 1)]
         sel = buf.get_selection_bounds()
         if sel:
             n = sel[1].get_offset() - sel[0].get_offset()
-            pezzi.append("%d caratteri scelti" % n)
+            pezzi.append(_t("ed.selchars") % n)
         self.lbl_pos.set_text("   ".join(pezzi))
         lang = buf.get_language()
-        self.lbl_lingua.set_text(lang.get_name() if lang else "Testo semplice")
-        self.lbl_info.set_text("%s   %d righe   %s"
-                               % (doc.codifica.upper(), buf.get_line_count(),
-                                  "modificato" if buf.get_modified() else "salvato"))
+        self.lbl_lingua.set_text(lang.get_name() if lang else _t("ed.plaintext"))
+        n_righe = buf.get_line_count()
+        self.lbl_info.set_text(
+            "%s   %s   %s"
+            % (doc.codifica.upper(),
+               _t("ed.lines") % n_righe if n_righe != 1 else _t("ed.line1"),
+               _t("ed.modified") if buf.get_modified() else _t("ed.savedstate")))
         self.aggiorna_titolo()
         return False
 

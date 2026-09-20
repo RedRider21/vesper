@@ -24,8 +24,10 @@ CONF = paths.config("panel.conf")
 RC_XML = Path(os.environ.get("VESPER_RC_XML", str(paths.config("openbox-rc.xml"))))
 
 # default e limiti
-PANEL_HEIGHT = 34          # compatibilita': altezza di default
-DEF_HEIGHT = 34
+# 36px: con 34 l'orologio a due righe (ora 10pt + data 7.5pt) non ci stava e
+# i discendenti della data finivano tagliati sul bordo inferiore.
+PANEL_HEIGHT = 36          # compatibilita': altezza di default
+DEF_HEIGHT = 36
 MIN_HEIGHT, MAX_HEIGHT = 24, 64
 DEF_ICON_PX = 22
 MIN_ICON_PX, MAX_ICON_PX = 16, 40

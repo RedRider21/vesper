@@ -713,6 +713,10 @@ class Panel(Gtk.Window):
         self.connect("realize", self._on_realize)
 
         self._tick_clock()
+        # Se la barra è più bassa di quanto serve alle due righe dell'orologio,
+        # la data sparisce (resta nel tooltip): meglio senza che tagliata a
+        # metà. Si misura dopo il primo disegno, quando lo stile è applicato.
+        GLib.idle_add(self._adatta_orologio)
         self._refresh_tasks()
         GLib.timeout_add(POLL_MS, self._refresh_tasks)
         GLib.timeout_add(1000, self._tick_clock)
@@ -2420,6 +2424,22 @@ class Panel(Gtk.Window):
             run_bg(["wmctrl", "-i", "-a", wid])
 
     # --- orologio ---
+    def _adatta_orologio(self):
+        """Nasconde la riga della data se non ci sta nell'altezza della barra."""
+        try:
+            serve = self.clock_btn.get_preferred_height()[1]
+            altezza = panelcfg.get_height()
+        except Exception:                            # noqa: BLE001
+            return False
+        ci_sta = serve <= altezza
+        self.date.set_visible(ci_sta)
+        self.date.set_no_show_all(not ci_sta)
+        if not ci_sta:
+            # la data non si perde: finisce accanto al nome del calendario
+            self.clock_btn.set_tooltip_text(
+                "%s - %s" % (_t("tray.calendar"), self.date.get_text()))
+        return False
+
     def _tick_clock(self):
         t = time.localtime()
         self.clock.set_text(time.strftime("%H:%M", t))

@@ -172,7 +172,7 @@ spinner { color: #00e5ff; }
   font-weight: bold;
 }
 .vesper-panel label.vesper-clock { color: #c8f5ff; font-size: 10pt; padding: 0 6px; }
-.vesper-panel label.vesper-clock-date { color: #5a8a9a; font-size: 8pt; padding: 0 6px; }
+.vesper-panel label.vesper-clock-date { color: #5a8a9a; font-size: 7.5pt; padding: 0 6px; }
 .vesper-panel separator { background-color: #1a3a52; margin: 5px 4px; }
 /* Menu a comparsa (tasto destro sul desktop, menu del pannello) */
 menu, .menu, menu.background {
@@ -275,7 +275,10 @@ button.vesper-app-item label { font-size: 10.5px; }
 }
 
 /* Pulsante orologio + calendario a comparsa (stile MATE) */
-.vesper-panel button.vesper-clock-btn { padding: 1px 8px; margin: 2px 1px; }
+/* Ora + data: due righe dentro una barra alta 34px. Il padding e il
+   margine verticali rubavano 6px e i discendenti della data (la g di
+   'giu') finivano tagliati sul bordo inferiore. */
+.vesper-panel button.vesper-clock-btn { padding: 0 8px; margin: 1px; }
 .vesper-calbox { padding: 6px; }
 calendar.vesper-calendar {
   background-color: #0a1a26; color: #c8f5ff;

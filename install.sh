@@ -63,6 +63,12 @@ COMANDI="vesper-session vesper-panel vesper-panel-restart vesper-control-center
          vesper-player vesper-recorder vesper-video vesper-disks vesper-editor
          vesper-launcherd vesper-launch vesper-zram vesper-viewer vesper-ram vesper-ripara"
 
+# Gestione delle licenze commerciali: NON entra nel pacchetto pubblico AGPL.
+# Si costruisce la variante commerciale con:  VESPER_COMMERCIALE=1 ./install.sh
+if [ "${VESPER_COMMERCIALE:-0}" = "1" ]; then
+  COMANDI="$COMANDI vesper-licenza"
+fi
+
 if [ "$ACTION" = uninstall ]; then
   echo "Disinstallo Vesper da $PREFIX"
   for c in $COMANDI; do rm -f "$BIN/$c"; done
@@ -95,8 +101,14 @@ mkdir -p "$BIN" "$LIB" "$SHARE" "$ICONS/scalable/apps" "$XSESS" "$APPS" "$THEMES
 # Senza __pycache__: bytecode vecchio con mtime azzerati farebbe eseguire
 # codice superato (gotcha noto del packaging).
 rm -rf "$LIB/vesper"
+# vesper/licenza/ (licenze commerciali) resta fuori dal pacchetto pubblico:
+# entra solo con VESPER_COMMERCIALE=1.
 (cd "$SRC/src" && find vesper -name '__pycache__' -prune -o -type f -print | \
   while read -r f; do
+    case "$f" in
+      vesper/licenza/*)
+        [ "${VESPER_COMMERCIALE:-0}" = "1" ] || continue ;;
+    esac
     mkdir -p "$LIB/$(dirname "$f")"
     cp "$f" "$LIB/$f"
   done)

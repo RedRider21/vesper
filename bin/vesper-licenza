@@ -1,0 +1,22 @@
+#!/bin/sh
+# SPDX-License-Identifier: AGPL-3.0-or-later
+# Copyright (C) 2026 Daniele Deplano (RedRider21). Parte di Vesper.
+# vesper-licenza - licenza commerciale: stato, installazione, conteggio.
+#
+# Vesper è AGPL-3.0-or-later per tutti: questo comando serve solo a chi ha
+# acquistato la licenza commerciale alternativa. Nel pacchetto pubblico il
+# modulo non c'è, e il comando lo dice.
+_self=$(readlink -f "$0" 2>/dev/null || echo "$0"); _d=$(dirname "$_self")
+for _e in "$_d/env.sh" "$(dirname "$_d")/lib/vesper/env.sh" \
+          /usr/local/lib/vesper/env.sh /usr/lib/vesper/env.sh; do
+  [ -r "$_e" ] && { . "$_e"; break; }
+done
+[ -n "${VESPER_PY:-}" ] || { echo "vesper-licenza: python3 non disponibile" >&2; exit 1; }
+
+if ! "$VESPER_PY" -c "import vesper.licenza.cli" 2>/dev/null; then
+  echo "Questa è la versione AGPL di Vesper: non contiene la gestione delle" >&2
+  echo "licenze commerciali. Vesper è libero secondo l'AGPL-3.0-or-later." >&2
+  echo "Per la licenza commerciale: Daniele Deplano <deplano.d@gmail.com>" >&2
+  exit 1
+fi
+exec "$VESPER_PY" -m vesper.licenza.cli "$@"

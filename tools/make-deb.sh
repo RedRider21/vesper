@@ -9,6 +9,9 @@
 #
 #   ./tools/make-deb.sh                 -> packaging/vesper_<ver>_all.deb
 #   ./tools/make-deb.sh --out /tmp      cambia la cartella di destinazione
+#   ./tools/make-deb.sh --commerciale   include la gestione delle licenze
+#                                       commerciali (non va nel pacchetto
+#                                       pubblico AGPL)
 #
 # Il pacchetto è "all" (architettura indipendente): dentro c'è solo Python,
 # dati e script di shell.
@@ -16,12 +19,16 @@ set -eu
 
 ROOT=$(cd "$(dirname "$0")/.." && pwd)
 OUT="$ROOT/packaging"
-for a in "$@"; do
-  case "$a" in
-    --out) shift; OUT="${1:-$OUT}" ;;
-    --out=*) OUT="${a#--out=}" ;;
+COMMERCIALE=0
+while [ $# -gt 0 ]; do
+  case "$1" in
+    --out) OUT="${2:-$OUT}"; shift 2 || shift ;;
+    --out=*) OUT="${1#--out=}"; shift ;;
+    --commerciale) COMMERCIALE=1; shift ;;
+    *) shift ;;
   esac
 done
+export VESPER_COMMERCIALE="$COMMERCIALE"
 
 command -v dpkg-deb >/dev/null 2>&1 || {
   echo "serve dpkg-deb (pacchetto dpkg)" >&2; exit 1; }
@@ -141,12 +148,16 @@ find "$STAGE/usr/share/doc" -type d -exec chmod 755 {} +
 find "$STAGE/usr/share/doc" -type f -exec chmod 644 {} +
 
 mkdir -p "$OUT"
-DEB="$OUT/vesper_${VER}_all.deb"
+if [ "$COMMERCIALE" = "1" ]; then
+  DEB="$OUT/vesper_${VER}_all_commerciale.deb"
+else
+  DEB="$OUT/vesper_${VER}_all.deb"
+fi
 # --root-owner-group: dentro il pacchetto tutto risulta di root:root anche
 # costruendo da utente normale.
 dpkg-deb --root-owner-group --build "$STAGE" "$DEB" >/dev/null
 # impronta accanto al pacchetto, come fa make-tarball.sh: va allegata alla release
-( cd "$OUT" && sha256sum "vesper_${VER}_all.deb" > "vesper_${VER}_all.deb.sha256" )
+( cd "$OUT" && sha256sum "$(basename "$DEB")" > "$(basename "$DEB").sha256" )
 echo "pacchetto: $DEB"
-cat "$OUT/vesper_${VER}_all.deb.sha256"
+cat "$DEB.sha256"
 command -v lintian >/dev/null 2>&1 && lintian --no-tag-display-limit "$DEB" 2>&1 | head -20 || true

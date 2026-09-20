@@ -1056,7 +1056,7 @@ def open_zram(_btn=None):
         if dev:
             d = dev[0]
             valori["zram"].set_text(
-                "%s - %s, %s (%s%% della RAM)"
+                _t("v.zram.dev_line")
                 % (d["dispositivo"], _gb(d["disksize"] / 1024), d["algoritmo"],
                    s.get("quota_ram", 0)))
             if d.get("originale", 0) > 1024 * 1024:

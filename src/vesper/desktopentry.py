@@ -113,7 +113,8 @@ def scan_desktop_apps():
                 # Categories serve a raggruppare le voci nel menu (vedi
                 # app_category): senza, tutto finirebbe in "Altre".
                 "categories": e.get("Categories", ""),
-                "comment": e.get("Comment[it]") or e.get("Comment", ""),
+                "comment": (e.get("Comment[%s]" % LANG)
+                            or e.get("Comment", "")),
             }
     return sorted(apps.values(), key=lambda a: a["name"].lower())
 

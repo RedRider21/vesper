@@ -1,7 +1,15 @@
 [Desktop Entry]
 Type=Application
 Name=Lettore audio
+Name[en]=Audio player
+Name[fr]=Lecteur audio
+Name[es]=Reproductor de audio
+Name[de]=Audio-Player
 Comment=Riproduce musica e file audio
+Comment[en]=Plays music and audio files
+Comment[fr]=Lit la musique et les fichiers audio
+Comment[es]=Reproduce música y archivos de audio
+Comment[de]=Spielt Musik und Audiodateien ab
 Exec=vesper-player %F
 TryExec=vesper-player
 Icon=multimedia-player

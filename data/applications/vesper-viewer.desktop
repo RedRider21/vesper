@@ -1,7 +1,15 @@
 [Desktop Entry]
 Type=Application
 Name=Immagini
+Name[en]=Images
+Name[fr]=Images
+Name[es]=Imágenes
+Name[de]=Bilder
 Comment=Visualizza le immagini, le ruota e le imposta come sfondo
+Comment[en]=Views images, rotates them and sets them as wallpaper
+Comment[fr]=Affiche les images, les pivote et les met en fond d'écran
+Comment[es]=Muestra las imágenes, las gira y las pone de fondo
+Comment[de]=Zeigt Bilder, dreht sie und setzt sie als Hintergrund
 Exec=vesper-viewer %f
 TryExec=vesper-viewer
 Icon=multimedia-photo-viewer

@@ -1,7 +1,15 @@
 [Desktop Entry]
 Type=Application
 Name=Registratore vocale
+Name[en]=Voice recorder
+Name[fr]=Enregistreur vocal
+Name[es]=Grabadora de voz
+Name[de]=Sprachrekorder
 Comment=Registra dal microfono
+Comment[en]=Records from the microphone
+Comment[fr]=Enregistre depuis le microphone
+Comment[es]=Graba desde el micrófono
+Comment[de]=Nimmt über das Mikrofon auf
 Exec=vesper-recorder %F
 TryExec=vesper-recorder
 Icon=audio-input-microphone

@@ -1,7 +1,15 @@
 [Desktop Entry]
 Type=Application
 Name=Editor di testo
+Name[en]=Text editor
+Name[fr]=Éditeur de texte
+Name[es]=Editor de texto
+Name[de]=Texteditor
 Comment=Editor con colorazione della sintassi
+Comment[en]=Editor with syntax highlighting
+Comment[fr]=Éditeur avec coloration syntaxique
+Comment[es]=Editor con resaltado de sintaxis
+Comment[de]=Editor mit Syntaxhervorhebung
 Exec=vesper-editor %F
 TryExec=vesper-editor
 Icon=accessories-text-editor

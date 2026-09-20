@@ -1,8 +1,14 @@
 [Desktop Entry]
 Type=Application
 Name=File manager
+Name[fr]=Fichiers
+Name[es]=Archivos
+Name[de]=Dateien
 Name[en]=Files
 Comment=Gestione file di Vesper
+Comment[fr]=Gestionnaire de fichiers de Vesper
+Comment[es]=Gestor de archivos de Vesper
+Comment[de]=Dateiverwaltung von Vesper
 Comment[en]=Vesper file manager
 Exec=vesper-files %U
 TryExec=vesper-files

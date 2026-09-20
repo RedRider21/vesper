@@ -1,7 +1,15 @@
 [Desktop Entry]
 Type=Application
 Name=Dischi
+Name[en]=Disks
+Name[fr]=Disques
+Name[es]=Discos
+Name[de]=Laufwerke
 Comment=Elenca, monta e smonta dischi e chiavette
+Comment[en]=List, mount and unmount disks and USB sticks
+Comment[fr]=Lister, monter et démonter disques et clés USB
+Comment[es]=Lista, monta y desmonta discos y memorias USB
+Comment[de]=Laufwerke und USB-Sticks auflisten, einhängen und aushängen
 Exec=vesper-disks
 TryExec=vesper-disks
 Icon=drive-harddisk

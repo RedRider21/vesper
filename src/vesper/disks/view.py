@@ -261,7 +261,7 @@ def open_disks(_btn=None):
         if r != Gtk.ResponseType.OK or not dest:
             return
         cmd = ("doas dd if=%s of=%s bs=4M conv=noerror,sync status=progress; "
-               "echo; echo 'Premi Invio per chiudere'; read x" % (n.path, dest))
+               "echo; echo '%s'; read x" % (n.path, dest, _t("dk.press_enter")))
         if have("lxterminal"):
             run_bg(["lxterminal", "-e", cmd])
         else:

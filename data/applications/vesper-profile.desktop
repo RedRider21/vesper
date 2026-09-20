@@ -1,8 +1,14 @@
 [Desktop Entry]
 Type=Application
 Name=Aspetto di Vesper
+Name[fr]=Aspect de Vesper
+Name[es]=Aspecto de Vesper
+Name[de]=Aussehen von Vesper
 Name[en]=Vesper appearance
 Comment=Preset di aspetto: colore d'accento, sfondo, icone
+Comment[fr]=Préréglages d'aspect : couleur d'accent, fond d'écran, icônes
+Comment[es]=Ajustes de aspecto: color de acento, fondo, iconos
+Comment[de]=Aussehen-Voreinstellungen: Akzentfarbe, Hintergrund, Symbole
 Comment[en]=Appearance presets: accent colour, wallpaper, icons
 Exec=vesper-profile
 TryExec=vesper-profile

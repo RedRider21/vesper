@@ -1,7 +1,15 @@
 [Desktop Entry]
 Type=Application
 Name=Visualizzatore video
+Name[en]=Video player
+Name[fr]=Lecteur vidéo
+Name[es]=Reproductor de vídeo
+Name[de]=Video-Player
 Comment=Riproduce file video
+Comment[en]=Plays video files
+Comment[fr]=Lit les fichiers vidéo
+Comment[es]=Reproduce archivos de vídeo
+Comment[de]=Spielt Videodateien ab
 Exec=vesper-video %F
 TryExec=vesper-video
 Icon=video-x-generic

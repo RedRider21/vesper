@@ -22,23 +22,48 @@ LINGUE = ("it", "en", "fr", "es", "de")
 BASE = "it"                                  # lingua di riferimento
 
 # t("chiave"), _t("chiave"), i18n.t('chiave'), label("chiave", "ripiego")
-RX_USO = re.compile(r"""\b(?:_?t|label)\(\s*["']([a-z][a-z0-9_]*(?:\.[a-z0-9_]+)+)["']""")
+RX_USO = re.compile(
+    r"""\b(?:_?t|label|label_for)\(\s*["']([a-z][a-z0-9_]*(?:\.[a-z0-9_]+)+)["']""")
+ESTENSIONI = {"xml", "json", "py", "log", "sh", "txt", "png", "svg", "css",
+              "desktop", "conf", "ini", "wav", "gz", "deb"}
+# chiave scritta tale e quale in una tabella, fuori da una chiamata a t()
+RX_LETTERALE = re.compile(r"""["']((?:app|appcat|cc|cb|dk|ed|fm|iv|k|lang|menu|mnt|
+    pl|pn|pr|rc|sel|session|ss|tray|v|vd)\.[a-z0-9_]+(?:\.[a-z0-9_]+)*)["']""", re.X)
 # chiavi composte a runtime: t("appcat." + nome), t("k." + tasto)
 RX_PREFISSO = re.compile(
     r"""\(\s*["']([a-z][a-z0-9_]*(?:\.[a-z0-9_]+)*\.)["']\s*\+""")
 RX_SEGNA = re.compile(r"%(?:[-+ #0]*\d*(?:\.\d+)?[sdifgxX%]|[NQ])|\{[a-z_]+\}")
 
 
+def sorgenti():
+    """Sorgenti da scandire: il pacchetto Python e i comandi bin/ (che sono
+    script Python senza estensione: anche loro traducono)."""
+    for f in sorted(SRC.rglob("*.py")):
+        if "__pycache__" not in f.parts:
+            yield f
+    for f in sorted((RADICE / "bin").glob("vesper-*")):
+        try:
+            if f.is_file() and "python" in f.read_text(encoding="utf-8",
+                                                       errors="ignore")[:80]:
+                yield f
+        except OSError:
+            continue
+
+
 def chiavi_usate() -> tuple[dict[str, list[str]], set[str]]:
     usi: dict[str, list[str]] = {}
     prefissi: set[str] = set()
-    for f in sorted(SRC.rglob("*.py")):
-        if "__pycache__" in f.parts:
-            continue
+    for f in sorgenti():
         testo = f.read_text(encoding="utf-8")
         for k in RX_USO.findall(testo):
             usi.setdefault(k, []).append(str(f.relative_to(RADICE)))
         prefissi.update(RX_PREFISSO.findall(testo))
+        # chiavi passate a una funzione da una tabella (vesper-logout) o
+        # composte altrove: se la chiave compare tale e quale, e' usata
+        for k in RX_LETTERALE.findall(testo):
+            if k.rsplit(".", 1)[1] in ESTENSIONI:      # "rc.xml" e' un file
+                continue
+            usi.setdefault(k, []).append(str(f.relative_to(RADICE)))
     return usi, prefissi
 
 

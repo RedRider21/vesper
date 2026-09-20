@@ -15,6 +15,12 @@ import gi
 gi.require_version("Gtk", "3.0")
 from gi.repository import Gtk, Gdk, GLib  # noqa: E402
 
+try:
+    from vesper.i18n import t as _t       # noqa: E402
+except Exception:                         # noqa: BLE001
+    def _t(chiave, **kw):                 # ripiego: mostra la chiave
+        return chiave
+
 HIST = os.path.join(os.environ.get("XDG_CACHE_HOME",
                     os.path.expanduser("~/.cache")), "vesper", "clipboard.json")
 MAX_ITEMS = 30
@@ -74,7 +80,7 @@ def run_menu():
     cb = Gtk.Clipboard.get(Gdk.SELECTION_CLIPBOARD)
 
     win = Gtk.Window(type=Gtk.WindowType.TOPLEVEL)
-    win.set_title("Appunti")
+    win.set_title(_t("cb.title"))
     win.set_decorated(True)
     win.set_skip_taskbar_hint(True)
     win.set_keep_above(True)
@@ -88,7 +94,7 @@ def run_menu():
     box.set_border_width(8)
     win.add(box)
     head = Gtk.Label()
-    head.set_markup("<b>Appunti</b>  <small>(clic per ricopiare · Esc per chiudere)</small>")
+    head.set_markup("<b>%s</b>  <small>%s</small>" % (_t("cb.title"), _t("cb.hint")))
     head.set_xalign(0)
     box.pack_start(head, False, False, 0)
 
@@ -112,7 +118,7 @@ def run_menu():
             lst.remove(c)
         if not entries:
             row = Gtk.ListBoxRow(); row.set_selectable(False)
-            lab = Gtk.Label(label="(cronologia vuota)"); lab.set_xalign(0)
+            lab = Gtk.Label(label=_t("cb.empty")); lab.set_xalign(0)
             lab.set_margin_top(8); lab.set_margin_bottom(8)
             row.add(lab)
             lst.add(row)
@@ -143,9 +149,9 @@ def run_menu():
     win.connect("destroy", lambda *_: GLib.source_remove(_tid))
 
     footer = Gtk.Box(orientation=Gtk.Orientation.HORIZONTAL, spacing=6)
-    clr = Gtk.Button(label="Svuota cronologia")
+    clr = Gtk.Button(label=_t("cb.clear"))
     clr.connect("clicked", lambda _b: (_save([]), win.destroy()))
-    close = Gtk.Button(label="Chiudi")
+    close = Gtk.Button(label=_t("cb.close"))
     close.connect("clicked", lambda _b: win.destroy())
     footer.pack_start(clr, False, False, 0)
     footer.pack_end(close, False, False, 0)

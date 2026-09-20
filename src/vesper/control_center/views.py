@@ -26,6 +26,7 @@ from vesper.common import (
     icon_button, COL_ACCENT, COL_ALERT,
 )
 from vesper import panelcfg
+from vesper import paths
 
 try:
     from vesper.i18n import t as _t          # traduzioni (it/en/fr/es/de)
@@ -1284,8 +1285,12 @@ def open_statusbar(_btn=None):
 # ---------------------------------------------------------------------------
 # Openbox: temi finestra e menu tasto destro
 # ---------------------------------------------------------------------------
-RC_XML = HOME / ".config/openbox/rc.xml"
-MENU_XML = HOME / ".config/openbox/menu.xml"
+# I file di Vesper, non quelli dell'utente. Fino alla 0.4.1 qui c'erano
+# ~/.config/openbox/rc.xml e menu.xml: il Centro di Controllo scriveva nella
+# configurazione Openbox dell'utente e Vesper, che usa la propria, non vedeva
+# nemmeno le modifiche.
+RC_XML = Path(os.environ.get("VESPER_RC_XML", str(paths.config("openbox-rc.xml"))))
+MENU_XML = paths.config("openbox-menu.xml")
 THEME_DIRS = [
     HOME / ".themes",
     HOME / ".local/share/themes",
@@ -1582,7 +1587,10 @@ def open_text_editor(title: str, path: Path, on_save=None):
     win.show_all()
 
 
-AUTOSTART = HOME / ".config/openbox/autostart"
+# Autostart di Vesper: file suo, eseguito da vesper-session. L'autostart XDG
+# condiviso (~/.config/autostart) resta agli altri desktop e lo esegue
+# vesper-autostart come fa ogni DE.
+AUTOSTART = paths.config("autostart")
 _AS_BEGIN = "# >>> Vesper autostart utente (Centro di Controllo)"
 _AS_END = "# <<< Vesper autostart utente"
 

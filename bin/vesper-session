@@ -32,10 +32,36 @@ XDG_CURRENT_DESKTOP=Vesper
 XDG_SESSION_DESKTOP=vesper
 export XDG_CURRENT_DESKTOP XDG_SESSION_DESKTOP
 
+# Marcatore di sessione. Lo esporta SOLO questo script, ed e' cio' che
+# autorizza Vesper a toccare le impostazioni dell'utente condivise con gli
+# altri desktop (tema GTK, decorazioni, scorciatoie di marco). Un comando
+# `vesper-*` lanciato dentro XFCE o Cinnamon non lo ha, e li' non tocca nulla.
+VESPER_SESSION=1
+export VESPER_SESSION
+
 CONF="${XDG_CONFIG_HOME:-$HOME/.config}/vesper"
 CACHE="${XDG_CACHE_HOME:-$HOME/.cache}/vesper"
 mkdir -p "$CONF" "$CACHE" 2>/dev/null || true
 LOG="$CACHE/session.log"
+
+# --- uscita dalla sessione ------------------------------------------------
+# `vesper-session --logout` termina la sessione SENZA sapere quale gestore
+# finestre sta girando: manda TERM a questo stesso script, che ferma il WM e
+# ripristina il desktop precedente. Prima si faceva `openbox --exit`, che non
+# fa nulla se il gestore e' marco o metacity: era il motivo per cui il logout
+# sembrava non funzionare.
+if [ "${1:-}" = "--logout" ] || [ "${1:-}" = "--esci" ]; then
+  PIDFILE="$CACHE/session.pid"
+  PID=$(head -1 "$PIDFILE" 2>/dev/null || echo "")
+  if [ -n "$PID" ] && [ -d "/proc/$PID" ] &&
+     grep -qa "vesper-session" "/proc/$PID/cmdline" 2>/dev/null; then
+    kill -TERM "$PID" 2>/dev/null && exit 0
+  fi
+  # Nessuna sessione Vesper viva: non si chiude la sessione di qualcun altro.
+  echo "vesper-session: nessuna sessione Vesper in corso (qui il desktop e'" \
+       "${XDG_CURRENT_DESKTOP:-sconosciuto}): esci dal menu del tuo desktop." >&2
+  exit 1
+fi
 
 # Bus di SESSIONE: serve alle notifiche, al Bluetooth (obexd) e a molte app.
 # Se non c'è, ci riavviamo dentro dbus-run-session (una volta sola: la guardia
@@ -48,6 +74,31 @@ if [ -z "${DBUS_SESSION_BUS_ADDRESS:-}" ] && [ -z "${VESPER_DBUS:-}" ] \
 fi
 
 exec >>"$LOG" 2>&1
+
+# PID di questo script: lo legge vesper-logout per terminare la sessione
+# qualunque sia il gestore finestre.
+echo $$ > "$CACHE/session.pid"
+
+# Pulizia una tantum: le versioni fino alla 0.4.1 scrivevano il blocco
+# dell'autostart dentro ~/.config/openbox/autostart, che è dell'utente. Si
+# migra nel file di Vesper e si toglie di là.
+"$VESPER_PY" -m vesper.sessionstate migra 2>&1 || true
+
+# Fotografia del desktop PRECEDENTE (tema GTK, .gtkrc-2.0, gsettings delle
+# decorazioni e delle scorciatoie): all'uscita si rimette tutto com'era, cosi'
+# chi torna in XFCE o in Cinnamon ritrova il suo desktop.
+"$VESPER_PY" -m vesper.sessionstate salva 2>&1 || true
+
+# Uscita ordinata: ferma il gestore finestre, ripristina il desktop di prima,
+# pulisce i file di stato. Vale per il logout, per un TERM del display manager
+# e per la fine naturale della sessione.
+_vesper_uscita() {
+  [ -n "${WM_PID:-}" ] && kill -TERM "$WM_PID" 2>/dev/null || true
+  "$VESPER_PY" -m vesper.sessionstate ripristina 2>&1 || true
+  rm -f "$CACHE/session.pid" "$CACHE/wm.pid" 2>/dev/null || true
+  echo "=== sessione Vesper terminata $(date) ==="
+}
+trap '_vesper_uscita; exit 0' TERM INT HUP
 echo "=== sessione Vesper avviata $(date) ==="
 
 # --- 2. configurazione del window manager, solo se manca -------------------
@@ -119,6 +170,9 @@ command -v spice-vdagent >/dev/null 2>&1 && spice-vdagent 2>/dev/null &
 
 # --- 5. autostart XDG (le app che l'utente/la distro voglione all'avvio) ----
 command -v vesper-autostart >/dev/null 2>&1 && (sleep 2; vesper-autostart) &
+# Autostart NOSTRO (~/.config/vesper/autostart, lo scrive il Centro di
+# Controllo): file di Vesper, non condiviso con gli altri desktop.
+[ -r "$CONF/autostart" ] && (sleep 2; sh "$CONF/autostart") &
 
 # --- 6. window manager in primo piano: la sessione vive quanto lui ---------
 # Quale gestore finestre: la scelta sta in ~/.config/vesper/wm.
@@ -151,12 +205,23 @@ Installa il pacchetto 'openbox' e riprova." 2>/dev/null
 fi
 echo "gestore finestre: $WM"
 
+# Il gestore finestre gira in BACKGROUND e la sessione lo aspetta: cosi'
+# quando esce (logout, crash, --exit) questo script riprende il controllo ed
+# esegue il ripristino. Con `exec` il ripristino non avverrebbe mai.
 case "$WM" in
   openbox)
-    if [ -f "$RC" ]; then
-      exec openbox --config-file "$RC"
+    # SEMPRE --config-file col rc.xml di Vesper: `openbox` nudo leggerebbe
+    # ~/.config/openbox/rc.xml, cioè la configurazione Openbox dell'utente.
+    if [ ! -f "$RC" ]; then
+      for d in ${VESPER_DATA_DIRS:-} /usr/local/share/vesper /usr/share/vesper; do
+        [ -f "$d/skel/openbox/rc.xml" ] && { cp "$d/skel/openbox/rc.xml" "$RC"; break; }
+      done
     fi
-    exec openbox ;;
-  marco)     exec marco ;;
-  metacity)  exec metacity ;;
+    openbox --config-file "$RC" & WM_PID=$! ;;
+  marco)     marco & WM_PID=$! ;;
+  metacity)  metacity & WM_PID=$! ;;
 esac
+echo "$WM_PID" > "$CACHE/wm.pid"
+wait "$WM_PID"
+_vesper_uscita
+exit 0

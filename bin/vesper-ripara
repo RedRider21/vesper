@@ -1,0 +1,28 @@
+#!/bin/sh
+# SPDX-License-Identifier: AGPL-3.0-or-later
+# Copyright (C) 2026 Daniele Deplano (RedRider21). Parte di Vesper.
+# vesper-ripara - rimette a posto il desktop che c'era prima di Vesper.
+#
+#   vesper-ripara            ripristina (o, se non c'è la fotografia, riporta
+#                            ai valori della distribuzione) tema GTK, icone,
+#                            decorazioni e scorciatoie di marco/metacity
+#   vesper-ripara --mostra   dice cosa c'è nella fotografia, senza toccare
+#
+# Serve a chi ha provato Vesper fino alla 0.4.1: quelle versioni scrivevano le
+# impostazioni condivise senza salvarle prima, e chi rientrava in MATE o XFCE
+# trovava tema e scorciatoie cambiati. Dalla 0.5.0 la sessione fotografa tutto
+# all'avvio e rimette com'era all'uscita, da sola.
+_self=$(readlink -f "$0" 2>/dev/null || echo "$0"); _d=$(dirname "$_self")
+for _e in "$_d/env.sh" "$(dirname "$_d")/lib/vesper/env.sh" \
+          /usr/local/lib/vesper/env.sh /usr/lib/vesper/env.sh; do
+  [ -r "$_e" ] && { . "$_e"; break; }
+done
+[ -n "${VESPER_PY:-}" ] || { echo "vesper-ripara: python3 non disponibile" >&2; exit 1; }
+
+case "${1:-}" in
+  --mostra) exec "$VESPER_PY" -m vesper.sessionstate mostra ;;
+  -h|--help)
+    echo "uso: vesper-ripara [--mostra]"; exit 0 ;;
+esac
+"$VESPER_PY" -m vesper.sessionstate migra
+exec "$VESPER_PY" -m vesper.sessionstate ripara

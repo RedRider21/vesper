@@ -19,8 +19,9 @@ from vesper import paths
 
 HOME = paths.HOME
 CONF = paths.config("panel.conf")
-RC_XML = Path(os.environ.get(
-    "VESPER_RC_XML", str(HOME / ".config" / "openbox" / "rc.xml")))
+# Il rc.xml di Vesper, MAI quello dell'utente in ~/.config/openbox: quella è
+# la configurazione della sua sessione Openbox e non ci si scrive.
+RC_XML = Path(os.environ.get("VESPER_RC_XML", str(paths.config("openbox-rc.xml"))))
 
 # default e limiti
 PANEL_HEIGHT = 34          # compatibilita': altezza di default

@@ -631,6 +631,10 @@ def set_wm_theme(key: str | None = None) -> str:
     # VESPER_NO_GSETTINGS=1: qui ci si ferma prima di scrivere.
     if os.environ.get("VESPER_NO_GSETTINGS"):
         return theme
+    if not paths.sessione_vesper():
+        # Il pannello di Vesper avviato dentro MATE cambierebbe il tema delle
+        # decorazioni della sessione MATE: marco legge da qui.
+        return theme
     try:
         subprocess.run(["gsettings", "set", schema, "theme", theme],
                        stdout=subprocess.DEVNULL, stderr=subprocess.DEVNULL,
@@ -857,6 +861,8 @@ def available_icon_themes() -> list[str]:
 def _replace_line(path: Path, prefix: str, newline: str) -> None:
     """Sostituisce (o aggiunge) una riga che inizia con prefix in un file di
     config a righe, senza toccare le altre impostazioni."""
+    if path == HOME / ".gtkrc-2.0" and not paths.sessione_vesper():
+        return                        # file dell'utente, non nostro
     try:
         lines = path.read_text().splitlines() if path.exists() else []
     except Exception:                     # noqa: BLE001
@@ -983,11 +989,18 @@ def set_gtk_theme(key: str | None = None) -> str:
 def gtk3_set(key: str, value: str) -> None:
     """Scrive una chiave in ~/.config/gtk-3.0/settings.ini.
 
+    Quel file NON è di Vesper: è dell'utente e lo leggono tutte le
+    applicazioni GTK, XFCE e MATE compresi. Ci si scrive solo quando Vesper è
+    la sessione attiva (`paths.sessione_vesper()`), e la sessione ne ha
+    salvato prima il contenuto per rimetterlo all'uscita.
+
     ATTENZIONE: quel file è un key file GLib e DEVE iniziare col gruppo
     [Settings]. Senza, GTK lo rifiuta INTERO ("Key file does not start with a
     group") e nessuna impostazione viene letta: era il caso di una home nuova,
     dove il file non esiste ancora e va creato da zero.
     """
+    if not paths.sessione_vesper():
+        return                            # fuori dalla sessione non si tocca
     path = HOME / ".config" / "gtk-3.0" / "settings.ini"
     try:
         lines = path.read_text().splitlines() if path.exists() else []

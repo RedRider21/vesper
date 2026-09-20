@@ -48,15 +48,15 @@ from pathlib import Path
 # 1) VESPER_RC_XML (esportata da vesper-session), 2) il rc.xml di Vesper,
 # 3) quello di Openbox "nudo" come ultima spiaggia.
 def _rc_path() -> Path:
+    """Il rc.xml DI VESPER. Mai ~/.config/openbox/rc.xml: quello è la
+    configurazione Openbox dell'utente, che deve restare intatta anche se
+    Vesper non è mai stato avviato."""
     env = os.environ.get("VESPER_RC_XML")
     if env:
         return Path(env)
     conf = Path(os.environ.get("VESPER_CONFIG_HOME",
                                os.path.expanduser("~/.config/vesper")))
-    nostro = conf / "openbox-rc.xml"
-    if nostro.exists():
-        return nostro
-    return Path(os.path.expanduser("~/.config/openbox/rc.xml"))
+    return conf / "openbox-rc.xml"
 
 
 RC = _rc_path()

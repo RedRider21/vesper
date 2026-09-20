@@ -42,6 +42,25 @@ STATE_HOME = _xdg("VESPER_STATE_HOME",
                   _xdg("XDG_DATA_HOME", HOME / ".local" / "share") / APP)
 
 
+def sessione_vesper() -> bool:
+    """True se stiamo girando DENTRO la sessione Vesper.
+
+    Solo allora Vesper può toccare le impostazioni che condivide con gli altri
+    ambienti desktop installati (tema GTK in `~/.config/gtk-3.0/settings.ini`
+    e `~/.gtkrc-2.0`, decorazioni e scorciatoie via gsettings): fuori — per
+    esempio col pannello di Vesper avviato dentro XFCE o MATE — si cambierebbe
+    il desktop di qualcun altro, che è esattamente quello che è successo fino
+    alla 0.4.1.
+
+    Il marcatore lo esporta `vesper-session` e basta. `XDG_CURRENT_DESKTOP`
+    non va bene: `env.sh` la imposta a Vesper anche per un comando singolo.
+    `VESPER_ALLOW_GLOBAL=1` forza la mano a chi sa cosa sta facendo.
+    """
+    if os.environ.get("VESPER_ALLOW_GLOBAL") == "1":
+        return True
+    return os.environ.get("VESPER_SESSION") == "1"
+
+
 def config(*parts: str) -> Path:
     """Percorso dentro la configurazione utente (non crea nulla)."""
     return CONFIG_HOME.joinpath(*parts)

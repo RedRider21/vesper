@@ -31,8 +31,11 @@ except Exception:                     # noqa: BLE001
 ACTIONS = [
     ("system-lock-screen-symbolic", "session.lock", "Blocca",
      ["vesper-screensaver"]),
+    # NON `openbox --exit`: non fa nulla se il gestore finestre e' marco o
+    # metacity. Si chiede alla sessione di chiudersi, e lei ferma il gestore
+    # che sta davvero girando e rimette il desktop di prima.
     ("system-log-out-symbolic", "session.logout", "Esci",
-     ["openbox", "--exit"]),
+     ["vesper-session", "--logout"]),
     ("system-reboot-symbolic", "session.reboot", "Riavvia",
      ["vesper-shutdown", "reboot"]),
     ("system-shutdown-symbolic", "session.poweroff", "Spegni",

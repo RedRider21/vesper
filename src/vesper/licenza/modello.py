@@ -42,6 +42,9 @@ PRODOTTO = "vesper"
 # caratteri esadecimali dello sha256 della chiave pubblica. `vesper-licgen
 # chiavi` stampa la riga da incollare qui dopo aver generato la coppia.
 CHIAVI_FIDATE: dict[str, str] = {
+    # Chiave di firma di Daniele Deplano (RedRider21), generata il 2026-09-21.
+    # La privata sta offline: senza di lei non si emettono licenze valide.
+    "ee2daa4883ef5c91": "a370b5e6d57430b366a0420add2417e76caf2ddd48cc3bee1e470d1914969aa6",
     # "0123456789abcdef": "…64 caratteri esadecimali…",
 }
 

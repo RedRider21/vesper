@@ -120,6 +120,8 @@ VIEW_MAP = {
     "language": views.open_language,
     "zram": views.open_zram,
     "memoria": views.open_zram,
+    "licenza": views.open_licenza,
+    "license": views.open_licenza,
 }
 
 
@@ -253,7 +255,9 @@ def build_window() -> Gtk.Window:
              launch("zram")),
         Tile("utilities-terminal", _t("cc.t.logs"), _t("cc.d.logs"),
              launch("log")),
-    ]), False, False, 0)
+    ] + ([Tile("application-certificate", _t("cc.t.licenza"),
+               _t("cc.d.licenza"), launch("licenza"))]
+         if views.licenza_disponibile() else [])), False, False, 0)
 
     footer = Gtk.Label(label=_t("cc.footer"))
     footer.set_xalign(0)

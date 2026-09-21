@@ -8,6 +8,7 @@ dove un programma dedicato e' gia' una GUI: lxappearance).
 """
 from __future__ import annotations
 
+import json
 import os
 import re
 import shutil
@@ -3387,6 +3388,190 @@ def open_language(_btn=None):
             info_dialog(win, _t("v.lang.title"),
                         _t("v.lang.set_msg"))
     b_apply.connect("clicked", _apply)
+
+    win.show_all()
+    return win
+
+
+# ---------------------------------------------------------------------------
+# Licenza commerciale (solo se il modulo c'è: nella versione AGPL non c'è)
+# ---------------------------------------------------------------------------
+def licenza_disponibile() -> bool:
+    """True se questa installazione ha la gestione delle licenze commerciali."""
+    try:
+        import vesper.licenza.modello                    # noqa: F401
+        return True
+    except Exception:                                    # noqa: BLE001
+        return False
+
+
+def open_licenza(_btn=None):
+    """Licenza commerciale: stato, inserimento del file, rapporto d'uso.
+
+    È la vista che usa il CLIENTE. Vesper resta AGPL per tutti: chi non ha
+    comprato nulla non vede nemmeno questa tessera.
+    """
+    if not licenza_disponibile():
+        # Versione AGPL: il modulo non c'è. Si dice, invece di sollevare.
+        info_dialog(_t("v.lic.title"), _t("v.lic.only_commercial"), level="info")
+        return None
+    from vesper.licenza import modello as _lic
+
+    win, body = panel_window(_t("v.lic.title"), 640, 560)
+
+    intro = Gtk.Label(label=_t("v.lic.intro"))
+    intro.set_xalign(0); intro.set_line_wrap(True)
+    intro.get_style_context().add_class("vesper-val")
+    body.pack_start(intro, False, False, 0)
+
+    griglia = Gtk.Grid(column_spacing=16, row_spacing=6)
+    body.pack_start(griglia, False, False, 6)
+    valori = {}
+    for riga, (chiave, etichetta) in enumerate((
+            ("stato", _t("v.lic.state")),
+            ("cliente", _t("v.lic.customer")),
+            ("id", _t("v.lic.number")),
+            ("postazioni", _t("v.lic.seats")),
+            ("scadenza", _t("v.lic.expiry")),
+            ("nota", _t("v.lic.note")),
+            ("installazione", _t("v.lic.install_id")))):
+        k = Gtk.Label(label=etichetta); k.set_xalign(0)
+        k.get_style_context().add_class("vesper-key")
+        v = Gtk.Label(label="-"); v.set_xalign(0); v.set_line_wrap(True)
+        v.set_selectable(True)
+        v.get_style_context().add_class("vesper-val")
+        griglia.attach(k, 0, riga, 1, 1)
+        griglia.attach(v, 1, riga, 1, 1)
+        valori[chiave] = v
+
+    def aggiorna():
+        doc = _lic.carica()
+        valori["installazione"].set_text(_lic.id_installazione())
+        if doc is None:
+            valori["stato"].set_text(_t("v.lic.none"))
+            for c in ("cliente", "id", "postazioni", "scadenza", "nota"):
+                valori[c].set_text("-")
+            return False
+        esito = _lic.verifica(doc)
+        dati = esito.dati
+        valori["stato"].set_text(esito.motivo)
+        valori["cliente"].set_text(dati.get("cliente", "-"))
+        valori["id"].set_text(dati.get("id", "-"))
+        valori["postazioni"].set_text(str(dati.get("postazioni", "-")))
+        valori["scadenza"].set_text(dati.get("scadenza") or _t("v.lic.no_expiry"))
+        valori["nota"].set_text(dati.get("nota", "-"))
+        return bool(esito)
+
+    aggiorna()
+
+    # --- inserimento: da file o incollando il testo ------------------------
+    sep = Gtk.Label(label=_t("v.lic.install_section")); sep.set_xalign(0)
+    sep.get_style_context().add_class("vesper-section")
+    body.pack_start(sep, False, False, 8)
+
+    spiega = Gtk.Label(label=_t("v.lic.install_hint"))
+    spiega.set_xalign(0); spiega.set_line_wrap(True)
+    spiega.get_style_context().add_class("vesper-val")
+    body.pack_start(spiega, False, False, 0)
+
+    testo = Gtk.TextView()
+    testo.set_wrap_mode(Gtk.WrapMode.CHAR)
+    testo.set_monospace(True)
+    sw = Gtk.ScrolledWindow(); sw.add(testo)
+    sw.set_size_request(-1, 120)
+    sw.set_policy(Gtk.PolicyType.AUTOMATIC, Gtk.PolicyType.AUTOMATIC)
+    body.pack_start(sw, False, False, 0)
+
+    riga_b = Gtk.Box(orientation=Gtk.Orientation.HORIZONTAL, spacing=8)
+    body.pack_start(riga_b, False, False, 6)
+
+    def _installa(documento):
+        esito = _lic.verifica(documento)
+        if not esito:
+            info_dialog(_t("v.lic.rejected"), esito.motivo, level="error",
+                        parent=win)
+            return
+        _lic.installa(documento)
+        aggiorna()
+        buf = testo.get_buffer()
+        buf.set_text("")
+        info_dialog(_t("v.lic.installed"),
+                    "%s - %s" % (esito.dati.get("cliente", ""),
+                                 esito.dati.get("id", "")), parent=win)
+
+    def _da_file(_b):
+        d = Gtk.FileChooserDialog(title=_t("v.lic.choose_file"),
+                                  transient_for=win,
+                                  action=Gtk.FileChooserAction.OPEN)
+        d.add_buttons(_t("v.cancel"), Gtk.ResponseType.CANCEL,
+                      _t("v.lic.install"), Gtk.ResponseType.OK)
+        f = Gtk.FileFilter(); f.set_name("JSON"); f.add_pattern("*.json")
+        d.add_filter(f)
+        risposta = d.run()
+        nome = d.get_filename()
+        d.destroy()
+        if risposta != Gtk.ResponseType.OK or not nome:
+            return
+        try:
+            _installa(json.loads(Path(nome).read_text(encoding="utf-8")))
+        except (OSError, ValueError) as e:
+            info_dialog(_t("v.lic.rejected"), str(e), level="error", parent=win)
+
+    def _da_testo(_b):
+        buf = testo.get_buffer()
+        grezzo = buf.get_text(buf.get_start_iter(), buf.get_end_iter(), False)
+        if not grezzo.strip():
+            return
+        try:
+            _installa(json.loads(grezzo))
+        except ValueError as e:
+            info_dialog(_t("v.lic.rejected"), str(e), level="error", parent=win)
+
+    b_file = icon_button(_t("v.lic.from_file"), "document-open", primary=True)
+    b_file.connect("clicked", _da_file)
+    riga_b.pack_start(b_file, False, False, 0)
+    b_testo = icon_button(_t("v.lic.from_text"), "edit-paste")
+    b_testo.connect("clicked", _da_testo)
+    riga_b.pack_start(b_testo, False, False, 0)
+
+    # --- rapporto d'uso ----------------------------------------------------
+    sep2 = Gtk.Label(label=_t("v.lic.report_section")); sep2.set_xalign(0)
+    sep2.get_style_context().add_class("vesper-section")
+    body.pack_start(sep2, False, False, 8)
+
+    spiega2 = Gtk.Label(label=_t("v.lic.report_hint"))
+    spiega2.set_xalign(0); spiega2.set_line_wrap(True)
+    spiega2.get_style_context().add_class("vesper-val")
+    body.pack_start(spiega2, False, False, 0)
+
+    def _rapporto(_b):
+        doc = _lic.carica()
+        if doc is None:
+            info_dialog(_t("v.lic.none"), "", level="warn", parent=win)
+            return
+        d = Gtk.FileChooserDialog(title=_t("v.lic.report_save"),
+                                  transient_for=win,
+                                  action=Gtk.FileChooserAction.SAVE)
+        d.add_buttons(_t("v.cancel"), Gtk.ResponseType.CANCEL,
+                      _t("v.lic.report_btn"), Gtk.ResponseType.OK)
+        d.set_current_name("rapporto-%s.json" % _lic.id_installazione()[:8])
+        risposta = d.run()
+        nome = d.get_filename()
+        d.destroy()
+        if risposta != Gtk.ResponseType.OK or not nome:
+            return
+        try:
+            Path(nome).write_text(json.dumps(_lic.rapporto(doc), indent=1,
+                                             ensure_ascii=False) + "\n",
+                                  encoding="utf-8")
+            info_dialog(_t("v.lic.report_done"), nome, parent=win)
+        except OSError as e:
+            info_dialog(_t("v.lic.report_failed"), str(e), level="error",
+                        parent=win)
+
+    b_rap = icon_button(_t("v.lic.report_btn"), "document-save")
+    b_rap.connect("clicked", _rapporto)
+    body.pack_start(b_rap, False, False, 0)
 
     win.show_all()
     return win

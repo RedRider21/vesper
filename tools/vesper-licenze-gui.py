@@ -466,7 +466,7 @@ class Finestra(Gtk.Window):
             return
         d = Gtk.Dialog(title="Storico di %s" % v.get("id", ""),
                        transient_for=self, modal=True)
-        d.set_default_size(560, 420)
+        d.set_default_size(620, 440)
         d.add_button("Chiudi", Gtk.ResponseType.CLOSE)
         box = d.get_content_area()
         box.set_spacing(8)
@@ -496,16 +496,23 @@ class Finestra(Gtk.Window):
 
         store = Gtk.ListStore(str, str, str)
         for riga in v.get("storico", []):
-            quando = riga.get("quando", "").replace("T", " ")
+            # "2026-09-21T09:12:00" -> "2026-09-21 09:12": i secondi non
+            # servono, e la data intera deve restare leggibile.
+            quando = riga.get("quando", "").replace("T", " ")[:16]
             extra = riga.get("dettaglio", "")
             if riga.get("installazioni") is not None:
                 extra = "%s installazioni — %s" % (riga["installazioni"], extra)
             store.append([quando, riga.get("evento", ""), extra])
         vista = Gtk.TreeView(model=store)
-        for i, titolo in enumerate(("Quando", "Evento", "Dettaglio")):
+        for i, (titolo, larghezza) in enumerate((("Quando", 130),
+                                                 ("Evento", 90),
+                                                 ("Dettaglio", 240))):
             r = Gtk.CellRendererText()
             r.set_property("ellipsize", Pango.EllipsizeMode.END)
-            vista.append_column(Gtk.TreeViewColumn(titolo, r, text=i))
+            col = Gtk.TreeViewColumn(titolo, r, text=i)
+            col.set_min_width(larghezza)
+            col.set_resizable(True)
+            vista.append_column(col)
         sw = Gtk.ScrolledWindow(); sw.add(vista); sw.set_vexpand(True)
         box.pack_start(sw, True, True, 0)
 

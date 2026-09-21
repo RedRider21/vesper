@@ -172,23 +172,22 @@ class DialogoEmissione(Gtk.Dialog):
         self.mesi.set_value(12)
         self.nota = riga(3, "Nota / contratto", Gtk.Entry())
         self.nota.set_placeholder_text("es. contratto 2026/017")
-        self.endpoint = riga(4, "Endpoint (facoltativo)", Gtk.Entry())
-        self.endpoint.set_placeholder_text("https://… solo se il contratto lo prevede")
 
         avviso = Gtk.Label()
         avviso.set_markup("<small>Durata 0 = senza scadenza: sconsigliata, la "
                           "scadenza annuale\nè ciò che dà un momento di "
-                          "riconciliazione obbligato.</small>")
+                          "riconciliazione obbligato.\n\nTutto resta in locale: "
+                          "nessuna attivazione in rete, il conteggio\npassa dai "
+                          "rapporti che il cliente consegna.</small>")
         avviso.set_xalign(0)
         avviso.get_style_context().add_class("sotto")
-        griglia.attach(avviso, 0, 5, 2, 1)
+        griglia.attach(avviso, 0, 4, 2, 1)
 
         if rinnovo:
             self.cliente.set_text(voce.get("cliente", ""))
             self.cliente.set_sensitive(False)
             self.postazioni.set_value(voce.get("postazioni", 10))
             self.nota.set_text(voce.get("nota", ""))
-            self.endpoint.set_text(voce.get("endpoint", ""))
         self.show_all()
 
     def valori(self) -> dict:
@@ -197,7 +196,6 @@ class DialogoEmissione(Gtk.Dialog):
             "postazioni": int(self.postazioni.get_value()),
             "mesi": int(self.mesi.get_value()),
             "nota": self.nota.get_text().strip(),
-            "endpoint": self.endpoint.get_text().strip(),
         }
 
 
@@ -372,8 +370,6 @@ class Finestra(Gtk.Window):
                "--out", str(destinazione)]
         if val["nota"]:
             cmd += ["--nota", val["nota"]]
-        if val["endpoint"]:
-            cmd += ["--endpoint", val["endpoint"]]
         try:
             r = subprocess.run(cmd, capture_output=True, text=True, timeout=30)
         except (OSError, subprocess.SubprocessError) as e:
@@ -389,7 +385,6 @@ class Finestra(Gtk.Window):
                 "postazioni": dati["postazioni"], "emessa": dati["emessa"],
                 "scadenza": dati.get("scadenza", ""),
                 "nota": dati.get("nota", ""),
-                "endpoint": dati.get("endpoint", ""),
                 "file": str(destinazione)}
         if precedente:
             voce["rinnovo_di"] = precedente.get("id", "")

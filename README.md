@@ -244,3 +244,30 @@ Il nome «Vesper» e il marchio (la stella della sera) sono di Daniele Deplano
 [CLA](CLA.md) — serve a tenere in piedi la doppia licenza, non cede la
 proprietà del tuo codice. Le regole pratiche sono in
 [`CONTRIBUTING.md`](CONTRIBUTING.md).
+
+### Mi serve la licenza commerciale?
+
+Quasi sempre **no**. Se usi Vesper — anche in azienda, anche su cento computer,
+anche modificandolo — e rispetti l'AGPL, non devi niente a nessuno: installa e
+usa, è software libero.
+
+La licenza commerciale esiste per i casi in cui l'AGPL ti **impedisce**
+qualcosa:
+
+- **metti Vesper in un prodotto che vendi** (chiosco, POS, cartellonistica,
+  terminale industriale, dispositivo medicale) e le tue aggiunte o modifiche
+  non possono essere pubblicate;
+- **lo integri con software proprietario** in modo che il tuo codice diventi
+  opera derivata, e quel codice deve restare chiuso;
+- **lo offri attraverso la rete** (desktop remoto, VDI, thin client): l'AGPL,
+  all'articolo 13, obbliga a dare il sorgente completo anche agli utenti che si
+  collegano da remoto, tue modifiche comprese;
+- **la tua organizzazione vieta il copyleft** per politica interna, pur senza
+  un obbligo tecnico;
+- **ti servono garanzie contrattuali** che una licenza libera non dà per
+  definizione: manleva, supporto con tempi concordati, impegni sulle versioni.
+
+Se non ti riconosci in nessuno di questi punti, resta con l'AGPL. Se invece
+uno ti riguarda: **deplano.d@gmail.com** — si concorda una licenza a numero di
+installazioni, con la relativa gestione (`vesper-licenza`) nel pacchetto
+dedicato.

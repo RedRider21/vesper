@@ -24,6 +24,10 @@ mai uscire di lì.
 La chiave privata è un file di 32 byte con permessi 600. Perderla significa
 non poter più emettere licenze verificabili dalle installazioni esistenti:
 copiala su due supporti diversi e tienila offline.
+
+Tutto il sistema funziona **senza rete**: si firma qui, si verifica sul
+computer del cliente, e il conteggio passa da file. Nessun server di
+attivazione, per scelta.
 """
 from __future__ import annotations
 
@@ -96,8 +100,6 @@ def cmd_emetti(args) -> int:
         dati["scadenza"] = scadenza
     if args.nota:
         dati["nota"] = args.nota
-    if args.endpoint:
-        dati["endpoint"] = args.endpoint
 
     documento = modello.emetti(dati, seme)
     testo = json.dumps(documento, indent=1, ensure_ascii=False) + "\n"
@@ -201,7 +203,6 @@ def main(argv=None) -> int:
     p.add_argument("--id", help="identificativo della licenza (altrimenti generato)")
     p.add_argument("--nota", help="riferimento al contratto")
     p.add_argument("--emessa-da", dest="emessa_da")
-    p.add_argument("--endpoint", help="URL di attivazione, se previsto dal contratto")
     p.add_argument("--out", help="file di destinazione")
     p.set_defaults(func=cmd_emetti)
 

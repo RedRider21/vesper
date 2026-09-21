@@ -21,6 +21,12 @@ autentica, intestata e non scaduta. NON impedisce a un cliente di modificare
 il proprio software — è AGPL, il codice ce l'ha — ma renderebbe l'eventuale
 manomissione un atto deliberato e dimostrabile, che è ciò che serve davanti
 a un contratto.
+
+**Niente rete, per scelta.** Non esiste attivazione online, né telemetria, né
+controlli periodici verso un server: la verifica è tutta locale e il conteggio
+passa da file che il cliente consegna. Un desktop non deve dipendere da un
+server per funzionare, e un fornitore non deve sapere quando i suoi clienti
+accendono il computer.
 """
 from __future__ import annotations
 

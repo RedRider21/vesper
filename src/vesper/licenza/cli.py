@@ -11,7 +11,11 @@ in uso.
     vesper-licenza --id               identificativo di questa installazione
     vesper-licenza --rapporto         rapporto sigillato di QUESTA macchina
     vesper-licenza --unisci F...      unisce i rapporti di più macchine
-    vesper-licenza --attiva           registra l'installazione (se prevista)
+
+**Tutto resta su questo computer.** Il sistema di licenze di Vesper non si
+collega a nessun server, né alla consegna né durante l'uso: la licenza si
+verifica con una firma che il programma porta con sé, e il conteggio delle
+installazioni passa da file che decidi tu di consegnare al fornitore.
 
 Il rapporto non contiene nulla di personale: identificativo pseudonimo della
 macchina (hash del machine-id), numero di licenza, data e versione. Il nome
@@ -130,11 +134,8 @@ def main(argv=None) -> int:
             print("uso: vesper-licenza --unisci FILE [FILE...]", file=sys.stderr)
             return 2
         return _unisci(argv[1:], out)
-    if cmd == "--attiva":
-        from vesper.licenza import attivazione
-        return attivazione.attiva_ora()
     print("uso: vesper-licenza [--stato|--installa FILE|--id|--rapporto|"
-          "--unisci FILE...|--attiva]", file=sys.stderr)
+          "--unisci FILE...]", file=sys.stderr)
     return 2
 
 

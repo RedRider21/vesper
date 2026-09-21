@@ -12,7 +12,11 @@ Identificatore SPDX:  AGPL-3.0-or-later
 
 Doppia licenza: il titolare, che detiene il 100% dei diritti sul codice
 originale, rende disponibile in alternativa all'AGPLv3 una LICENZA COMMERCIALE
-per usi che non possono o non intendono rispettare gli obblighi di copyleft.
+per usi che non possono o non intendono rispettare gli obblighi di copyleft:
+prodotti che incorporano Vesper senza poterne pubblicare le modifiche,
+integrazioni con software proprietario, erogazione attraverso la rete (art. 13
+AGPL), o vincoli interni all'organizzazione. Per chi rispetta l'AGPL non serve
+alcuna licenza aggiuntiva.
 Per informazioni: Daniele Deplano (RedRider21) <deplano.d@gmail.com>.
 
 Questo programma è distribuito nella speranza che sia utile, ma SENZA ALCUNA

@@ -44,6 +44,16 @@ from vesper.licenza import ed25519
 
 PRODOTTO = "vesper"
 
+# Che cosa certifica una licenza. Il formato firmato è sempre lo stesso: cambia
+# il tipo e i campi che ne dipendono.
+#   postazioni  numero di installazioni concordate (OEM, integratori): si
+#               contano, e l'eccedenza fa scattare il true-up
+#   servizi     contratto di assistenza: livello, servizi inclusi, scadenza.
+#               Non si conta niente — è un attestato, non un contatore
+#   sito        uso illimitato dentro un perimetro (una sede, una società)
+TIPI = ("postazioni", "servizi", "sito")
+TIPO_PREDEFINITO = "postazioni"
+
 # Chiavi pubbliche riconosciute: id -> chiave (hex). L'id sono i primi 16
 # caratteri esadecimali dello sha256 della chiave pubblica. `vesper-licgen
 # chiavi` stampa la riga da incollare qui dopo aver generato la coppia.
@@ -117,9 +127,9 @@ def verifica(documento: dict, chiavi: dict[str, str] | None = None,
         return Esito(False, "firma o chiave malformate", dati)
     if not ed25519.verifica(canonico(dati), f, pub):
         return Esito(False, "firma non valida: il file è stato modificato", dati)
-    if dati.get("prodotto") != PRODOTTO:
-        return Esito(False, "licenza di un altro prodotto (%s)"
-                     % dati.get("prodotto"), dati)
+    if not copre(dati, PRODOTTO):
+        coperti = ", ".join(prodotti(dati)) or "?"
+        return Esito(False, "licenza di un altro prodotto (%s)" % coperti, dati)
 
     scad = dati.get("scadenza")
     if scad:
@@ -130,6 +140,33 @@ def verifica(documento: dict, chiavi: dict[str, str] | None = None,
         if (oggi or date.today()) > giorno:
             return Esito(False, "scaduta il %s" % scad, dati)
     return Esito(True, "valida", dati)
+
+
+def prodotti(dati: dict) -> list[str]:
+    """I prodotti coperti. Le licenze vecchie hanno il solo campo `prodotto`:
+    una licenza emessa prima del multi-prodotto deve restare valida."""
+    elenco = dati.get("prodotti")
+    if isinstance(elenco, list) and elenco:
+        return [str(x) for x in elenco]
+    uno = dati.get("prodotto")
+    return [str(uno)] if uno else []
+
+
+def copre(dati: dict, prodotto: str) -> bool:
+    return prodotto in prodotti(dati)
+
+
+def tipo(dati: dict) -> str:
+    t = dati.get("tipo") or TIPO_PREDEFINITO
+    return t if t in TIPI else TIPO_PREDEFINITO
+
+
+def conta_installazioni(dati: dict) -> bool:
+    """True se per questa licenza ha senso contare le installazioni.
+
+    Per un contratto di servizi non ne ha: si vende assistenza, non copie.
+    """
+    return tipo(dati) == "postazioni"
 
 
 def carica(percorso: Path | None = None) -> dict | None:

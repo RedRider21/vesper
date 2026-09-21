@@ -104,40 +104,70 @@ def prepara_demo(cartella: Path, ricrea: bool = False) -> None:
     (cartella / "pubblica.hex").write_text(pubblica.hex() + "\n", encoding="utf-8")
 
     oggi = date.today()
+    # un esempio per ogni tipo, così la demo mostra tutti i casi veri
     esempi = [
-        ("Acme S.p.A.", 50, oggi + timedelta(days=365), "contratto 2026/017",
-         [("conteggio", -174, "12 file di rapporto", 44),
-          ("verifica", -83, "valida", None),
-          ("conteggio", -1, "14 file di rapporto", 57)]),
-        ("Beta Integrazioni srl", 25, oggi + timedelta(days=28),
-         "chiosco museale, rinnovo in vista",
-         [("verifica", -11, "valida", None)]),
-        ("Gamma Sistemi", 10, oggi - timedelta(days=15), "pilota terminato", []),
-        ("Delta Chioschi srl", 120, oggi + timedelta(days=200),
-         "contratto 2026/031 — cartellonistica",
-         [("conteggio", -45, "8 file di rapporto", 118)]),
+        dict(cliente="Acme S.p.A.", tipo="postazioni", prodotti=["vesper"],
+             postazioni=50, scadenza=oggi + timedelta(days=365),
+             nota="contratto 2026/017",
+             eventi=[("conteggio", -174, "12 file di rapporto", 44),
+                     ("verifica", -83, "valida", None),
+                     ("conteggio", -1, "14 file di rapporto", 57)]),
+        dict(cliente="Beta Integrazioni srl", tipo="postazioni",
+             prodotti=["vesper"], postazioni=25,
+             scadenza=oggi + timedelta(days=28),
+             nota="chiosco museale, rinnovo in vista",
+             eventi=[("verifica", -11, "valida", None)]),
+        dict(cliente="Gamma Sistemi", tipo="postazioni", prodotti=["vesper"],
+             postazioni=10, scadenza=oggi - timedelta(days=15),
+             nota="pilota terminato", eventi=[]),
+        dict(cliente="Delta Chioschi srl", tipo="postazioni",
+             prodotti=["vesper"], postazioni=120,
+             scadenza=oggi + timedelta(days=200),
+             nota="contratto 2026/031 — cartellonistica",
+             eventi=[("conteggio", -45, "8 file di rapporto", 118)]),
+        dict(cliente="Epsilon Difesa S.p.A.", tipo="servizi",
+             prodotti=["nexussec", "termux-nexussec"], livello="premium",
+             servizi=["supporto 8x5", "4 giornate di formazione",
+                      "versione aziendale"],
+             scadenza=oggi + timedelta(days=120),
+             nota="contratto 2026/044 — formazione + supporto",
+             eventi=[("verifica", -30, "valida", None)]),
+        dict(cliente="Zeta Università", tipo="sito", prodotti=["vesper"],
+             perimetro="campus di Palermo",
+             scadenza=oggi + timedelta(days=300),
+             nota="convenzione 2026/009", eventi=[]),
     ]
     dati_registro = {"demo": True, "licenze": []}
-    for cliente, posti, scadenza, nota, eventi in esempi:
+    for esempio in esempi:
+        cliente = esempio["cliente"]
         chiave_file = cartella / "emesse" / (
             cliente.split()[0].lower() + ".licenza.json")
-        dati = {"prodotto": modello.PRODOTTO,
+        dati = {"prodotti": esempio["prodotti"],
+                "prodotto": esempio["prodotti"][0],
+                "tipo": esempio["tipo"],
                 "id": "DEMO-%s-%s" % (oggi.year, secrets.token_hex(3).upper()),
-                "cliente": cliente, "postazioni": posti,
+                "cliente": cliente,
                 "emessa": (oggi - timedelta(days=200)).isoformat(),
-                "scadenza": scadenza.isoformat(), "nota": nota,
-                "segreto": "demo"}
+                "scadenza": esempio["scadenza"].isoformat(),
+                "nota": esempio["nota"], "segreto": "demo"}
+        for campo in ("postazioni", "livello", "servizi", "perimetro"):
+            if esempio.get(campo):
+                dati[campo] = esempio[campo]
         documento = modello.emetti(dati, seme)
         chiave_file.write_text(json.dumps(documento, indent=1, ensure_ascii=False)
                                + "\n", encoding="utf-8")
-        voce = {"id": dati["id"], "cliente": cliente, "postazioni": posti,
+        voce = {"id": dati["id"], "cliente": cliente,
+                "tipo": esempio["tipo"], "prodotti": esempio["prodotti"],
+                "postazioni": esempio.get("postazioni", 0),
+                "livello": esempio.get("livello", ""),
+                "servizi": esempio.get("servizi", []),
+                "perimetro": esempio.get("perimetro", ""),
                 "emessa": dati["emessa"], "scadenza": dati["scadenza"],
-                "nota": nota, "file": str(chiave_file),
+                "nota": esempio["nota"], "file": str(chiave_file),
                 "storico": [{"quando": dati["emessa"] + "T09:12:00",
                              "evento": "emessa",
-                             "dettaglio": "%d postazioni, scadenza %s"
-                             % (posti, dati["scadenza"])}]}
-        for evento, giorni, dettaglio, quante in eventi:
+                             "dettaglio": "scadenza %s" % dati["scadenza"]}]}
+        for evento, giorni, dettaglio, quante in esempio["eventi"]:
             riga = {"quando": (oggi + timedelta(days=giorni)).isoformat() + "T10:30:00",
                     "evento": evento, "dettaglio": dettaglio}
             if quante is not None:
@@ -182,11 +212,17 @@ class Registro:
 
     def aggiungi(self, voce: dict) -> None:
         voce.setdefault("storico", [])
+        tipo = voce.get("tipo", "postazioni")
+        if tipo == "postazioni":
+            che_cosa = "%d postazioni" % voce.get("postazioni", 0)
+        elif tipo == "servizi":
+            che_cosa = "assistenza %s" % (voce.get("livello") or "—")
+        else:
+            che_cosa = "sito: %s" % (voce.get("perimetro") or "—")
         voce["storico"].append({"quando": datetime.now().isoformat(timespec="seconds"),
                                 "evento": "emessa",
-                                "dettaglio": "%d postazioni, scadenza %s"
-                                % (voce.get("postazioni", 0),
-                                   voce.get("scadenza") or "nessuna")})
+                                "dettaglio": "%s, scadenza %s"
+                                % (che_cosa, voce.get("scadenza") or "nessuna")})
         self.licenze.append(voce)
         self.salva()
 
@@ -244,6 +280,9 @@ def da_fare(licenze: list[dict]) -> list[str]:
         elif classe == "scade":
             avvisi.append("%s: %s — preparare il rinnovo" % (nome, testo))
 
+        if v.get("tipo", "postazioni") != "postazioni":
+            continue          # assistenza o sito: non si contano installazioni
+
         quando, quante = ultimo_conteggio(v)
         posti = v.get("postazioni", 0)
         if quante is not None and posti and quante > posti:
@@ -278,23 +317,65 @@ class DialogoEmissione(Gtk.Dialog):
         griglia.set_border_width(14)
         self.get_content_area().add(griglia)
 
+        etichette = {}
+
         def riga(n, etichetta, widget):
             lab = Gtk.Label(label=etichetta); lab.set_xalign(1)
             griglia.attach(lab, 0, n, 1, 1)
             widget.set_hexpand(True)
             griglia.attach(widget, 1, n, 1, 1)
+            etichette[id(widget)] = lab
             return widget
 
         self.cliente = riga(0, "Cliente", Gtk.Entry())
         self.cliente.set_placeholder_text("ragione sociale")
-        self.postazioni = riga(1, "Postazioni",
+
+        self.tipo = riga(1, "Tipo", Gtk.ComboBoxText())
+        for t, descrizione in (("postazioni", "a postazioni (si contano)"),
+                               ("servizi", "contratto di assistenza"),
+                               ("sito", "illimitato in un perimetro")):
+            self.tipo.append(t, descrizione)
+        self.tipo.set_active_id("postazioni")
+
+        self.prodotti = riga(2, "Prodotti", Gtk.Entry())
+        self.prodotti.set_text(modello.PRODOTTO)
+        self.prodotti.set_placeholder_text("separati da virgola: un contratto "
+                                           "può coprirne più d'uno")
+
+        self.postazioni = riga(3, "Postazioni",
                                Gtk.SpinButton.new_with_range(1, 100000, 1))
         self.postazioni.set_value(10)
-        self.mesi = riga(2, "Durata (mesi)",
+        self.livello = riga(4, "Livello", Gtk.Entry())
+        self.livello.set_placeholder_text("es. premium, standard")
+        self.servizi = riga(5, "Servizi inclusi", Gtk.Entry())
+        self.servizi.set_placeholder_text("separati da virgola: supporto 8x5, "
+                                          "2 giornate di formazione")
+        self.perimetro = riga(6, "Perimetro", Gtk.Entry())
+        self.perimetro.set_placeholder_text("sede, società, gruppo")
+
+        self.mesi = riga(7, "Durata (mesi)",
                          Gtk.SpinButton.new_with_range(0, 120, 1))
         self.mesi.set_value(12)
-        self.nota = riga(3, "Nota / contratto", Gtk.Entry())
+        self.nota = riga(8, "Nota / contratto", Gtk.Entry())
         self.nota.set_placeholder_text("es. contratto 2026/017")
+
+        # le righe che non c'entrano col tipo scelto spariscono: il caso
+        # semplice deve restare semplice
+        def cambia_tipo(_c=None):
+            t = self.tipo.get_active_id() or "postazioni"
+            for widget, tipi in ((self.postazioni, ("postazioni",)),
+                                 (self.livello, ("servizi",)),
+                                 (self.servizi, ("servizi",)),
+                                 (self.perimetro, ("sito",))):
+                mostra = t in tipi
+                widget.set_visible(mostra)
+                widget.set_no_show_all(not mostra)
+                etichetta = etichette.get(id(widget))
+                if etichetta is not None:
+                    etichetta.set_visible(mostra)
+                    etichetta.set_no_show_all(not mostra)
+        self.tipo.connect("changed", cambia_tipo)
+        self._cambia_tipo = cambia_tipo
 
         avviso = Gtk.Label()
         avviso.set_markup("<small>Durata 0 = senza scadenza: sconsigliata, la "
@@ -304,19 +385,31 @@ class DialogoEmissione(Gtk.Dialog):
                           "rapporti che il cliente consegna.</small>")
         avviso.set_xalign(0)
         avviso.get_style_context().add_class("sotto")
-        griglia.attach(avviso, 0, 4, 2, 1)
+        griglia.attach(avviso, 0, 9, 2, 1)
 
         if rinnovo:
             self.cliente.set_text(voce.get("cliente", ""))
             self.cliente.set_sensitive(False)
-            self.postazioni.set_value(voce.get("postazioni", 10))
+            self.tipo.set_active_id(voce.get("tipo", "postazioni"))
+            self.prodotti.set_text(", ".join(voce.get("prodotti")
+                                             or [modello.PRODOTTO]))
+            self.postazioni.set_value(voce.get("postazioni") or 10)
+            self.livello.set_text(voce.get("livello", ""))
+            self.servizi.set_text(", ".join(voce.get("servizi") or []))
+            self.perimetro.set_text(voce.get("perimetro", ""))
             self.nota.set_text(voce.get("nota", ""))
         self.show_all()
+        cambia_tipo()
 
     def valori(self) -> dict:
         return {
             "cliente": self.cliente.get_text().strip(),
+            "tipo": self.tipo.get_active_id() or "postazioni",
+            "prodotti": self.prodotti.get_text().strip() or modello.PRODOTTO,
             "postazioni": int(self.postazioni.get_value()),
+            "livello": self.livello.get_text().strip(),
+            "servizi": self.servizi.get_text().strip(),
+            "perimetro": self.perimetro.get_text().strip(),
             "mesi": int(self.mesi.get_value()),
             "nota": self.nota.get_text().strip(),
         }
@@ -394,14 +487,14 @@ class Finestra(Gtk.Window):
         radice.pack_start(self.cornice_avvisi, False, False, 0)
 
         # elenco
-        self.store = Gtk.ListStore(str, str, int, str, str, str, str, str)
-        # cliente, id, postazioni, emessa, scadenza, stato, installazioni, nota
+        self.store = Gtk.ListStore(str, str, str, str, str, str, str, str, str)
+        # cliente, tipo, id, copertura, emessa, scadenza, stato, installaz., nota
         self.vista = Gtk.TreeView(model=self.store)
         self.vista.set_headers_visible(True)
         for i, (titolo, larg) in enumerate([
-                ("Cliente", 210), ("Licenza", 150), ("Post.", 60),
-                ("Emessa", 100), ("Scadenza", 100), ("Stato", 185),
-                ("Installaz.", 90), ("Nota", 160)]):
+                ("Cliente", 190), ("Tipo", 95), ("Licenza", 150),
+                ("Copre", 140), ("Emessa", 100), ("Scadenza", 100),
+                ("Stato", 185), ("Installaz.", 90), ("Nota", 150)]):
             r = Gtk.CellRendererText()
             r.set_property("ellipsize", Pango.EllipsizeMode.END)
             col = Gtk.TreeViewColumn(titolo, r, text=i)
@@ -461,8 +554,19 @@ class Finestra(Gtk.Window):
                     ultimo = "%s%s" % (n, " !" if isinstance(n, int)
                                        and n > v.get("postazioni", 0) else "")
                     break
-            self.store.append([v.get("cliente", ""), v.get("id", ""),
-                               v.get("postazioni", 0), v.get("emessa", ""),
+            tipo = v.get("tipo", "postazioni")
+            if tipo == "postazioni":
+                copre = "%s · %d post." % (", ".join(v.get("prodotti")
+                                                     or [modello.PRODOTTO]),
+                                           v.get("postazioni", 0))
+            elif tipo == "servizi":
+                copre = "%s · %s" % (", ".join(v.get("prodotti") or []),
+                                     v.get("livello") or "—")
+            else:
+                copre = "%s · %s" % (", ".join(v.get("prodotti") or []),
+                                     v.get("perimetro") or "—")
+            self.store.append([v.get("cliente", ""), tipo, v.get("id", ""),
+                               copre, v.get("emessa", ""),
                                v.get("scadenza", "—"), testo, ultimo or "—",
                                v.get("nota", "")])
         pezzi = ["%d licenze" % len(self.registro.licenze)]
@@ -500,7 +604,7 @@ class Finestra(Gtk.Window):
         modello_, iter_ = self.vista.get_selection().get_selected()
         if iter_ is None:
             return None
-        return self.registro.trova(modello_[iter_][1])
+        return self.registro.trova(modello_[iter_][2])   # colonna «Licenza»
 
     def su_selezione(self, _sel) -> None:
         attiva = self.scelta() is not None
@@ -539,9 +643,19 @@ class Finestra(Gtk.Window):
         cmd = [sys.executable, str(RADICE / "tools" / "vesper-licgen.py"),
                "emetti", "--chiave", str(self.privata),
                "--cliente", val["cliente"],
-               "--postazioni", str(val["postazioni"]),
+               "--tipo", val["tipo"],
+               "--prodotti", val["prodotti"],
                "--mesi", str(val["mesi"]),
                "--out", str(destinazione)]
+        if val["tipo"] == "postazioni":
+            cmd += ["--postazioni", str(val["postazioni"])]
+        if val["tipo"] == "servizi":
+            if val["livello"]:
+                cmd += ["--livello", val["livello"]]
+            for servizio in [x.strip() for x in val["servizi"].split(",") if x.strip()]:
+                cmd += ["--servizio", servizio]
+        if val["tipo"] == "sito" and val["perimetro"]:
+            cmd += ["--perimetro", val["perimetro"]]
         if val["nota"]:
             cmd += ["--nota", val["nota"]]
         try:
@@ -556,7 +670,13 @@ class Finestra(Gtk.Window):
         doc = json.loads(destinazione.read_text(encoding="utf-8"))
         dati = doc["licenza"]
         voce = {"id": dati["id"], "cliente": dati["cliente"],
-                "postazioni": dati["postazioni"], "emessa": dati["emessa"],
+                "tipo": modello.tipo(dati),
+                "prodotti": modello.prodotti(dati),
+                "postazioni": dati.get("postazioni", 0),
+                "livello": dati.get("livello", ""),
+                "servizi": dati.get("servizi", []),
+                "perimetro": dati.get("perimetro", ""),
+                "emessa": dati["emessa"],
                 "scadenza": dati.get("scadenza", ""),
                 "nota": dati.get("nota", ""),
                 "file": str(destinazione)}
@@ -567,11 +687,19 @@ class Finestra(Gtk.Window):
         self.registro.aggiungi(voce)
         self.aggiorna()
         self.stato.set_text("emessa %s → %s" % (voce["id"], destinazione.name))
+        if voce["tipo"] == "postazioni":
+            sommario = "%d postazioni" % voce["postazioni"]
+        elif voce["tipo"] == "servizi":
+            sommario = "assistenza %s" % (voce["livello"] or "—")
+            if voce["servizi"]:
+                sommario += ": " + ", ".join(voce["servizi"])
+        else:
+            sommario = "illimitata in %s" % (voce["perimetro"] or "perimetro")
         self.avviso("Licenza emessa",
-                    "%s — %d postazioni, scadenza %s\n\nFile:\n%s\n\n"
-                    "Consegna al cliente questo file e il pacchetto\n"
-                    "vesper_*_commerciale.deb."
-                    % (voce["cliente"], voce["postazioni"],
+                    "%s — %s\nProdotti: %s\nScadenza: %s\n\nFile:\n%s\n\n"
+                    "Consegna al cliente questo file e il pacchetto commerciale."
+                    % (voce["cliente"], sommario,
+                       ", ".join(voce["prodotti"]),
                        voce["scadenza"] or "nessuna", destinazione),
                     errore=False)
 

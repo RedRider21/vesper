@@ -15,6 +15,13 @@ mai uscire di lì.
         --cliente "Acme S.p.A." --postazioni 50 --mesi 12 \\
         --nota "contratto 2026/017" --out acme.licenza.json
 
+    # contratto di assistenza che copre due prodotti
+    tools/vesper-licgen.py emetti --chiave ~/licenze-vesper/privata.key \\
+        --tipo servizi --prodotti "nexussec,termux-nexussec" \\
+        --cliente "Acme S.p.A." --livello premium \\
+        --servizio "supporto 8x5" --servizio "2 giornate di formazione" \\
+        --mesi 12 --out acme-servizi.json
+
     # controllo di ciò che si è emesso, o di un file ricevuto
     tools/vesper-licgen.py verifica acme.licenza.json
 
@@ -85,17 +92,29 @@ def cmd_emetti(args) -> int:
     oggi = date.today()
     scadenza = (oggi + timedelta(days=int(args.mesi * 30.44))).isoformat() \
         if args.mesi else args.scadenza
+    elenco = [p.strip() for p in (args.prodotti or modello.PRODOTTO).split(",")
+              if p.strip()]
     dati = {
-        "prodotto": modello.PRODOTTO,
+        "prodotti": elenco,
+        "prodotto": elenco[0],          # compatibilità con i lettori vecchi
+        "tipo": args.tipo,
         "id": args.id or "VSP-%s-%s" % (oggi.year,
                                         secrets.token_hex(3).upper()),
         "cliente": args.cliente,
-        "postazioni": args.postazioni,
         "emessa": oggi.isoformat(),
         "emessa_da": args.emessa_da or getpass.getuser(),
         # Segreto condiviso col cliente: sigilla i rapporti di conteggio.
         "segreto": base64.b64encode(secrets.token_bytes(32)).decode("ascii"),
     }
+    if args.tipo == "postazioni":
+        dati["postazioni"] = args.postazioni
+    if args.tipo == "servizi":
+        if args.livello:
+            dati["livello"] = args.livello
+        if args.servizio:
+            dati["servizi"] = list(args.servizio)
+    if args.tipo == "sito" and args.perimetro:
+        dati["perimetro"] = args.perimetro
     if scadenza:
         dati["scadenza"] = scadenza
     if args.nota:
@@ -110,7 +129,16 @@ def cmd_emetti(args) -> int:
         print(testo)
     print("  id          : %s" % dati["id"])
     print("  cliente     : %s" % dati["cliente"])
-    print("  postazioni  : %d" % dati["postazioni"])
+    print("  tipo        : %s" % dati["tipo"])
+    print("  prodotti    : %s" % ", ".join(elenco))
+    if "postazioni" in dati:
+        print("  postazioni  : %d" % dati["postazioni"])
+    if dati.get("livello"):
+        print("  livello     : %s" % dati["livello"])
+    if dati.get("servizi"):
+        print("  servizi     : %s" % ", ".join(dati["servizi"]))
+    if dati.get("perimetro"):
+        print("  perimetro   : %s" % dati["perimetro"])
     print("  scadenza    : %s" % dati.get("scadenza", "nessuna"))
     return 0
 
@@ -133,6 +161,11 @@ def cmd_verifica(args) -> int:
 def cmd_conta(args) -> int:
     lic = json.loads(Path(args.licenza).read_text(encoding="utf-8"))
     dati = lic.get("licenza") or {}
+    if not modello.conta_installazioni(dati):
+        print("licenza di tipo «%s»: non si contano installazioni."
+              % modello.tipo(dati))
+        print("È un contratto di assistenza, non un numero di copie.")
+        return 0
     segreto = dati.get("segreto", "")
     postazioni = int(dati.get("postazioni") or 0)
 
@@ -196,7 +229,18 @@ def main(argv=None) -> int:
     p = sub.add_parser("emetti", help="emette una licenza firmata")
     p.add_argument("--chiave", required=True, help="file della chiave privata")
     p.add_argument("--cliente", required=True)
-    p.add_argument("--postazioni", type=int, required=True)
+    p.add_argument("--tipo", choices=modello.TIPI,
+                   default=modello.TIPO_PREDEFINITO,
+                   help="postazioni (conteggio), servizi (assistenza), "
+                        "sito (perimetro)")
+    p.add_argument("--prodotti", help="elenco separato da virgole "
+                                      "(un contratto può coprirne più d'uno)")
+    p.add_argument("--postazioni", type=int, default=0,
+                   help="solo per --tipo postazioni")
+    p.add_argument("--livello", help="solo per --tipo servizi (es. premium)")
+    p.add_argument("--servizio", action="append",
+                   help="servizio incluso; ripetibile (--tipo servizi)")
+    p.add_argument("--perimetro", help="solo per --tipo sito (sede, società)")
     p.add_argument("--mesi", type=int, default=12,
                    help="durata in mesi (0 = nessuna scadenza)")
     p.add_argument("--scadenza", help="data esatta AAAA-MM-GG (alternativa a --mesi)")

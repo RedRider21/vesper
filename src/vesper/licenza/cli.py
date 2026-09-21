@@ -42,7 +42,16 @@ def _stampa_stato() -> int:
     dati = esito.dati
     print("Licenza  : %s" % dati.get("id", "?"))
     print("Cliente  : %s" % dati.get("cliente", "?"))
-    print("Postazioni concordate: %s" % dati.get("postazioni", "?"))
+    print("Tipo     : %s" % modello.tipo(dati))
+    print("Prodotti : %s" % ", ".join(modello.prodotti(dati)))
+    if modello.tipo(dati) == "postazioni":
+        print("Postazioni concordate: %s" % dati.get("postazioni", "?"))
+    if dati.get("livello"):
+        print("Livello  : %s" % dati["livello"])
+    if dati.get("servizi"):
+        print("Servizi  : %s" % ", ".join(dati["servizi"]))
+    if dati.get("perimetro"):
+        print("Perimetro: %s" % dati["perimetro"])
     print("Emessa   : %s" % dati.get("emessa", "?"))
     print("Scadenza : %s" % dati.get("scadenza", "nessuna"))
     if dati.get("nota"):
@@ -72,6 +81,13 @@ def _rapporto(host: bool, out: str | None) -> int:
     doc = modello.carica()
     if doc is None:
         print("nessuna licenza installata: niente da dichiarare",
+              file=sys.stderr)
+        return 1
+    dati = doc.get("licenza") or {}
+    if not modello.conta_installazioni(dati):
+        print("licenza di tipo «%s»: non prevede il conteggio delle "
+              "installazioni." % modello.tipo(dati), file=sys.stderr)
+        print("Il rapporto serve solo alle licenze a postazioni.",
               file=sys.stderr)
         return 1
     r = modello.rapporto(doc, nome_host=host)

@@ -3426,12 +3426,16 @@ def open_licenza(_btn=None):
 
     griglia = Gtk.Grid(column_spacing=16, row_spacing=6)
     body.pack_start(griglia, False, False, 6)
-    valori = {}
+    valori, etichette = {}, {}
     for riga, (chiave, etichetta) in enumerate((
             ("stato", _t("v.lic.state")),
             ("cliente", _t("v.lic.customer")),
             ("id", _t("v.lic.number")),
+            ("tipo", _t("v.lic.kind")),
+            ("prodotti", _t("v.lic.products")),
             ("postazioni", _t("v.lic.seats")),
+            ("livello", _t("v.lic.level")),
+            ("servizi", _t("v.lic.services")),
             ("scadenza", _t("v.lic.expiry")),
             ("nota", _t("v.lic.note")),
             ("installazione", _t("v.lic.install_id")))):
@@ -3443,26 +3447,45 @@ def open_licenza(_btn=None):
         griglia.attach(k, 0, riga, 1, 1)
         griglia.attach(v, 1, riga, 1, 1)
         valori[chiave] = v
+        etichette[chiave] = k
 
     def aggiorna():
         doc = _lic.carica()
         valori["installazione"].set_text(_lic.id_installazione())
         if doc is None:
             valori["stato"].set_text(_t("v.lic.none"))
-            for c in ("cliente", "id", "postazioni", "scadenza", "nota"):
+            for c in ("cliente", "id", "tipo", "prodotti", "postazioni",
+                      "livello", "servizi", "scadenza", "nota"):
                 valori[c].set_text("-")
             return False
         esito = _lic.verifica(doc)
         dati = esito.dati
+        tipo = _lic.tipo(dati)
         valori["stato"].set_text(esito.motivo)
         valori["cliente"].set_text(dati.get("cliente", "-"))
         valori["id"].set_text(dati.get("id", "-"))
+        valori["tipo"].set_text(_t("v.lic.kind." + tipo))
+        valori["prodotti"].set_text(", ".join(_lic.prodotti(dati)) or "-")
         valori["postazioni"].set_text(str(dati.get("postazioni", "-")))
+        valori["livello"].set_text(dati.get("livello", "-"))
+        valori["servizi"].set_text(", ".join(dati.get("servizi") or []) or "-")
         valori["scadenza"].set_text(dati.get("scadenza") or _t("v.lic.no_expiry"))
         valori["nota"].set_text(dati.get("nota", "-"))
+        # le righe che non c'entrano col tipo non si mostrano affatto
+        for chiave, tipi in (("postazioni", ("postazioni",)),
+                             ("livello", ("servizi",)),
+                             ("servizi", ("servizi",))):
+            mostra = tipo in tipi
+            valori[chiave].set_visible(mostra)
+            valori[chiave].set_no_show_all(not mostra)
+            etichette[chiave].set_visible(mostra)
+            etichette[chiave].set_no_show_all(not mostra)
+        # il rapporto d'uso riguarda solo le licenze a postazioni
+        conta = _lic.conta_installazioni(dati)
+        for w in (sep2, spiega2, b_rap):
+            w.set_visible(conta)
+            w.set_no_show_all(not conta)
         return bool(esito)
-
-    aggiorna()
 
     # --- inserimento: da file o incollando il testo ------------------------
     sep = Gtk.Label(label=_t("v.lic.install_section")); sep.set_xalign(0)
@@ -3573,5 +3596,7 @@ def open_licenza(_btn=None):
     b_rap.connect("clicked", _rapporto)
     body.pack_start(b_rap, False, False, 0)
 
+    aggiorna()                      # ora che i widget esistono tutti
     win.show_all()
+    aggiorna()                      # show_all rimostra tutto: si ri-nasconde
     return win

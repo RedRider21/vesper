@@ -39,6 +39,7 @@ from vesper.licenza import ed25519, modello              # noqa: E402
 CARTELLA = Path(os.environ.get("VESPER_LICENZE_HOME",
                                Path.home() / "licenze-vesper"))
 GIORNI_AVVISO = 60           # sotto questa soglia la scadenza si segnala
+RICONCILIA_MESI = 6          # ogni quanto si chiede il conteggio al cliente
 
 CSS = b"""
 window, dialog { background: #050a14; color: #c8f5ff; }
@@ -122,7 +123,9 @@ class Registro:
 
 
 def stato_licenza(voce: dict) -> tuple[str, str]:
-    """(testo, classe CSS) leggendo la scadenza."""
+    """(testo, classe CSS) leggendo scadenza e revoca."""
+    if voce.get("revocata"):
+        return "revocata il %s" % voce.get("revocata"), "scaduta"
     scad = voce.get("scadenza")
     if not scad:
         return "valida (senza scadenza)", "valida"
@@ -136,6 +139,45 @@ def stato_licenza(voce: dict) -> tuple[str, str]:
     if mancano <= GIORNI_AVVISO:
         return "scade fra %d giorni" % mancano, "scade"
     return "valida", "valida"
+
+
+def ultimo_conteggio(voce: dict) -> tuple[str, int | None]:
+    """(data, installazioni) dell'ultimo conteggio registrato."""
+    for riga in reversed(voce.get("storico", [])):
+        if riga.get("evento") == "conteggio":
+            return riga.get("quando", "")[:10], riga.get("installazioni")
+    return "", None
+
+
+def da_fare(licenze: list[dict]) -> list[str]:
+    """Cosa richiede una mossa, oggi. È la risposta a «come faccio a sapere
+    che devo intervenire»: il conteggio non arriva da solo, lo si chiede."""
+    avvisi = []
+    for v in licenze:
+        if v.get("revocata"):
+            continue
+        nome = v.get("cliente", "?")
+        testo, classe = stato_licenza(v)
+        if classe == "scaduta":
+            avvisi.append("%s: licenza %s — rinnovare o chiudere" % (nome, testo))
+        elif classe == "scade":
+            avvisi.append("%s: %s — preparare il rinnovo" % (nome, testo))
+
+        quando, quante = ultimo_conteggio(v)
+        posti = v.get("postazioni", 0)
+        if quante is not None and posti and quante > posti:
+            avvisi.append("%s: %d installazioni contate contro %d concordate "
+                          "— true-up da fatturare" % (nome, quante, posti))
+        # riconciliazione periodica: se non si conta da troppo, si chiede
+        riferimento = quando or v.get("emessa", "")
+        try:
+            giorni = (date.today() - date.fromisoformat(riferimento)).days
+        except (ValueError, TypeError):
+            giorni = 0
+        if giorni > RICONCILIA_MESI * 30:
+            avvisi.append("%s: nessun conteggio da %d giorni — chiedere il "
+                          "rapporto d'uso" % (nome, giorni))
+    return avvisi
 
 
 # --- dialogo di emissione ---------------------------------------------------
@@ -238,6 +280,17 @@ class Finestra(Gtk.Window):
         testa.pack_end(b_nuova, False, False, 0)
         radice.pack_start(testa, False, False, 0)
 
+        # cosa richiede una mossa, oggi
+        self.avvisi = Gtk.Label(); self.avvisi.set_xalign(0)
+        self.avvisi.set_line_wrap(True)
+        self.cornice_avvisi = Gtk.Frame()
+        self.cornice_avvisi.set_shadow_type(Gtk.ShadowType.NONE)
+        riquadro = Gtk.Box(orientation=Gtk.Orientation.VERTICAL, spacing=4)
+        riquadro.set_border_width(10)
+        riquadro.pack_start(self.avvisi, False, False, 0)
+        self.cornice_avvisi.add(riquadro)
+        radice.pack_start(self.cornice_avvisi, False, False, 0)
+
         # elenco
         self.store = Gtk.ListStore(str, str, int, str, str, str, str, str)
         # cliente, id, postazioni, emessa, scadenza, stato, installazioni, nota
@@ -271,6 +324,8 @@ class Finestra(Gtk.Window):
                 ("Conta installazioni…", self.su_conta),
                 ("Rinnova…", self.su_rinnova),
                 ("Verifica file", self.su_verifica),
+                ("Revoca…", self.su_revoca),
+                ("Elimina dal registro…", self.su_elimina),
                 ("Apri cartella", self.su_apri_cartella)):
             b = Gtk.Button(label=etichetta)
             b.connect("clicked", funzione)
@@ -310,6 +365,18 @@ class Finestra(Gtk.Window):
             pezzi.append("%d in scadenza" % in_scadenza)
         if scadute:
             pezzi.append("%d scadute" % scadute)
+        cose = da_fare(self.registro.licenze)
+        if cose:
+            self.avvisi.set_markup(
+                "<b>Da fare</b>\n" + "\n".join("• " + GLib.markup_escape_text(c)
+                                                for c in cose))
+            self.avvisi.get_style_context().add_class("scade")
+        else:
+            self.avvisi.set_markup("<b>Tutto in ordine</b>\nNessuna scadenza "
+                                   "vicina, nessuna eccedenza aperta, nessun "
+                                   "conteggio arretrato.")
+            self.avvisi.get_style_context().remove_class("scade")
+
         chiave = "chiave %s" % (modello.id_chiave(
             bytes.fromhex((self.cartella / "pubblica.hex").read_text().strip()))
             if (self.cartella / "pubblica.hex").exists() else "assente")
@@ -525,6 +592,79 @@ class Finestra(Gtk.Window):
         d.show_all()
         d.run()
         d.destroy()
+
+    def su_revoca(self, _b) -> None:
+        """Segna una licenza come revocata NEL REGISTRO.
+
+        Attenzione a cosa vuol dire: è una registrazione amministrativa, non
+        un interruttore. Il file firmato è già in mano al cliente e resta
+        tecnicamente valido fino alla scadenza — non esiste revoca a distanza,
+        perché Vesper non si collega a niente. Quello che si fa davvero è:
+        risolvere il contratto, togliere il token del repository (niente più
+        aggiornamenti né supporto) e non rinnovare.
+        """
+        v = self.scelta()
+        if not v:
+            return
+        if v.get("revocata"):
+            self.avviso("Già revocata",
+                        "Revocata il %s: %s" % (v["revocata"],
+                                                v.get("motivo_revoca", "")),
+                        errore=False)
+            return
+        d = Gtk.Dialog(title="Revoca licenza", transient_for=self, modal=True)
+        d.add_button("Annulla", Gtk.ResponseType.CANCEL)
+        b = d.add_button("Revoca", Gtk.ResponseType.OK)
+        b.get_style_context().add_class("primario")
+        box = d.get_content_area(); box.set_border_width(12); box.set_spacing(8)
+        testo = Gtk.Label()
+        testo.set_markup(
+            "Revoca di <b>%s</b> (%s).\n\n<small>Il file consegnato al cliente "
+            "resta valido fino alla scadenza:\nVesper non si collega a nessun "
+            "server e non può disattivarlo a distanza.\nQui si registra la "
+            "decisione; gli effetti li dà il contratto,\ne togliere il token "
+            "del repository ferma aggiornamenti e supporto.</small>"
+            % (GLib.markup_escape_text(v.get("cliente", "")),
+               GLib.markup_escape_text(v.get("id", ""))))
+        testo.set_xalign(0)
+        box.add(testo)
+        motivo = Gtk.Entry()
+        motivo.set_placeholder_text("motivo (risoluzione, mancato pagamento, errore…)")
+        box.add(motivo)
+        d.show_all()
+        risposta = d.run()
+        perche = motivo.get_text().strip()
+        d.destroy()
+        if risposta != Gtk.ResponseType.OK:
+            return
+        v["revocata"] = date.today().isoformat()
+        v["motivo_revoca"] = perche
+        self.registro.annota(v["id"], "revocata", perche or "senza motivo indicato")
+        self.registro.salva()
+        self.aggiorna()
+
+    def su_elimina(self, _b) -> None:
+        """Toglie la voce dal registro. Serve per le emissioni sbagliate."""
+        v = self.scelta()
+        if not v:
+            return
+        d = Gtk.MessageDialog(
+            transient_for=self, modal=True, message_type=Gtk.MessageType.WARNING,
+            buttons=Gtk.ButtonsType.OK_CANCEL,
+            text="Togliere %s dal registro?" % v.get("id", ""))
+        d.format_secondary_text(
+            "Sparisce dall'elenco e con lei il suo storico: usalo per le "
+            "emissioni sbagliate, non per chiudere un rapporto — per quello "
+            "c'è Revoca, che lascia traccia.\n\nIl file firmato resta sul "
+            "disco (%s) e, se l'hai già consegnato, resta valido fino alla "
+            "scadenza." % v.get("file", "?"))
+        risposta = d.run()
+        d.destroy()
+        if risposta != Gtk.ResponseType.OK:
+            return
+        self.registro.licenze.remove(v)
+        self.registro.salva()
+        self.aggiorna()
 
     def su_apri_cartella(self, _b) -> None:
         v = self.scelta()

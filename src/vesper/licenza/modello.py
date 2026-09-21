@@ -61,6 +61,12 @@ CHIAVI_FIDATE: dict[str, str] = {
     # Chiave di firma di Daniele Deplano (RedRider21), generata il 2026-09-21.
     # La privata sta offline: senza di lei non si emettono licenze valide.
     "ee2daa4883ef5c91": "a370b5e6d57430b366a0420add2417e76caf2ddd48cc3bee1e470d1914969aa6",
+    # Chiave COMUNE, generata il 2026-09-21: firma i contratti che coprono più
+    # prodotti insieme (Vesper dentro lo stesso accordo di un altro prodotto).
+    # Sta qui fin d'ora, prima che serva: aggiungerla dopo vorrebbe dire
+    # aggiornare le installazioni già consegnate. La privata è offline, nel
+    # registro comune (~/licenze/comune/).
+    "b744338c0fcb620e": "44e8e6dc3dbe303d1c2bf340c4228a47ce326c206de03f0cc0e70855d03a70cf",
     # "0123456789abcdef": "…64 caratteri esadecimali…",
 }
 

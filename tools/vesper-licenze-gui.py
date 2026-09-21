@@ -13,10 +13,17 @@ comando, ma con l'elenco sott'occhio e la memoria storica di tutto:
   quando, e se erano oltre il concordato;
 - storico per ogni licenza, con tutte le date.
 
-    tools/vesper-licenze-gui.py [--registro ~/licenze-vesper]
+    tools/vesper-licenze-gui.py                 il registro vero
+    tools/vesper-licenze-gui.py --demo          dati finti, per provare
+    tools/vesper-licenze-gui.py --demo --ricrea rigenera la demo da zero
+    tools/vesper-licenze-gui.py --registro DIR  un registro qualunque
 
 Il registro è un JSON (`registro.json`) accanto alle chiavi: si legge anche a
 mano e si mette al sicuro con un backup qualunque.
+
+La **modalità demo** lavora in `~/.cache/vesper/licenze-demo`, con una coppia
+di chiavi sua e quattro licenze di esempio in stati diversi: si può premere
+tutto senza paura, il registro vero non viene nemmeno aperto.
 """
 from __future__ import annotations
 
@@ -65,6 +72,80 @@ button.primario:hover { background: #4df0ff; }
 .eccedenza { color: #ff5a8a; font-weight: bold; }
 frame { border: 1px solid #1a3a52; border-radius: 8px; }
 """
+
+
+CARTELLA_DEMO = Path(os.environ.get("XDG_CACHE_HOME",
+                                    Path.home() / ".cache")) / "vesper" / "licenze-demo"
+
+
+def prepara_demo(cartella: Path, ricrea: bool = False) -> None:
+    """Chiavi di prova e quattro licenze di esempio, se non ci sono già.
+
+    La demo ha una chiave TUTTA SUA: le licenze finte non devono mai essere
+    firmate con la chiave vera, altrimenti finirebbero per essere valide sul
+    serio sui computer dei clienti.
+    """
+    import secrets
+    registro = cartella / "registro.json"
+    if registro.exists() and not ricrea:
+        return
+    if ricrea:
+        for f in (registro, cartella / "privata.key", cartella / "pubblica.hex"):
+            try:
+                f.unlink()
+            except OSError:
+                pass
+    (cartella / "emesse").mkdir(parents=True, exist_ok=True)
+
+    seme = secrets.token_bytes(32)
+    (cartella / "privata.key").write_bytes(seme)
+    (cartella / "privata.key").chmod(0o600)
+    pubblica = ed25519.chiave_pubblica(seme)
+    (cartella / "pubblica.hex").write_text(pubblica.hex() + "\n", encoding="utf-8")
+
+    oggi = date.today()
+    esempi = [
+        ("Acme S.p.A.", 50, oggi + timedelta(days=365), "contratto 2026/017",
+         [("conteggio", -174, "12 file di rapporto", 44),
+          ("verifica", -83, "valida", None),
+          ("conteggio", -1, "14 file di rapporto", 57)]),
+        ("Beta Integrazioni srl", 25, oggi + timedelta(days=28),
+         "chiosco museale, rinnovo in vista",
+         [("verifica", -11, "valida", None)]),
+        ("Gamma Sistemi", 10, oggi - timedelta(days=15), "pilota terminato", []),
+        ("Delta Chioschi srl", 120, oggi + timedelta(days=200),
+         "contratto 2026/031 — cartellonistica",
+         [("conteggio", -45, "8 file di rapporto", 118)]),
+    ]
+    dati_registro = {"demo": True, "licenze": []}
+    for cliente, posti, scadenza, nota, eventi in esempi:
+        chiave_file = cartella / "emesse" / (
+            cliente.split()[0].lower() + ".licenza.json")
+        dati = {"prodotto": modello.PRODOTTO,
+                "id": "DEMO-%s-%s" % (oggi.year, secrets.token_hex(3).upper()),
+                "cliente": cliente, "postazioni": posti,
+                "emessa": (oggi - timedelta(days=200)).isoformat(),
+                "scadenza": scadenza.isoformat(), "nota": nota,
+                "segreto": "demo"}
+        documento = modello.emetti(dati, seme)
+        chiave_file.write_text(json.dumps(documento, indent=1, ensure_ascii=False)
+                               + "\n", encoding="utf-8")
+        voce = {"id": dati["id"], "cliente": cliente, "postazioni": posti,
+                "emessa": dati["emessa"], "scadenza": dati["scadenza"],
+                "nota": nota, "file": str(chiave_file),
+                "storico": [{"quando": dati["emessa"] + "T09:12:00",
+                             "evento": "emessa",
+                             "dettaglio": "%d postazioni, scadenza %s"
+                             % (posti, dati["scadenza"])}]}
+        for evento, giorni, dettaglio, quante in eventi:
+            riga = {"quando": (oggi + timedelta(days=giorni)).isoformat() + "T10:30:00",
+                    "evento": evento, "dettaglio": dettaglio}
+            if quante is not None:
+                riga["installazioni"] = quante
+            voce["storico"].append(riga)
+        dati_registro["licenze"].append(voce)
+    registro.write_text(json.dumps(dati_registro, indent=1, ensure_ascii=False)
+                        + "\n", encoding="utf-8")
 
 
 # --- registro ---------------------------------------------------------------
@@ -243,10 +324,12 @@ class DialogoEmissione(Gtk.Dialog):
 
 # --- finestra principale ----------------------------------------------------
 class Finestra(Gtk.Window):
-    def __init__(self, cartella: Path):
-        super().__init__(title="Vesper — registro delle licenze")
+    def __init__(self, cartella: Path, demo: bool = False):
+        super().__init__(title="Vesper — registro delle licenze"
+                         + (" (DIMOSTRAZIONE)" if demo else ""))
         self.set_default_size(1000, 620)
         self.cartella = cartella
+        self.demo = demo
         self.registro = Registro(cartella)
         self.privata = cartella / "privata.key"
 
@@ -262,6 +345,25 @@ class Finestra(Gtk.Window):
         radice = Gtk.Box(orientation=Gtk.Orientation.VERTICAL, spacing=10)
         radice.set_border_width(14)
         self.add(radice)
+
+        if demo:
+            banner = Gtk.Label()
+            banner.set_markup(
+                "<b>MODALITÀ DIMOSTRAZIONE</b> — licenze finte, firmate con una "
+                "chiave di prova che nessuna installazione riconosce.\n"
+                "<small>Prova pure tutti i pulsanti: il registro vero "
+                "(~/licenze-vesper) non viene nemmeno aperto. "
+                "Per ricominciare da capo: --demo --ricrea</small>")
+            banner.set_xalign(0)
+            banner.set_line_wrap(True)
+            banner.get_style_context().add_class("scade")
+            cornice = Gtk.Frame()
+            cornice.set_shadow_type(Gtk.ShadowType.NONE)
+            dentro = Gtk.Box(orientation=Gtk.Orientation.VERTICAL)
+            dentro.set_border_width(10)
+            dentro.pack_start(banner, False, False, 0)
+            cornice.add(dentro)
+            radice.pack_start(cornice, False, False, 0)
 
         # intestazione
         testa = Gtk.Box(orientation=Gtk.Orientation.HORIZONTAL, spacing=10)
@@ -298,7 +400,7 @@ class Finestra(Gtk.Window):
         self.vista.set_headers_visible(True)
         for i, (titolo, larg) in enumerate([
                 ("Cliente", 210), ("Licenza", 150), ("Post.", 60),
-                ("Emessa", 100), ("Scadenza", 100), ("Stato", 150),
+                ("Emessa", 100), ("Scadenza", 100), ("Stato", 185),
                 ("Installaz.", 90), ("Nota", 160)]):
             r = Gtk.CellRendererText()
             r.set_property("ellipsize", Pango.EllipsizeMode.END)
@@ -344,11 +446,14 @@ class Finestra(Gtk.Window):
     def aggiorna(self) -> None:
         self.registro.carica()
         self.store.clear()
-        scadute = in_scadenza = 0
+        scadute = in_scadenza = revocate = 0
         for v in self.registro.licenze:
             testo, classe = stato_licenza(v)
-            scadute += classe == "scaduta"
-            in_scadenza += classe == "scade"
+            if v.get("revocata"):
+                revocate += 1
+            else:
+                scadute += classe == "scaduta"
+                in_scadenza += classe == "scade"
             ultimo = ""
             for riga in reversed(v.get("storico", [])):
                 if riga.get("evento") == "conteggio":
@@ -365,6 +470,8 @@ class Finestra(Gtk.Window):
             pezzi.append("%d in scadenza" % in_scadenza)
         if scadute:
             pezzi.append("%d scadute" % scadute)
+        if revocate:
+            pezzi.append("%d revocate" % revocate)
         cose = da_fare(self.registro.licenze)
         if cose:
             self.avvisi.set_markup(
@@ -382,7 +489,7 @@ class Finestra(Gtk.Window):
             if (self.cartella / "pubblica.hex").exists() else "assente")
         pezzi.append(chiave)
         self.sotto.set_text(" · ".join(pezzi) + "  ·  " + str(self.cartella))
-        if not self.privata.exists():
+        if not self.privata.exists() and not self.demo:
             self.avviso("Chiave privata assente",
                         "Non trovo %s.\n\nSenza la chiave privata non si "
                         "possono emettere licenze. Generala con:\n\n"
@@ -698,15 +805,19 @@ class Finestra(Gtk.Window):
 
 def main(argv=None) -> int:
     argv = list(sys.argv[1:] if argv is None else argv)
-    cartella = CARTELLA
+    if argv and argv[0] in ("-h", "--help"):
+        print(__doc__.strip())
+        return 0
+
+    demo = "--demo" in argv
+    cartella = CARTELLA_DEMO if demo else CARTELLA
     if "--registro" in argv:
         i = argv.index("--registro")
         if i + 1 < len(argv):
             cartella = Path(argv[i + 1]).expanduser()
-    if argv and argv[0] in ("-h", "--help"):
-        print(__doc__.strip())
-        return 0
-    Finestra(cartella).show_all()
+    if demo:
+        prepara_demo(cartella, ricrea="--ricrea" in argv)
+    Finestra(cartella, demo=demo).show_all()
     Gtk.main()
     return 0
 

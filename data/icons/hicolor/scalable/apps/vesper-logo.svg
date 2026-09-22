@@ -1,11 +1,13 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <!-- Marchio di Vesper: la stella della sera sopra l'orizzonte.
-     Griglia 64x64, tutto in currentColor + opacita': la stessa figura fa da
-     icona simbolica nel pannello e da logo grande. -->
+     Griglia 64x64. Colore ESPLICITO, non currentColor: questa icona la
+     disegnano anche il greeter del display manager e i gestori di file,
+     fuori da GTK, dove currentColor varrebbe nero e sparirebbe sul fondo
+     scuro. La variante -symbolic resta in currentColor, per il pannello. -->
 <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 64 64" width="64" height="64">
-  <g fill="currentColor" stroke="none">
+  <g fill="#00e5ff" stroke="none">
     <!-- cielo della sera: un arco appena accennato, non un disco pieno -->
-    <circle cx="32" cy="27" r="24" fill="none" stroke="currentColor"
+    <circle cx="32" cy="27" r="24" fill="none" stroke="#00e5ff"
             stroke-width="1.2" opacity="0.30"/>
     <circle cx="32" cy="27" r="24" opacity="0.05"/>
     <!-- stella della sera: quattro punte a lati concavi -->

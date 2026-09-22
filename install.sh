@@ -17,6 +17,8 @@
 #   <prefisso>/lib/vesper/env.sh            risolutore percorsi dei comandi
 #   <prefisso>/lib/vesper/i18n.sh           traduzione dei messaggi degli script
 #   <prefisso>/share/vesper/                sfondi, skin, preset, skel
+#   <prefisso>/share/icons/hicolor/...     marchio: SVG + PNG 16..512
+#   <prefisso>/share/pixmaps/vesper.png    copia per i greeter
 #   <prefisso>/share/themes/                temi finestre (Openbox + GTK)
 #   <prefisso>/share/icons/hicolor/         marchio
 #   <prefisso>/share/xsessions/vesper.desktop   voce di sessione (login)
@@ -48,6 +50,7 @@ BIN="$DESTDIR$PREFIX/bin"
 LIB="$DESTDIR$PREFIX/lib/vesper"
 SHARE="$DESTDIR$PREFIX/share/vesper"
 ICONS="$DESTDIR$PREFIX/share/icons/hicolor"
+PIXMAPS="$DESTDIR$PREFIX/share/pixmaps"
 XSESS="$DESTDIR$PREFIX/share/xsessions"
 APPS="$DESTDIR$PREFIX/share/applications"
 THEMES="$DESTDIR$PREFIX/share/themes"
@@ -80,6 +83,8 @@ if [ "$ACTION" = uninstall ]; then
         "$APPS/vesper-profile.desktop"
   rm -f "$ICONS/scalable/apps/vesper-logo.svg" \
         "$ICONS/scalable/apps/vesper-logo-symbolic.svg"
+  find "$ICONS" -name 'vesper-logo.png' -delete 2>/dev/null || true
+  rm -f "$PIXMAPS/vesper.png" "$PIXMAPS/vesper-logo.png"
   command -v gtk-update-icon-cache >/dev/null 2>&1 && \
     gtk-update-icon-cache -q -f -t "$ICONS" 2>/dev/null || true
   echo "Fatto. La configurazione in ~/.config/vesper NON è stata toccata."
@@ -93,6 +98,26 @@ if [ -z "$DESTDIR" ] && [ ! -w "$(dirname "$PREFIX")" ] && [ "$(id -u)" != 0 ]; 
   echo "Usa:  sudo ./install.sh        oppure  ./install.sh --user" >&2
   exit 1
 fi
+
+# Marchio: la stella della sera sopra l'orizzonte, disegnata coi caratteri.
+# Il colore si usa solo scrivendo a un terminale vero (in un log o in una
+# pipe resta testo pulito). printf riga per riga, non un heredoc: dentro un
+# heredoc non quotato le barre rovesce del disegno sparirebbero.
+if [ -t 1 ] && [ "${TERM:-dumb}" != "dumb" ] && [ -z "${NO_COLOR:-}" ]; then
+  C=$(printf '\033[38;5;51m'); G=$(printf '\033[38;5;245m'); Z=$(printf '\033[0m')
+else
+  C=""; G=""; Z=""
+fi
+printf '%s\n' "" \
+  "$C            /\\           $Z" \
+  "$C           /  \\          $Z" \
+  "$C     <====<    >====>     $Z" \
+  "$C           \\  /          $Z" \
+  "$C            \\/           $Z" \
+  "$G     ______________________$Z" \
+  "" \
+  "$C   V E S P E R$Z   $G ambiente desktop$Z" \
+  ""
 
 echo "Installo Vesper in $PREFIX${DESTDIR:+ (radice: $DESTDIR)}"
 mkdir -p "$BIN" "$LIB" "$SHARE" "$ICONS/scalable/apps" "$XSESS" "$APPS" "$THEMES"
@@ -154,6 +179,19 @@ fi
 # --- icone, sessione, voci di menu ----------------------------------------
 cp "$SRC/data/icons/hicolor/scalable/apps/vesper-logo.svg" "$ICONS/scalable/apps/"
 cp "$SRC/data/icons/hicolor/scalable/apps/vesper-logo-symbolic.svg" "$ICONS/scalable/apps/"
+# PNG a misura fissa: il greeter del display manager (slick-greeter,
+# lightdm-gtk) disegna l'icona della sessione fuori da GTK e spesso prende
+# solo questi; con il solo scalable il logo restava sbiadito o assente.
+for _d in "$SRC/data/icons/hicolor"/*x*/apps; do
+  [ -d "$_d" ] || continue
+  _m=$(basename "$(dirname "$_d")")
+  mkdir -p "$ICONS/$_m/apps"
+  cp "$_d"/vesper-logo.png "$ICONS/$_m/apps/" 2>/dev/null || true
+done
+# /usr/share/pixmaps: alcuni greeter e gestori di sessione guardano solo qui
+mkdir -p "$PIXMAPS"
+cp "$SRC/data/pixmaps/vesper.png" "$PIXMAPS/" 2>/dev/null || true
+cp "$SRC/data/pixmaps/vesper-logo.png" "$PIXMAPS/" 2>/dev/null || true
 cp "$SRC/data/xsessions/vesper.desktop" "$XSESS/vesper.desktop"
 cp "$SRC/data/applications/"*.desktop "$APPS/"
 
@@ -171,6 +209,9 @@ chmod 644 "$XSESS/vesper.desktop" 2>/dev/null || true
 chmod 644 "$APPS"/vesper-*.desktop 2>/dev/null || true
 chmod 644 "$ICONS/scalable/apps"/vesper-logo*.svg 2>/dev/null || true
 chmod 755 "$ICONS" "$ICONS/scalable" "$ICONS/scalable/apps" 2>/dev/null || true
+find "$ICONS" -name 'vesper-logo.png' -exec chmod 644 {} + 2>/dev/null || true
+find "$ICONS" -type d -exec chmod 755 {} + 2>/dev/null || true
+chmod 644 "$PIXMAPS"/vesper*.png 2>/dev/null || true
 
 # Cache di sistema: si aggiornano SOLO su un'installazione vera. Con DESTDIR
 # (packaging) i file generati finirebbero dentro il pacchetto, dove non devono

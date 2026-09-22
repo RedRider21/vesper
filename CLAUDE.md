@@ -124,6 +124,12 @@ vesper/
   (touchscreen, penne, mouse integrato delle VM): serve la «Coordinate
   Transformation Matrix» via `xinput`. Mouse e touchpad sono relativi e non
   si toccano: per loro il puntatore si muove nello spazio dello schermo.
+- **Framebuffer residuo**: `xrandr` allarga lo schermo X quando serve ma non
+  lo rimpicciolisce mai da solo. Dopo un giro in verticale (1080x1920) e il
+  ritorno in orizzontale resta 1920x1920, e in quell'area di troppo ci stanno
+  un secondo sfondo e una seconda barra (il desktop e il pannello disegnano
+  per monitor). Quando si ruota con UN solo schermo si passa anche `--fb`;
+  con piu' schermi lo ricalcola `apply_policy`.
 - **Cambio di risoluzione**: certi driver (schede video virtuali) accettano
   `--mode` senza fare nulla finché non si dichiara anche `--fb`. Si verifica
   l'esito e si ritenta, invece di lasciare all'utente il «secondo tentativo».

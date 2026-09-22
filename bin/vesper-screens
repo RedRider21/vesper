@@ -109,6 +109,27 @@ geom_attesa() {
   esac
 }
 
+# Dimensione che il framebuffer deve avere per un output a una data
+# rotazione. Serve perche' xrandr NON rimpicciolisce il framebuffer da solo:
+# dopo un giro in verticale (1080x1920) e il ritorno in orizzontale lo schermo
+# X puo' restare alto il doppio del monitor, e in quello spazio di troppo
+# finiscono un secondo sfondo e una seconda barra - il desktop "doppio".
+fb_per_rotazione() {
+  geo=$(cur_res "$1")
+  [ -n "$geo" ] || return 1
+  gw=${geo%x*}; gh=${geo#*x}
+  # la geometria di ADESSO e' gia' girata se l'output e' ruotato: si risale
+  # ai lati del modo, poi li si gira secondo la rotazione RICHIESTA
+  case "$(cur_rot "$1")" in
+    left|right) mw=$gh; mh=$gw ;;
+    *)          mw=$gw; mh=$gh ;;
+  esac
+  case "$2" in
+    left|right) echo "${mh}x${mw}" ;;
+    *)          echo "${mw}x${mh}" ;;
+  esac
+}
+
 set_mode() {
   out="$1"; res="$2"
   attesa=$(geom_attesa "$out" "$res")
@@ -349,7 +370,18 @@ case "${1:-}" in
       normal|left|right|inverted) ;;
       *) echo "$(vesper_t cli.screens.bad_rotation 'orientamento non valido'): ${3:-} (normal|left|right|inverted)" >&2; exit 2 ;;
     esac
-    xrandr --output "$2" --rotate "$3" 2>>"$LOG" || exit 1
+    # Con un solo schermo si dichiara anche il framebuffer, cosi' torna
+    # esattamente della misura del monitor invece di restare grande quanto il
+    # giro precedente. Con piu' schermi lo ricalcola la disposizione, subito
+    # sotto: un --fb dedotto da un solo output spegnerebbe gli altri.
+    if [ "$(connected | wc -l)" -le 1 ] && fb=$(fb_per_rotazione "$2" "$3"); then
+      echo "rotate: $2 -> $3 (framebuffer $fb)" >> "$LOG"
+      xrandr --output "$2" --rotate "$3" --fb "$fb" 2>>"$LOG" || exit 1
+    else
+      echo "rotate: $2 -> $3" >> "$LOG"
+      xrandr --output "$2" --rotate "$3" 2>>"$LOG" || exit 1
+      apply_policy                     # ricolloca gli altri schermi e il fb
+    fi
     # Touchscreen e puntatori assoluti vanno ruotati con lo schermo, altrimenti
     # i clic restano nel sistema di coordinate di prima.
     rimappa_input "$3"

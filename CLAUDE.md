@@ -117,6 +117,16 @@ vesper/
   (`_e_finestra`), così chi chiede ripiega sull'avvio normale. Il servizio va
   anche fermato all'uscita della sessione: è figlio di `vesper-session` ma non
   riceve il TERM del logout.
+- **Schermo ruotato**: xrandr chiama il modo `1920x1080` ma riporta la
+  geometria GIRATA (`1080x1920`). Chi confronta un modo con la geometria deve
+  invertire i lati secondo `cur_rot` (`geom_attesa` in `vesper-screens`).
+  Inoltre `--rotate` NON ruota i dispositivi di puntamento ASSOLUTI
+  (touchscreen, penne, mouse integrato delle VM): serve la «Coordinate
+  Transformation Matrix» via `xinput`. Mouse e touchpad sono relativi e non
+  si toccano: per loro il puntatore si muove nello spazio dello schermo.
+- **Cambio di risoluzione**: certi driver (schede video virtuali) accettano
+  `--mode` senza fare nulla finché non si dichiara anche `--fb`. Si verifica
+  l'esito e si ritenta, invece di lasciare all'utente il «secondo tentativo».
 - **Luce blu**: gamma via `xrandr`. L'overlay traslucido è stato SCARTATO: in VM
   senza compositore diventa opaco e copre lo schermo.
 

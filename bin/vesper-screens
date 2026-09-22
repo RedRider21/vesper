@@ -137,6 +137,23 @@ set_mode() {
   return 1
 }
 
+# Il modo e' entrato, ma qualcuno lo rimette com'era? Succede nelle macchine
+# virtuali: con il "ridimensionamento automatico dello schermo" attivo,
+# VirtualBox (VBoxClient) riporta il guest alla dimensione della finestra
+# dell'host un istante dopo. L'utente vede una risoluzione che "non la piglia"
+# e non ha modo di sapere perche': qui glielo diciamo.
+avvisa_se_tornata() {
+  out="$1"; attesa="$2"
+  sleep 2
+  ora=$(cur_res "$out")
+  [ "$ora" = "$attesa" ] && return 0
+  echo "mode: riportata a $ora da fuori (auto-resize della VM?)" >> "$LOG"
+  command -v notify-send >/dev/null 2>&1 || return 0
+  notify-send -i video-display "$(vesper_t pn.scr.title 'Schermi')" \
+    "$(vesper_t cli.screens.reverted 'La risoluzione e stata riportata indietro da un altro programma. In VirtualBox: Visualizza, Ridimensionamento automatico dello schermo.')" \
+    2>/dev/null || true
+}
+
 reload_desktop() {
   mkdir -p "$(dirname "$REFRESH")" 2>/dev/null || true
   : > "$REFRESH" 2>/dev/null || true
@@ -300,7 +317,10 @@ case "${1:-}" in
 
   mode)
     [ -n "$2" ] && [ -n "$3" ] || exit 1
-    set_mode "$2" "$3"
+    if set_mode "$2" "$3"; then
+      # in background: il comando non deve restare appeso due secondi
+      avvisa_se_tornata "$2" "$(geom_attesa "$2" "$3")" &
+    fi
     reload_desktop
     ;;
 

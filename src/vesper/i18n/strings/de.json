@@ -122,6 +122,7 @@
  "cli.prompt.usage": "Aufruf: vesper-prompt [get|list|set <default|parrot|plain>]",
  "cli.screens.bad_rotation": "ungültige Ausrichtung",
  "cli.screens.policy_usage": "Aufruf: vesper-screens set-policy {mirror|extend}",
+ "cli.screens.reverted": "Ein anderes Programm hat die Auflösung zurückgesetzt. In VirtualBox: Anzeige → Automatische Größenanpassung.",
  "cli.screens.rotate_usage": "Aufruf: vesper-screens rotate AUSGANG {normal|left|right|inverted}",
  "cli.screens.usage": "Aufruf: vesper-screens {outputs|modes NAME|mirror|extend|only NAME|mode NAME BxH|primary NAME|autostart|policy|set-policy mirror|extend|lid}",
  "cli.session.no_wm": "kein Fenstermanager gefunden (openbox wird gebraucht)",

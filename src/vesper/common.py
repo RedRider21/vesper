@@ -35,8 +35,28 @@ COL_ALERT = "#ff5a8a"
 CSS = b"""
 window, .background, dialog { background-color: #050a14; color: #c8f5ff; }
 /* Viewport (dentro gli ScrolledWindow) trasparente: senza, userebbe il colore
-   "base" del tema (bianco) e le viste scrollabili apparirebbero bianche. */
-viewport { background-color: transparent; }
+   "base" del tema (bianco) e le viste scrollabili apparirebbero bianche.
+   Stessa storia per gli altri contenitori: lo stile "vetro" (predefinito)
+   disegna tessere e schede SEMITRASPARENTI, e quello che si vede sotto deve
+   essere il fondo della NOSTRA finestra. Se il notebook o lo scrolledwindow
+   restano dipinti dal tema GTK, sotto il vetro compare il bianco del tema e
+   il testo chiaro diventa illeggibile: succedeva con un preset scuro e un
+   tema GTK chiaro installato. */
+viewport, scrolledwindow, notebook, notebook > stack, stack, paned {
+  background-color: transparent;
+}
+/* Tooltip: in GTK3 il tooltip E' una finestra con classe .background, quindi
+   la riga qui sopra gli cambiava il FONDO mentre il testo restava quello
+   deciso dal tema GTK (bianco: il tema si aspetta un tooltip scuro).
+   Risultato in tema chiaro: scritte bianche su fondo bianco. Fondo e testo
+   vanno dichiarati insieme, e il colore va imposto anche ai figli, che
+   altrimenti continuano a ereditare dal tema.
+   NB: qui dentro solo ASCII, e' una stringa bytes. */
+tooltip, tooltip.background {
+  background-color: #0a1a26; color: #c8f5ff;
+  border: 1px solid #1a3a52; border-radius: 8px;
+}
+tooltip label, tooltip.background label, tooltip * { color: #c8f5ff; }
 /* Font dell'interfaccia: titoli ed etichette in Chakra Petch (look "tech"),
    meta in IBM Plex Mono. Se non sono installati (pacchetto font opzionale di
    Vesper, o /usr/share/fonts/vesper) valgono i fallback dichiarati dopo. */

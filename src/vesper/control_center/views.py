@@ -251,6 +251,25 @@ def open_sysinfo(_btn=None):
 GRAPH_N = 60
 
 
+_modo_cache = [0.0, False]          # (quando, chiaro)
+
+
+def _modo_chiaro() -> bool:
+    """True se l'interfaccia è in chiaro. Il valore si rilegge al massimo una
+    volta al secondo: _draw dei grafici gira a ogni aggiornamento e non deve
+    toccare il disco a ogni frame."""
+    import time
+    ora = time.time()
+    if ora - _modo_cache[0] > 1.0:
+        try:
+            from vesper import palette
+            _modo_cache[1] = palette.is_light()
+        except Exception:                        # noqa: BLE001
+            _modo_cache[1] = False
+        _modo_cache[0] = ora
+    return _modo_cache[1]
+
+
 class _Graph(Gtk.DrawingArea):
     """Grafico a scorrimento (linea + area riempita + griglia), stile Monitor di
     sistema MATE. hist tiene 0..1 (CPU/RAM) o byte/s grezzi (Rete/Disco: autoscale)."""
@@ -270,9 +289,19 @@ class _Graph(Gtk.DrawingArea):
     def _draw(self, _w, cr):
         w = self.get_allocated_width(); h = self.get_allocated_height()
         r, g, b = self.rgb
-        cr.set_source_rgba(0.02, 0.06, 0.10, 1.0)
+        # Fondo e griglia seguono la modalità chiaro/scuro: disegnati in Cairo
+        # non passano dal CSS, e in tema chiaro restavano due riquadri neri
+        # dentro una finestra bianca.
+        chiaro = _modo_chiaro()
+        if chiaro:
+            fondo = (0.91, 0.94, 0.96, 1.0)
+            griglia = (0.62, 0.69, 0.75)
+        else:
+            fondo = (0.02, 0.06, 0.10, 1.0)
+            griglia = (0.10, 0.23, 0.32)
+        cr.set_source_rgba(*fondo)
         cr.rectangle(0, 0, w, h); cr.fill()
-        cr.set_source_rgba(0.10, 0.23, 0.32, 0.55); cr.set_line_width(1)
+        cr.set_source_rgba(*griglia, 0.55); cr.set_line_width(1)
         for i in range(1, 4):
             y = round(h * i / 4.0) + 0.5
             cr.move_to(0, y); cr.line_to(w, y); cr.stroke()
@@ -299,7 +328,7 @@ class _Graph(Gtk.DrawingArea):
             for i, v in enumerate(vals):
                 (cr.move_to if i == 0 else cr.line_to)(i * step, yv(v))
             cr.stroke()
-        cr.set_source_rgba(0.10, 0.23, 0.32, 0.9); cr.set_line_width(1)
+        cr.set_source_rgba(*griglia, 0.9); cr.set_line_width(1)
         cr.rectangle(0.5, 0.5, w - 1, h - 1); cr.stroke()
 
 

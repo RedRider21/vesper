@@ -95,6 +95,19 @@ vesper/
 - **Uscita dalla sessione**: mai `openbox --exit` (non fa nulla con marco o
   metacity, che in `auto` Vesper preferisce). Si usa `vesper-session --logout`,
   che manda TERM al processo di sessione: lui ferma il WM vero e ripristina.
+- **Stile «vetro» e tema GTK**: lo stile finestre predefinito disegna tessere
+  e schede SEMITRASPARENTI, quindi sotto deve esserci il fondo della NOSTRA
+  finestra. I contenitori intermedi (`viewport`, `scrolledwindow`, `notebook`,
+  `stack`, `paned`) vanno dichiarati trasparenti nel CSS base: se li dipinge
+  il tema GTK, con un tema chiaro sotto un preset scuro si vedono schede
+  bianche con testo chiaro. Stessa famiglia di problemi per i **tooltip**: in
+  GTK3 il tooltip è una finestra con classe `.background`, quindi la regola
+  generica gli cambia il fondo ma il testo resta quello del tema — fondo e
+  colore vanno dichiarati insieme, e il colore imposto anche ai figli.
+- **Colori nei disegni Cairo**: non passano dal CSS e non seguono chiaro/scuro
+  da soli (i grafici del Monitor restavano due riquadri neri in tema chiaro).
+  Si chiede la modalità a `palette.is_light()`, con una cache breve: `draw`
+  gira a ogni frame.
 - **Luce blu**: gamma via `xrandr`. L'overlay traslucido è stato SCARTATO: in VM
   senza compositore diventa opaco e copre lo schermo.
 

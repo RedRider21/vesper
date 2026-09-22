@@ -23,13 +23,13 @@ login.
 **Debian, Ubuntu, Linux Mint** — pacchetto `.deb`:
 
 ```sh
-sudo apt install ./vesper_0.6.7_all.deb     # scarica il .deb dalle release
+sudo apt install ./vesper_0.6.8_all.deb     # scarica il .deb dalle release
 ```
 
 **Da sorgenti, su qualsiasi distribuzione:**
 
 ```sh
-tar xzf vesper-0.6.7.tar.gz && cd vesper-0.6.7
+tar xzf vesper-0.6.8.tar.gz && cd vesper-0.6.8
 sudo ./install.sh                 # in /usr/local
 sudo ./install.sh --prefix=/usr   # in /usr (come i pacchetti della distro)
 ./install.sh --user               # in ~/.local, senza root

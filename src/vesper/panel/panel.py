@@ -2191,7 +2191,10 @@ class Panel(Gtk.Window):
                 for m in modes:
                     combo.append_text(m)
                 if modes:
-                    combo.set_active(0)
+                    # quella in uso, non la prima dell'elenco: altrimenti
+                    # "Applica" senza toccare nulla cambiava risoluzione
+                    cur = res.split("@")[0]
+                    combo.set_active(modes.index(cur) if cur in modes else 0)
                 r.pack_start(combo, True, True, 0)
                 ba = Gtk.Button(label=_t("pn.scr.apply"))
                 ba.get_style_context().add_class("vesper-menu-item")
@@ -2199,6 +2202,33 @@ class Panel(Gtk.Window):
                            self._screens_apply(["mode", n, c.get_active_text() or ""]))
                 r.pack_start(ba, False, False, 0)
                 oc.pack_start(r, False, False, 0)
+
+                # Orientamento: un monitor si puo' montare in verticale, e da
+                # qui - dove si sceglie la risoluzione - e' il posto naturale
+                # per girarlo. Prima esisteva solo nel Centro di Controllo.
+                rr = Gtk.Box(orientation=Gtk.Orientation.HORIZONTAL, spacing=4)
+                rlab = Gtk.Label(label=_t("pn.scr.orientation"))
+                rlab.set_xalign(0)
+                rr.pack_start(rlab, False, False, 0)
+                rot = Gtk.ComboBoxText()
+                for rid, rtxt in (("normal", _t("pn.scr.rot.normal")),
+                                  ("left", _t("pn.scr.rot.left")),
+                                  ("right", _t("pn.scr.rot.right")),
+                                  ("inverted", _t("pn.scr.rot.inverted"))):
+                    rot.append(rid, rtxt)
+                cur_rot = (self._run_out(["vesper-screens", "rotation", name])
+                           or "normal").strip()
+                rot.set_active_id(cur_rot if cur_rot in
+                                  ("normal", "left", "right", "inverted")
+                                  else "normal")
+                rr.pack_start(rot, True, True, 0)
+                br = Gtk.Button(label=_t("pn.scr.apply"))
+                br.get_style_context().add_class("vesper-menu-item")
+                br.connect("clicked", lambda _w, n=name, c=rot:
+                           self._screens_apply(
+                               ["rotate", n, c.get_active_id() or "normal"]))
+                rr.pack_start(br, False, False, 0)
+                oc.pack_start(rr, False, False, 0)
                 if len(outs) >= 2:
                     bo = Gtk.Button(label=_t("pn.scr.only"))
                     bo.get_style_context().add_class("vesper-menu-item")

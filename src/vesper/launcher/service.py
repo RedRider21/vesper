@@ -144,6 +144,21 @@ APERTURE = {"cc": _apri_cc, "profile": _apri_profile,
             "viewer": _apri_viewer}
 
 
+def _e_finestra(app, args) -> bool:
+    """Questa richiesta apre davvero una finestra?
+
+    Il servizio sa fare una cosa sola: aprire finestre. Se gli arriva un
+    SOTTOCOMANDO (`profile apply`, che riapplica il preset e non apre niente)
+    deve dire di no: il comando `vesper-*` che ha chiesto ripiega sull'avvio
+    normale ed esegue il sottocomando per davvero. Senza questo controllo
+    `vesper-profile apply` faceva comparire il selettore dei preset - all'avvio
+    della sessione e dopo ogni cambio di risoluzione - senza applicare nulla.
+    """
+    if app == "profile":
+        return not args or args == ["gui"]
+    return True
+
+
 def _apri(app, args):
     """Apre l'app richiesta (chiamata da idle_add, quindi nel main loop)."""
     _rileggi_lingua()
@@ -189,7 +204,7 @@ def _su_richiesta(fd, _cond, srv):
         pass
     elif pezzi[0] == "stop":
         GLib.idle_add(Gtk.main_quit)
-    elif pezzi[0] in APERTURE:
+    elif pezzi[0] in APERTURE and _e_finestra(pezzi[0], pezzi[1:]):
         GLib.idle_add(_apri, pezzi[0], pezzi[1:])
     else:
         risposta = b"no\n"

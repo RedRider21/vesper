@@ -3359,7 +3359,10 @@ def open_screens(_btn=None):
         outbox.show_all()
 
     def _apply(args):
-        if len(args) >= 4 and args[2] == "mode" and not args[3]:
+        # "mode" senza risoluzione scelta non si esegue (gli indici erano
+        # sfalsati di uno e il controllo non scattava mai: partiva un
+        # `vesper-screens mode NOME ""` che falliva e basta).
+        if len(args) >= 3 and args[0] == "mode" and not args[2]:
             return
         run_bg(["vesper-screens"] + args)
         GLib.timeout_add(900, lambda: (_rebuild(), False)[1])

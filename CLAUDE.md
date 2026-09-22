@@ -108,6 +108,15 @@ vesper/
   da soli (i grafici del Monitor restavano due riquadri neri in tema chiaro).
   Si chiede la modalità a `palette.is_light()`, con una cache breve: `draw`
   gira a ogni frame.
+- **Avvio «caldo» (vesper-launcherd)**: il servizio sa aprire SOLO finestre.
+  Un comando `vesper-*` gli delega la richiesta soltanto quando si vuole la
+  finestra: i sottocomandi restano nel wrapper. `vesper-profile apply` delegato
+  diventava «apri il selettore» con l'argomento ignorato — finestra dei preset
+  all'avvio e a ogni `vesper-screens` (che fa `vesper-profile apply`), e preset
+  mai riapplicato. Il servizio rifiuta comunque le richieste non-finestra
+  (`_e_finestra`), così chi chiede ripiega sull'avvio normale. Il servizio va
+  anche fermato all'uscita della sessione: è figlio di `vesper-session` ma non
+  riceve il TERM del logout.
 - **Luce blu**: gamma via `xrandr`. L'overlay traslucido è stato SCARTATO: in VM
   senza compositore diventa opaco e copre lo schermo.
 

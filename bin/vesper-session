@@ -95,6 +95,12 @@ echo $$ > "$CACHE/session.pid"
 # e per la fine naturale della sessione.
 _vesper_uscita() {
   [ -n "${WM_PID:-}" ] && kill -TERM "$WM_PID" 2>/dev/null || true
+  # L'avvio "caldo" e' figlio di questo script ma NON riceve il TERM del
+  # logout: se il display manager tiene in piedi lo stesso server X, il
+  # servizio sopravviveva alla sessione e la successiva se lo ritrovava gia'
+  # in ascolto, con i moduli e la lingua di prima.
+  command -v vesper-launcherd >/dev/null 2>&1 && \
+    vesper-launcherd --stop >/dev/null 2>&1 || true
   "$VESPER_PY" -m vesper.sessionstate ripristina 2>&1 || true
   rm -f "$CACHE/session.pid" "$CACHE/wm.pid" 2>/dev/null || true
   echo "=== sessione Vesper terminata $(date) ==="
@@ -130,6 +136,10 @@ if [ -r "$CONF/keyboard" ] && command -v setxkbmap >/dev/null 2>&1; then
 fi
 
 # --- 3. aspetto: accent, sfondo, tema icone del preset attivo --------------
+# Prima si congeda un eventuale avvio "caldo" rimasto da una sessione
+# precedente sullo stesso server X: e' nato con altri moduli e un'altra lingua.
+command -v vesper-launcherd >/dev/null 2>&1 && \
+  vesper-launcherd --stop >/dev/null 2>&1 || true
 command -v vesper-profile >/dev/null 2>&1 && vesper-profile apply || true
 
 # --- 4. componenti del desktop ---------------------------------------------

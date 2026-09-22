@@ -13,9 +13,16 @@ for _e in "$_d/env.sh" "$(dirname "$_d")/lib/vesper/env.sh" \
   [ -r "$_e" ] && { . "$_e"; break; }
 done
 [ -n "${VESPER_PY:-}" ] || { echo "vesper-profile: python3 non disponibile" >&2; exit 1; }
-# Avvio "caldo": se il servizio gira, apre lui la finestra (niente re-import).
-# Se non c'e' o non risponde, si prosegue con l'avvio normale qui sotto.
-if command -v vesper-launch >/dev/null 2>&1; then
-  vesper-launch profile "$@" && exit 0
-fi
+# Avvio "caldo": se il servizio gira, apre lui la FINESTRA (niente re-import).
+# Solo la finestra: i sottocomandi (apply, set, list, ...) restano qui.
+# Delegarli al servizio voleva dire chiedergli "profile apply", che lui
+# leggeva come "apri il selettore" ignorando l'argomento: all'avvio della
+# sessione e dopo ogni cambio schermo (vesper-screens -> vesper-profile apply)
+# compariva la finestra dei preset, e il preset non veniva riapplicato.
+case "${1:-}" in
+  ""|gui)
+    if command -v vesper-launch >/dev/null 2>&1; then
+      vesper-launch profile "$@" && exit 0
+    fi ;;
+esac
 exec "$VESPER_PY" -m vesper.profiles "$@"

@@ -74,23 +74,27 @@ window.inactive.button.close.unpressed.image.color: #b0b0b0
 # --- Menu del window manager (tasto destro sul desktop) --------------------
 # Stessa impostazione dei menu di Mint: fondo scuro uniforme, voce attiva
 # evidenziata col colore del preset, bordo sottile.
-menu.border.width: 1
-menu.border.color: #c6c6c6
+menu.border.width: 6
+menu.border.color: #f2f2f2
 menu.title.bg: flat solid
 menu.title.bg.color: #e8e8e8
 menu.title.text.color: #202020
 menu.title.text.justify: center
 menu.items.bg: flat solid
 menu.items.bg.color: #f2f2f2
+# Spazio tra le voci (da NexusSec): Openbox 3.6 non ha un padding per voce
+# (altezza = font + |ombra| + 4, fissi). Un'ombra del testo INVISIBILE
+# (shadowtint=0) aggiunge 5px a ogni voce, col testo centrato.
+menu.items.font: shadow=y:shadowoffset=5:shadowtint=0
 menu.items.text.color: #202020
 menu.items.disabled.text.color: #a5a5a5
 menu.items.active.bg: flat solid
 menu.items.active.bg.color: #1a73e8
-menu.items.active.text.color: #ffffff
+menu.items.active.text.color: #101010
 menu.separator.color: #d6d6d6
 menu.separator.width: 1
-menu.separator.padding.width: 6
-menu.separator.padding.height: 3
+menu.separator.padding.width: 10
+menu.separator.padding.height: 4
 menu.overlap.x: -2
 
 # --- OSD (indicatori a schermo) --------------------------------------------

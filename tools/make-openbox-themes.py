@@ -148,13 +148,28 @@ def lighten(hex_color, factor=0.35):
     return "#%02x%02x%02x" % (r, g, b)
 
 
+def mix(a, b, t):
+    """Colore a mescolato con b: t=1 -> a, t=0 -> b."""
+    ra = [int(a.lstrip("#")[i:i + 2], 16) for i in (0, 2, 4)]
+    rb = [int(b.lstrip("#")[i:i + 2], 16) for i in (0, 2, 4)]
+    return "#%02x%02x%02x" % tuple(round(x * t + y * (1 - t)) for x, y in zip(ra, rb))
+
+
 def render(template_text, accent, light=False):
     """Sostituisce i colori del preset. Se il preset è CHIARO, la famiglia
     Core viene tradotta nella variante chiara con la stessa mappa usata per
     l'interfaccia (src/vesper/palette.py): un colore solo, in un posto solo.
     Retro è già chiaro di suo e Cards ha la barra graphite per scelta, quindi
     non si toccano."""
+    h = accent.lstrip("#")
+    luce = sum(w * int(h[i:i + 2], 16) for w, i in ((0.299, 0), (0.587, 2), (0.114, 4))) / 255
+    # testo e simboli SOPRA l'accento: scuri sugli accenti chiari (ciano, lime,
+    # giallo...), bianchi sugli altri; prima erano sempre bianchi
+    on_accent = "#10161c" if luce > 0.6 else "#ffffff"
     out = (template_text
+           .replace("@ON_ACCENT@", on_accent)
+           .replace("@INACT_BG@", mix(accent, "#e4e4e1", 0.22))
+           .replace("@INACT_FG@", "#5f656b")
            .replace("@ACCENT_DK@", darken(accent))
            .replace("@ACCENT_LT@", lighten(accent))
            .replace("@ACCENT@", accent))

@@ -77,14 +77,18 @@ window.active.button.disabled.image.color: #3a3f48
 window.inactive.button.disabled.image.color: #33383f
 
 # --- Menu: scuro con intestazione/voce attiva col colore del preset -------------
-menu.border.color: #6366f1
-menu.border.width: 1
+menu.border.color: #23272e
+menu.border.width: 6
 menu.title.bg: flat solid
 menu.title.bg.color: #2b2f38
 menu.title.text.color: #6366f1
 menu.title.text.justify: center
 menu.items.bg: flat solid
 menu.items.bg.color: #23272e
+# Spazio tra le voci (da NexusSec): Openbox 3.6 non ha un padding per voce
+# (altezza = font + |ombra| + 4, fissi). Un'ombra del testo INVISIBILE
+# (shadowtint=0) aggiunge 5px a ogni voce, col testo centrato.
+menu.items.font: shadow=y:shadowoffset=5:shadowtint=0
 menu.items.text.color: #e6ebf2
 menu.items.disabled.text.color: #5a6472
 menu.items.active.bg: flat solid
@@ -92,6 +96,9 @@ menu.items.active.bg.color: #6366f1
 menu.items.active.text.color: #ffffff
 menu.separator.color: #2a2f37
 menu.items.justify: left
+menu.separator.width: 1
+menu.separator.padding.width: 10
+menu.separator.padding.height: 4
 
 # --- OSD ---------------------------------------------------------------------
 osd.border.width: 1

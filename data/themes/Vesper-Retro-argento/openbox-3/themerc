@@ -3,6 +3,10 @@
 !! 1977 - A minimalist theme set for Openbox
 !! Author:  Thayer Williams (thayerw@gmail.com)
 !! Website: http://cinderwick.ca
+!!
+!! Adattato per Vesper (famiglia Retro): rispetto all'originale le finestre
+!! INATTIVE hanno una barra smorzata col titolo leggibile (nel 1977 sparivano
+!! titolo e pulsanti) e testo/pulsanti dell'attiva scuri sugli accenti chiari.
 
 
 !! osd
@@ -17,7 +21,7 @@ osd.label.text.color: #ffffff
 !! menus
 menu.title.bg: flat
 menu.title.bg.color: #b8c6d0
-menu.title.text.color: #ffffff
+menu.title.text.color: #10161c
 menu.title.text.justify: right
 
 menu.items.bg: flat solid
@@ -34,6 +38,17 @@ menu.items.active.bg: flat border
 menu.items.active.bg.color: #424242
 menu.items.active.bg.border.color: #424242
 menu.items.active.text.color: white
+# Spazio tra le voci: Openbox 3.6 non ha un padding per voce (menuframe.c:
+# altezza = font + |ombra| + 4, fissi). Un'ombra del testo INVISIBILE
+# (shadowtint=0 = trasparenza 0) aggiunge 5px a ogni voce, col testo centrato.
+menu.items.font: shadow=y:shadowoffset=5:shadowtint=0
+# Separatori del menu con margini (coerente con Vesper-Core)
+menu.separator.width: 1
+menu.separator.padding.width: 10
+menu.separator.padding.height: 4
+# Bordo spesso nel tono del fondo = margine interno uniforme del menu
+menu.border.width: 6
+menu.border.color: #efefec
 
 !! fonts
 window.active.label.text.font:shadow=y
@@ -61,11 +76,11 @@ window.active.grip.bg: flat
 window.active.grip.bg.color: #b8c6d0
 
 window.active.label.bg: parentrelative
-window.active.label.text.color:  #ffffff
+window.active.label.text.color: #10161c
 
 window.active.button.unpressed.bg: flat
 window.active.button.unpressed.bg.color: #b8c6d0
-window.active.button.unpressed.image.color: #ffffff
+window.active.button.unpressed.image.color: #10161c
 
 window.active.button.pressed.bg: flat
 window.active.button.pressed.bg.color: #b8c6d0
@@ -75,39 +90,39 @@ window.active.button.pressed.image.color: #000000
 window.inactive.client.color: #404850
 
 window.inactive.title.bg: flat
-window.inactive.title.bg.color: #b8c6d0
+window.inactive.title.bg.color: #dadddd
 
 window.inactive.handle.bg: flat
-window.inactive.handle.bg.color: #b8c6d0
+window.inactive.handle.bg.color: #dadddd
 
 window.inactive.grip.bg: flat
-window.inactive.grip.bg.color: #b8c6d0
+window.inactive.grip.bg.color: #dadddd
 
 window.inactive.label.bg: parentrelative
-window.inactive.label.text.color: #b8c6d0
+window.inactive.label.text.color: #5f656b
 
 window.inactive.button.unpressed.bg: flat
-window.inactive.button.unpressed.bg.color: #b8c6d0
-window.inactive.button.unpressed.image.color: #b8c6d0
+window.inactive.button.unpressed.bg.color: #dadddd
+window.inactive.button.unpressed.image.color: #5f656b
 
 window.inactive.button.pressed.bg: flat 
-window.inactive.button.pressed.bg.color: #b8c6d0
+window.inactive.button.pressed.bg.color: #dadddd
 
-window.inactive.button.hover.image.color: #ffffff
+window.inactive.button.hover.image.color: #848e95
 
 !! buttons
 window.active.button.disabled.bg: flat 
 window.active.button.disabled.bg.color: #b8c6d0
 
 window.inactive.button.disabled.bg: flat 
-window.inactive.button.disabled.bg.color: #b8c6d0
-window.inactive.button.disabled.image.color: #b8c6d0
+window.inactive.button.disabled.bg.color: #dadddd
+window.inactive.button.disabled.image.color: #5f656b
 
 window.active.button.toggled.bg: flat
 window.active.button.toggled.bg.color: #b8c6d0
-window.active.button.toggled.image.color: #ffffff
+window.active.button.toggled.image.color: #10161c
 
 window.inactive.button.toggled.bg: flat
-window.inactive.button.toggled.bg.color: #b8c6d0
-window.inactive.button.toggled.image.color: #b8c6d0
+window.inactive.button.toggled.bg.color: #dadddd
+window.inactive.button.toggled.image.color: #5f656b
 

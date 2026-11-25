@@ -83,8 +83,9 @@ if [ "$ACTION" = uninstall ]; then
   rm -rf "$THEMES"/Vesper-* "$THEMES"/1977-*
   rm -f "$BADGES/vesper.svg" "$BADGES/vesper.png"
   rm -f "$XSESS/vesper.desktop"
-  rm -f "$APPS/vesper-control-center.desktop" "$APPS/vesper-files.desktop" \
-        "$APPS/vesper-profile.desktop"
+  # tutte le voci di menu installate (le stesse di data/applications): prima
+  # l'elenco era fisso e restavano quelle delle app aggiunte dopo
+  for _a in "$SRC"/data/applications/*.desktop; do rm -f "$APPS/$(basename "$_a")"; done
   rm -f "$ICONS/scalable/apps/vesper-logo.svg" \
         "$ICONS/scalable/apps/vesper-logo-symbolic.svg"
   find "$ICONS" -name 'vesper-logo.png' -delete 2>/dev/null || true

@@ -78,35 +78,53 @@ entry.vesper-menu-search:focus { border-color:#ffffff; }
    loro regole sopra (in GTK3 la priorita' del foglio vince sulla specificita',
    una regola generica qui coprirebbe i colori della barra). */
 window:not(.vesper-panel), dialog { background-color:#000000; color:#eaeaea; }
-window:not(.vesper-panel) .vesper-headerbar { background-color:#000000; color:#eaeaea; border-bottom:1px solid #ffffff; }
-window:not(.vesper-panel) .vesper-headerbar label.title { color:#ffffff; }
-window:not(.vesper-panel) .vesper-headerbar label.subtitle { color:#8a8a8a; }
-window:not(.vesper-panel) .vesper-footer { background-color:#000000; color:#8a8a8a; border-top:1px solid #2e2e2e; }
-window:not(.vesper-panel) .vesper-section { color:#ffffff; border-bottom:1px solid #2e2e2e; }
-window:not(.vesper-panel) .vesper-key, window:not(.vesper-panel) .vesper-card-title, window:not(.vesper-panel) frame > label { color:#ffffff; }
-window:not(.vesper-panel) .vesper-val, window:not(.vesper-panel) radiobutton, window:not(.vesper-panel) checkbutton, window:not(.vesper-panel) combobox { color:#eaeaea; }
-window:not(.vesper-panel) .vesper-tile, window:not(.vesper-panel) .vesper-card { background-color:#0a0a0a; color:#eaeaea; border:1px solid #2e2e2e; }
-window:not(.vesper-panel) .vesper-tile label { color:#eaeaea; }
-window:not(.vesper-panel) .vesper-tile:hover { background-color:rgba(255,255,255,0.14); border-color:#ffffff; }
-window:not(.vesper-panel) .vesper-tile-badge { background-color:rgba(255,255,255,0.14); }
-window:not(.vesper-panel) .vesper-tile-badge image, window:not(.vesper-panel) spinner { color:#ffffff; }
-window:not(.vesper-panel) textview, window:not(.vesper-panel) textview text, window:not(.vesper-panel) treeview { background-color:#0a0a0a; color:#eaeaea; caret-color:#ffffff; }
-window:not(.vesper-panel) treeview:selected { background-color:rgba(255,255,255,0.24); color:#eaeaea; }
-window:not(.vesper-panel) treeview header button { background-color:#000000; color:#ffffff; border-bottom:1px solid #2e2e2e; }
-window:not(.vesper-panel) button { background-color:#0a0a0a; color:#eaeaea; border:1px solid #2e2e2e; }
-window:not(.vesper-panel) button:hover { background-color:rgba(255,255,255,0.14); border-color:#ffffff; }
-window:not(.vesper-panel) button:active, window:not(.vesper-panel) button:checked { background-color:#ffffff; color:#000000; }
-window:not(.vesper-panel) button.vesper-primary { background-color:rgba(255,255,255,0.24); border-color:#ffffff; color:#ffffff; }
-window:not(.vesper-panel) button.vesper-menu-item { background-color:transparent; border-color:transparent; }
-window:not(.vesper-panel) button.vesper-menu-item:hover { background-color:rgba(255,255,255,0.14); }
-window:not(.vesper-panel) entry { background-color:#0a0a0a; color:#eaeaea; border:1px solid #2e2e2e; caret-color:#ffffff; }
-window:not(.vesper-panel) entry:focus { border-color:#ffffff; }
-window:not(.vesper-panel) progressbar > trough, window:not(.vesper-panel) switch { background-color:#0a0a0a; border:1px solid #2e2e2e; }
-window:not(.vesper-panel) progressbar > trough > progress, window:not(.vesper-panel) levelbar block.filled, window:not(.vesper-panel) switch:checked slider { background-color:#ffffff; }
-window:not(.vesper-panel) switch:checked { background-color:rgba(255,255,255,0.24); border-color:#ffffff; }
-window:not(.vesper-panel) switch slider { background-color:#8a8a8a; }
-window:not(.vesper-panel) notebook header { background-color:#000000; }
-window:not(.vesper-panel) notebook tab { color:#8a8a8a; }
-window:not(.vesper-panel) notebook tab:checked { color:#ffffff; background-color:#0a0a0a; box-shadow: inset 0 -2px #ffffff; }
-window:not(.vesper-panel) frame > border { border:1px solid #2e2e2e; }
-/* tono: scuro */
+window:not(.vesper-panel) .vesper-headerbar, dialog .vesper-headerbar { background-color:#000000; color:#eaeaea; border-bottom:1px solid #ffffff; }
+window:not(.vesper-panel) .vesper-headerbar label.title, dialog .vesper-headerbar label.title { color:#ffffff; }
+window:not(.vesper-panel) .vesper-headerbar label.subtitle, dialog .vesper-headerbar label.subtitle { color:#8a8a8a; }
+window:not(.vesper-panel) .vesper-footer, dialog .vesper-footer { background-color:#000000; color:#8a8a8a; border-top:1px solid #2e2e2e; }
+window:not(.vesper-panel) .vesper-section, dialog .vesper-section { color:#ffffff; border-bottom:1px solid #2e2e2e; }
+window:not(.vesper-panel) .vesper-key, window:not(.vesper-panel) .vesper-card-title, window:not(.vesper-panel) frame > label, dialog .vesper-key, dialog .vesper-card-title, dialog frame > label { color:#ffffff; }
+window:not(.vesper-panel) .vesper-val, window:not(.vesper-panel) radiobutton, window:not(.vesper-panel) checkbutton, window:not(.vesper-panel) combobox, dialog .vesper-val, dialog radiobutton, dialog checkbutton, dialog combobox { color:#eaeaea; }
+window:not(.vesper-panel) .vesper-tile, window:not(.vesper-panel) .vesper-card, dialog .vesper-tile, dialog .vesper-card { background-color:#0a0a0a; color:#eaeaea; border:1px solid #2e2e2e; }
+window:not(.vesper-panel) .vesper-tile label, dialog .vesper-tile label { color:#eaeaea; }
+window:not(.vesper-panel) .vesper-tile:hover, dialog .vesper-tile:hover { background-color:rgba(255,255,255,0.14); border-color:#ffffff; }
+window:not(.vesper-panel) .vesper-tile-badge, dialog .vesper-tile-badge { background-color:rgba(255,255,255,0.14); }
+window:not(.vesper-panel) .vesper-tile-badge image, window:not(.vesper-panel) spinner, dialog .vesper-tile-badge image, dialog spinner { color:#ffffff; }
+window:not(.vesper-panel) textview, window:not(.vesper-panel) textview text, window:not(.vesper-panel) treeview, dialog textview, dialog textview text, dialog treeview { background-color:#0a0a0a; color:#eaeaea; caret-color:#ffffff; }
+window:not(.vesper-panel) treeview:selected, dialog treeview:selected { background-color:rgba(255,255,255,0.24); color:#eaeaea; }
+window:not(.vesper-panel) treeview header button, dialog treeview header button { background-color:#000000; color:#ffffff; border-bottom:1px solid #2e2e2e; }
+window:not(.vesper-panel) button, dialog button { background-color:#0a0a0a; color:#eaeaea; border:1px solid #2e2e2e; }
+window:not(.vesper-panel) button:hover, dialog button:hover { background-color:rgba(255,255,255,0.14); border-color:#ffffff; }
+window:not(.vesper-panel) button:active, window:not(.vesper-panel) button:checked, dialog button:active, dialog button:checked { background-color:#ffffff; color:#000000; }
+window:not(.vesper-panel) button.vesper-primary, dialog button.vesper-primary { background-color:rgba(255,255,255,0.24); border-color:#ffffff; color:#ffffff; }
+window:not(.vesper-panel) button.vesper-menu-item, dialog button.vesper-menu-item { background-color:transparent; border-color:transparent; }
+window:not(.vesper-panel) button.vesper-menu-item:hover, dialog button.vesper-menu-item:hover { background-color:rgba(255,255,255,0.14); }
+window:not(.vesper-panel) entry, dialog entry { background-color:#0a0a0a; color:#eaeaea; border:1px solid #2e2e2e; caret-color:#ffffff; }
+window:not(.vesper-panel) entry:focus, dialog entry:focus { border-color:#ffffff; }
+window:not(.vesper-panel) progressbar > trough, window:not(.vesper-panel) switch, dialog progressbar > trough, dialog switch { background-color:#0a0a0a; border:1px solid #2e2e2e; }
+window:not(.vesper-panel) progressbar > trough > progress, window:not(.vesper-panel) levelbar block.filled, window:not(.vesper-panel) switch:checked slider, dialog progressbar > trough > progress, dialog levelbar block.filled, dialog switch:checked slider { background-color:#ffffff; }
+window:not(.vesper-panel) switch:checked, dialog switch:checked { background-color:rgba(255,255,255,0.24); border-color:#ffffff; }
+window:not(.vesper-panel) switch slider, dialog switch slider { background-color:#8a8a8a; }
+window:not(.vesper-panel) notebook header, dialog notebook header { background-color:#000000; }
+window:not(.vesper-panel) notebook tab, dialog notebook tab { color:#8a8a8a; }
+window:not(.vesper-panel) notebook tab:checked, dialog notebook tab:checked { color:#ffffff; background-color:#0a0a0a; box-shadow: inset 0 -2px #ffffff; }
+window:not(.vesper-panel) frame > border, dialog frame > border { border:1px solid #2e2e2e; }
+/* Le ETICHETTE dentro pulsanti, caselle e menu hanno una regola propria nel
+   CSS di base: senza dichiararle qui vince quella (ereditare dal genitore
+   conta meno) e con una skin chiara su un preset scuro il testo restava
+   chiaro su chiaro (pulsanti OK/Annulla, menu a tendina). */
+window:not(.vesper-panel) label, dialog label { color:#eaeaea; }
+window:not(.vesper-panel) button label, window:not(.vesper-panel) combobox button, window:not(.vesper-panel) combobox cellview, dialog button label, dialog combobox button, dialog combobox cellview { color:#eaeaea; }
+window:not(.vesper-panel) button:active label, window:not(.vesper-panel) button:checked label, dialog button:active label, dialog button:checked label { color:#000000; }
+window:not(.vesper-panel) spinbutton, window:not(.vesper-panel) spinbutton entry, dialog spinbutton, dialog spinbutton entry { background-color:#0a0a0a; color:#eaeaea; caret-color:#ffffff; }
+window:not(.vesper-panel) spinbutton button, dialog spinbutton button { background-color:#0a0a0a; color:#eaeaea; border-color:#2e2e2e; }
+window:not(.vesper-panel) menu, window:not(.vesper-panel) .menu, dialog menu, dialog .menu { background-color:#0a0a0a; color:#eaeaea; border:1px solid #2e2e2e; }
+window:not(.vesper-panel) menuitem label, dialog menuitem label { color:#eaeaea; }
+window:not(.vesper-panel) menuitem:hover, dialog menuitem:hover { background-color:rgba(255,255,255,0.14); }
+/* calendario (popup dell'orologio, impostazioni data/ora) */
+window:not(.vesper-panel) calendar, dialog calendar { background-color:#0a0a0a; color:#eaeaea; border:1px solid #2e2e2e; }
+window:not(.vesper-panel) calendar.header, dialog calendar.header { background-color:#000000; color:#ffffff; border:none; }
+window:not(.vesper-panel) calendar.button, dialog calendar.button { color:#ffffff; }
+window:not(.vesper-panel) calendar.highlight, dialog calendar.highlight { color:#ffffff; }
+window:not(.vesper-panel) calendar:indeterminate, dialog calendar:indeterminate { color:#8a8a8a; }
+window:not(.vesper-panel) calendar:selected, dialog calendar:selected { background-color:#ffffff; color:#000000; }/* tono: scuro */

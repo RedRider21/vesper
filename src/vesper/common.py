@@ -4,6 +4,7 @@
 from __future__ import annotations
 
 import os
+import re
 import shutil
 import subprocess
 from pathlib import Path
@@ -405,13 +406,28 @@ def base_css() -> bytes:
     """Il tema base nella variante giusta: scura (com'è scritto) o chiara
     (tradotta da vesper.palette). La scelta la fa il preset attivo, o la
     forza l'utente da ~/.config/vesper/ui-mode."""
+    css = CSS.decode()
+    # Il tema base e' scritto col ciano di Vesper (#00e5ff) in una quarantina
+    # di regole: accent.css ne ricopre molte col colore del preset, ma non
+    # tutte (il calendario restava ciano anche col preset bianco). Qui si
+    # sostituisce ovunque, una volta per tutte; il CSS si ricarica a caldo a
+    # ogni cambio di preset (_install_uimode_monitor).
+    try:
+        from vesper.profiles import model as _m
+        ac = _m.accent()
+        h = ac.lstrip("#")
+        rgb = ",".join(str(int(h[i:i + 2], 16)) for i in (0, 2, 4))
+        if len(h) == 6 and ac.lower() != "#00e5ff":
+            css = re.sub("#00e5ff", ac, css, flags=re.I).replace("0,229,255", rgb)
+    except Exception:                    # noqa: BLE001
+        pass
     try:
         from vesper import palette
         if palette.is_light():
-            return palette.to_light(CSS.decode()).encode()
+            css = palette.to_light(css)
     except Exception:                    # noqa: BLE001
         pass
-    return CSS
+    return css.encode()
 
 
 def apply_css() -> None:

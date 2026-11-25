@@ -220,7 +220,43 @@ window:not(.vesper-panel) notebook header {{ background-color:{bg}; }}
 window:not(.vesper-panel) notebook tab {{ color:{dim}; }}
 window:not(.vesper-panel) notebook tab:checked {{ color:{accent}; background-color:{card}; box-shadow: inset 0 -2px {accent}; }}
 window:not(.vesper-panel) frame > border {{ border:1px solid {border}; }}
+/* Le ETICHETTE dentro pulsanti, caselle e menu hanno una regola propria nel
+   CSS di base: senza dichiararle qui vince quella (ereditare dal genitore
+   conta meno) e con una skin chiara su un preset scuro il testo restava
+   chiaro su chiaro (pulsanti OK/Annulla, menu a tendina). */
+window:not(.vesper-panel) label {{ color:{text}; }}
+window:not(.vesper-panel) button label, window:not(.vesper-panel) combobox button, window:not(.vesper-panel) combobox cellview {{ color:{text}; }}
+window:not(.vesper-panel) button:active label, window:not(.vesper-panel) button:checked label {{ color:{on_accent}; }}
+window:not(.vesper-panel) spinbutton, window:not(.vesper-panel) spinbutton entry {{ background-color:{card}; color:{text}; caret-color:{accent}; }}
+window:not(.vesper-panel) spinbutton button {{ background-color:{card}; color:{text}; border-color:{border}; }}
+window:not(.vesper-panel) menu, window:not(.vesper-panel) .menu {{ background-color:{pop}; color:{text}; border:1px solid {border}; }}
+window:not(.vesper-panel) menuitem label {{ color:{text}; }}
+window:not(.vesper-panel) menuitem:hover {{ background-color:{hover}; }}
+/* calendario (popup dell'orologio, impostazioni data/ora) */
+window:not(.vesper-panel) calendar {{ background-color:{card}; color:{text}; border:1px solid {border}; }}
+window:not(.vesper-panel) calendar.header {{ background-color:{bg}; color:{accent}; border:none; }}
+window:not(.vesper-panel) calendar.button {{ color:{accent}; }}
+window:not(.vesper-panel) calendar.highlight {{ color:{accent}; }}
+window:not(.vesper-panel) calendar:indeterminate {{ color:{dim}; }}
+window:not(.vesper-panel) calendar:selected {{ background-color:{accent}; color:{on_accent}; }}
 """
+
+
+def _anche_dialoghi(css):
+    """Ogni selettore 'window:not(.vesper-panel) X' vale anche per 'dialog X':
+    in GTK3 le Gtk.Dialog hanno come nome CSS "dialog", non "window", e
+    restavano fuori (finestra della lingua: testo chiaro su chiaro)."""
+    out = []
+    for riga in css.splitlines():
+        if "{{" in riga and "window:not(.vesper-panel)" in riga.split("{{", 1)[0]:
+            sel, resto = riga.split("{{", 1)
+            parti = [x.strip() for x in sel.split(",") if x.strip()]
+            extra = ["dialog" + x[len("window:not(.vesper-panel)"):]
+                     for x in parti if x.startswith("window:not(.vesper-panel)")]
+            extra = [x for x in extra if x != "dialog" and x not in parti]
+            riga = ", ".join(parti + extra) + " {{" + resto
+        out.append(riga)
+    return "\n".join(out)
 
 
 def _luce(hexcol):
@@ -235,7 +271,7 @@ def main():
         chiara = _luce(p["bg"]) > 0.5
         win = p.get("win") or p["bg"]
         card = p.get("card") or p["pop"]
-        css = (TEMPLATE + CONTENUTO + "/* tono: %s */\n" % ("chiaro" if chiara else "scuro")).format(
+        css = (TEMPLATE + _anche_dialoghi(CONTENUTO) + "/* tono: %s */\n" % ("chiaro" if chiara else "scuro")).format(
             win=win, card=card,
             name=p["name"], bg=p["bg"], pop=p["pop"], border=p["border"],
             text=p["text"], dim=p["dim"], accent=p["accent"],

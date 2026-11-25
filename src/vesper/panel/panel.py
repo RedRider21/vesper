@@ -336,15 +336,32 @@ class _Meter(Gtk.DrawingArea):
         del self.hist[0]
         self.queue_draw()
 
-    @staticmethod
-    def _chiaro() -> bool:
-        """Interfaccia chiara? Il grafico è disegnato in Cairo, quindi il CSS
-        non lo tocca: il colore di fondo va scelto qui."""
+    _tono = [0.0, False]                 # (istante, chiaro?) condiviso dai grafici
+
+    @classmethod
+    def _chiaro(cls) -> bool:
+        """Barra chiara? Il grafico è disegnato in Cairo, quindi il CSS non lo
+        tocca: il colore di fondo va scelto qui. Con una skin a colori fissi
+        decide il TONO della skin (una skin chiara su un preset scuro lasciava
+        riquadri scuri sulla barra chiara), altrimenti il preset. Risultato
+        tenuto 2 s: draw gira a ogni aggiornamento."""
+        ora = time.monotonic()
+        if ora - cls._tono[0] < 2.0:
+            return cls._tono[1]
+        chiaro = False
         try:
-            from vesper import palette
-            return palette.is_light()
+            from vesper import paneltheme
+            tid = paneltheme.get_theme()
+            p = paneltheme.css_path(tid) if tid != "profile" else None
+            if p is not None:
+                chiaro = "/* tono: chiaro */" in open(p).read()
+            else:
+                from vesper import palette
+                chiaro = palette.is_light()
         except Exception:                # noqa: BLE001
-            return False
+            chiaro = False
+        cls._tono[0], cls._tono[1] = ora, chiaro
+        return chiaro
 
     def _draw(self, _w, cr):
         w = self.get_allocated_width()
@@ -1830,7 +1847,7 @@ class Panel(Gtk.Window):
         box.pack_start(head, False, False, 0)
 
         status = Gtk.Label(label="..."); status.set_xalign(0)
-        status.set_line_wrap(True)
+        status.set_line_wrap(True); status.set_max_width_chars(48)
         status.get_style_context().add_class("vesper-clock-date")
         box.pack_start(status, False, False, 0)
 
@@ -1989,7 +2006,7 @@ class Panel(Gtk.Window):
         head.pack_end(rescan, False, False, 0)
         box.pack_start(head, False, False, 0)
         status = Gtk.Label(label=_t("pn.wifi.scanning")); status.set_xalign(0)
-        status.set_line_wrap(True)
+        status.set_line_wrap(True); status.set_max_width_chars(48)
         status.get_style_context().add_class("vesper-clock-date")
         box.pack_start(status, False, False, 0)
         listbox = Gtk.Box(orientation=Gtk.Orientation.VERTICAL, spacing=2)

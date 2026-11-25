@@ -157,11 +157,32 @@ vesper/
 - **Testo sopra l'accento** (titoli Retro, voce attiva dei menu): scuro sugli
   accenti chiari, bianco sugli altri (`@ON_ACCENT@` in make-openbox-themes.py).
   Un colore fisso è illeggibile su metà dei preset.
+- **Priorità dei fogli CSS, non specificità**: in GTK3 una regola di un
+  provider a priorità più alta vince su qualunque regola di uno più basso.
+  Ordine: base (APPLICATION) < accent.css (+1) < window-style.css (+3) <
+  skin del pannello (+4). Una regola in accent.css viene coperta da una regola
+  generica di window-style (es. il fondo del desktop attivo nella barra): va
+  messa nel foglio giusto. E un'ETICHETTA con una regola propria nel CSS di
+  base non eredita il colore dal pulsante: si dichiara anche `button label`.
+- **Gtk.Dialog ha nome CSS `dialog`**, non `window`: le regole
+  `window:not(.vesper-panel) X` delle skin non la toccano. Il generatore
+  delle skin duplica ogni selettore per `dialog` (`_anche_dialoghi`).
+- **Ciano fisso nel CSS di base**: `base_css()` sostituisce `#00e5ff` e
+  `0,229,255` con l'accento del preset; si ricarica a caldo al cambio preset.
+- **Tutto a caldo, niente riavvio della barra**: accento, skin, chiaro/scuro e
+  `window-style.css` hanno ciascuno un sorvegliante in vesper.common. Il
+  riavvio «per sicurezza» faceva sparire la barra per mezzo secondo e
+  nascondeva i ricaricamenti incompleti. Il collaudo misura le assenze.
 - **Luce blu**: gamma via `xrandr`. L'overlay traslucido è stato SCARTATO: in VM
   senza compositore diventa opaco e copre lo schermo.
 
 ## Come si prova senza rompere niente
 
+- **Collaudo automatico, prima di OGNI release**: `tools/collaudo.sh`
+  (controlli statici + sessione vera nel container su Xvfb, ~35 controlli,
+  esito 0/1); `--statico` solo i controlli veloci; `--popup [preset[:skin]…]`
+  fotografa tutti i popup della barra per controllare i colori a occhio
+  (risultati in `$XDG_RUNTIME_DIR/vesper-collaudo/out`).
 - **Prova completa in finestra**: `tools/prova-xephyr.sh` (container podman con
   Openbox/picom + Xephyr, progetto in sola lettura, home temporanea in
   `$XDG_RUNTIME_DIR/vesper-prova`, `--stop` per chiudere). Immagine predefinita

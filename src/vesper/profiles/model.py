@@ -41,8 +41,11 @@ DEFAULT_WALLPAPER_MODE = "stretch"
 
 # rc.xml di Openbox: contiene <theme><name>...</name></theme>. Cambiare tema
 # finestre = riscrivere quel nome e fare "openbox --reconfigure".
+# Ripiego: SEMPRE il rc.xml di Vesper, mai ~/.config/openbox/rc.xml (quello
+# della sessione Openbox dell'utente: fuori dalla sessione Vesper, per esempio
+# aprendo il Centro di Controllo da MATE, lo si sarebbe riscritto).
 RC_XML = Path(os.environ.get(
-    "VESPER_RC_XML", str(HOME / ".config" / "openbox" / "rc.xml")))
+    "VESPER_RC_XML", str(paths.config("openbox-rc.xml"))))
 # Famiglia del tema finestre COORDINATA col preset (~/.config/vesper/theme):
 #   core  -> Vesper-Core-<preset> (il predefinito: barra del titolo piatta,
 #            pulsanti completi a destra, filetto d'accento del preset)
@@ -735,7 +738,7 @@ def _apply_rc(name: str, layout: str, reconfigure: bool = True) -> None:
             RC_XML.write_text(new)
         except OSError:
             return
-    if reconfigure:
+    if reconfigure and paths.sessione_vesper():
         try:
             subprocess.Popen(["openbox", "--reconfigure"],
                              stdout=subprocess.DEVNULL, stderr=subprocess.DEVNULL)

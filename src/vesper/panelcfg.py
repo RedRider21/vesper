@@ -162,6 +162,8 @@ def set_desktops(n: int) -> None:
     # rc.xml <number> e' letto SOLO all'avvio di Openbox (reconfigure NON cambia
     # il numero di desktop a runtime): applichiamo SUBITO via EWMH con wmctrl -n
     # (cosi' il pager si aggiorna), e teniamo rc.xml per i riavvii successivi.
+    if not paths.sessione_vesper():
+        return              # fuori sessione: vale al prossimo accesso a Vesper
     try:
         subprocess.Popen(["wmctrl", "-n", str(n)],
                          stdout=subprocess.DEVNULL, stderr=subprocess.DEVNULL)
@@ -171,6 +173,10 @@ def set_desktops(n: int) -> None:
 
 
 def openbox_reconfigure() -> None:
+    # Solo dentro la sessione Vesper: fuori, l'Openbox che gira e' quello
+    # dell'utente (il suo rc.xml non lo tocchiamo, ma non va nemmeno ricaricato).
+    if not paths.sessione_vesper():
+        return
     try:
         subprocess.Popen(["openbox", "--reconfigure"],
                          stdout=subprocess.DEVNULL, stderr=subprocess.DEVNULL)

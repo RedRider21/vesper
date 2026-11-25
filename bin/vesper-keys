@@ -138,6 +138,10 @@ def _find(txt, key):
 def _reconfigure():
     # se Openbox non c'e' (o non sta girando) la modifica resta scritta e vale
     # al prossimo avvio: non e' un errore.
+    # solo dentro la sessione Vesper (marcatore di vesper-session): fuori,
+    # l'Openbox in esecuzione e' quello dell'utente
+    if os.environ.get("VESPER_SESSION") != "1":
+        return
     try:
         subprocess.run(["openbox", "--reconfigure"],
                        stdout=subprocess.DEVNULL, stderr=subprocess.DEVNULL)
@@ -197,6 +201,13 @@ def _gs_get(schema, chiave) -> str:
 
 
 def _gs_set(schema, chiave, valore) -> None:
+    # Le scorciatoie di marco sono quelle di MATE: si toccano solo dentro la
+    # sessione Vesper, che le fotografa all'avvio e le rimette all'uscita.
+    # Fuori (o in prova, VESPER_NO_GSETTINGS) resterebbero cambiate per sempre.
+    if (os.environ.get("VESPER_SESSION") != "1"
+            or os.environ.get("VESPER_NO_GSETTINGS")):
+        sys.exit("vesper-keys: le scorciatoie di marco si modificano solo "
+                 "dentro la sessione Vesper.")
     subprocess.run(["gsettings", "set", schema, chiave, valore],
                    stdout=subprocess.DEVNULL, stderr=subprocess.DEVNULL)
 

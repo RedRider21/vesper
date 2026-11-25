@@ -133,6 +133,9 @@ def launch(app: dict, terminal_cmd: str = "vesper-terminal") -> None:
         pass
 
 
+_COMPOSITOR = ("picom", "compton", "xcompmgr")
+
+
 def autostart_entries() -> list[dict]:
     """Voci di avvio automatico XDG: ~/.config/autostart e $XDG_CONFIG_DIRS
     (default /etc/xdg). Le voci utente vincono su quelle di sistema (dedup per
@@ -170,6 +173,14 @@ def autostart_entries() -> list[dict]:
                 continue
             argv = _parse_exec(e["Exec"])
             if not argv:
+                continue
+            # Il compositor lo gestisce Vesper (vesper.profiles.model,
+            # _manage_picom: solo coi temi che lo vogliono, con la NOSTRA
+            # configurazione e una scheda video vera). Il pacchetto picom
+            # installa /etc/xdg/autostart/picom.desktop: eseguito, partirebbe
+            # sempre e con ~/.config/picom.conf dell'utente. Si saltano solo
+            # le voci di SISTEMA: una messa dall'utente resta una sua scelta.
+            if (d != dirs[0] and os.path.basename(argv[0]) in _COMPOSITOR):
                 continue
             out.append({
                 "name": e.get("Name[%s]" % LANG) or e.get("Name") or fn[:-8],

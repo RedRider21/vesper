@@ -126,6 +126,14 @@ for d in ${VESPER_DATA_DIRS:-} /usr/local/share/vesper /usr/share/vesper; do
   fi
   break
 done
+# Il menu va indicato col percorso ASSOLUTO: un nome relativo Openbox lo
+# cerca solo in ~/.config/openbox e /etc/xdg/openbox, cioe' fuori da Vesper,
+# e il menu del window manager non si caricava mai.
+if [ -f "$RC" ] && [ -f "$MENU" ] && grep -q '<file>openbox-menu.xml</file>' "$RC"; then
+  _m=$(printf '%s' "$MENU" | sed 's/[&#\\]/\\&/g')
+  sed -i "s#<file>openbox-menu.xml</file>#<file>$_m</file>#" "$RC" 2>/dev/null || true
+  unset _m
+fi
 # Tutti i componenti che modificano rc.xml (margini del pannello, editor
 # scorciatoie, tema finestre) devono scrivere QUESTO file.
 [ -f "$RC" ] && { VESPER_RC_XML="$RC"; export VESPER_RC_XML; }

@@ -449,6 +449,14 @@ def apply_css() -> None:
     # skin "profile" non e' un file: niente provider -> resta base+accent.
     apply_panel_theme_live()
     _install_paneltheme_monitor()
+    # Icona predefinita di TUTTE le finestre Vesper: la stella della sera.
+    # Openbox la mostra nella barra del titolo (titleLayout ...N); le finestre
+    # che dichiarano un'icona loro tengono la propria.
+    try:
+        install_icon_paths()
+        Gtk.Window.set_default_icon_name("vesper-logo")
+    except Exception:                    # noqa: BLE001
+        pass
     _css_done = True
 
 

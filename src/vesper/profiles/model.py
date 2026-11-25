@@ -56,7 +56,7 @@ FALLBACK_OB_THEME = "Vesper-Core"
 # titleLayout di Openbox: default = pulsanti a DESTRA (N=icona, L=titolo, I/M/C);
 # Cards (stile macOS) = pulsanti a SINISTRA (C=chiudi, I=minimizza, M=massimizza).
 OB_TITLELAYOUT_DEFAULT = "NLIMC"
-OB_TITLELAYOUT_LEFT = "CIML"
+OB_TITLELAYOUT_LEFT = "CIMLN"     # N = icona del programma, a destra
 # Compositor per angoli arrotondati/vetro reale: attivo con Cards o stile aero.
 PICOM_CONF = HOME / ".config" / "picom.conf"
 
@@ -315,6 +315,8 @@ button.vesper-app-item:hover {{ border-left-color: {ac}; background-color: rgba(
 button.vesper-primary {{ color: {ac}; border-color: {ac}; background-color: rgba({rgb},0.12); }}
 button.vesper-primary:hover {{ background-color: rgba({rgb},0.22); box-shadow: 0 6px 22px rgba({rgb},0.28); }}
 button:hover {{ border-color: {ac}; background-color: rgba({rgb},0.12); }}
+button:active, button:checked {{ background-color: {ac}; color: #04121a; border-color: {ac}; }}
+button:active label, button:checked label, button:active image, button:checked image {{ color: #04121a; }}
 button:hover image {{ color: {ac}; }}
 entry:focus {{ border-color: {ac}; box-shadow: 0 0 0 3px rgba({rgb},0.18); }}
 switch:checked {{ background-color: rgba({rgb},0.30); border-color: {ac}; }}
@@ -415,6 +417,8 @@ window, .background, dialog {{
 button {{ background-color: rgba({rgb},0.10); border: 1px solid rgba({rgb},0.28);
   border-radius: 9px; }}
 button:hover {{ border-color: {ac}; background-color: rgba({rgb},0.18); }}
+button:active, button:checked {{ background-color: {ac}; color: #04121a; border-color: {ac}; }}
+button:active label, button:checked label, button:active image, button:checked image {{ color: #04121a; }}
 button.vesper-primary {{ background-color: {ac}; color: #04121a; border-color: {ac};
   box-shadow: 0 0 18px rgba({rgb},0.55); }}
 entry {{ background-color: rgba(5,9,15,0.55); border: 1px solid rgba({rgb},0.24); }}
@@ -452,6 +456,8 @@ window, .background, dialog {{ background-color: #05090f; }}
 .vesper-section {{ border-bottom: 1px solid rgba({rgb},0.24); }}
 button {{ border-radius: 5px; background-color: #080f18; border: 1px solid rgba({rgb},0.30); }}
 button:hover {{ border-color: {ac}; background-color: rgba({rgb},0.10); }}
+button:active, button:checked {{ background-color: {ac}; color: #04121a; border-color: {ac}; }}
+button:active label, button:checked label, button:active image, button:checked image {{ color: #04121a; }}
 button.vesper-primary {{ background-color: {ac}; color: #04121a; border-color: {ac};
   box-shadow: none; }}
 entry {{ border-radius: 5px; background-color: #05090f; border: 1px solid rgba({rgb},0.24); }}
@@ -499,6 +505,8 @@ window, .background, dialog {{
   box-shadow: inset 0 0 0 1px rgba({rgb},0.40); }}
 button {{ background-color: rgba({rgb},0.05); border: 1px solid #173042; border-radius: 9px; }}
 button:hover {{ border-color: {ac}; background-color: rgba({rgb},0.12); }}
+button:active, button:checked {{ background-color: {ac}; color: #04121a; border-color: {ac}; }}
+button:active label, button:checked label, button:active image, button:checked image {{ color: #04121a; }}
 button.vesper-primary {{ background-color: {ac}; color: #04121a; border-color: {ac};
   box-shadow: 0 0 18px rgba({rgb},0.55); }}
 button.vesper-primary:hover {{ background-color: {ac}; box-shadow: 0 0 24px rgba({rgb},0.80); }}

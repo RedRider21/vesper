@@ -173,6 +173,15 @@ vesper/
   `window-style.css` hanno ciascuno un sorvegliante in vesper.common. Il
   riavvio «per sicurezza» faceva sparire la barra per mezzo secondo e
   nascondeva i ricaricamenti incompleti. Il collaudo misura le assenze.
+- **Energia (`vesper-power`, src/vesper/power.py)**: blocco prima della
+  sospensione con un inibitore logind di tipo "delay" (preso all'avvio e dopo
+  ogni risveglio, rilasciato ~0,9 s dopo aver lanciato
+  `vesper-screensaver --blocca`). Il salvaschermo e' a istanza unica
+  (`~/.cache/vesper/screensaver.pid`); un secondo `--blocca` manda SIGUSR1
+  a quello aperto. Il servizio esce da solo quando muore `vesper-session`
+  (`paths.SESSION_PID`). Nel container del collaudo logind non c'e': la parte
+  D-Bus si prova solo su VM/PC veri. MAI provare la sospensione sul PC
+  dell'utente.
 - **Luce blu**: gamma via `xrandr`. L'overlay traslucido è stato SCARTATO: in VM
   senza compositore diventa opaco e copre lo schermo.
 

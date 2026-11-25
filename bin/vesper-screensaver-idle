@@ -21,11 +21,18 @@ for _i in "$_vt_d/i18n.sh" "$(dirname "$_vt_d")/lib/vesper/i18n.sh" \
 done
 unset _i _vt_self _vt_d
 
-CONF="$HOME/.config/vesper/screensaver.conf"
+CONF="${VESPER_CONFIG_HOME:-${XDG_CONFIG_HOME:-$HOME/.config}/vesper}/screensaver.conf"
+PIDF="${XDG_CACHE_HOME:-$HOME/.cache}/vesper/xautolock.pid"
 
 get() { [ -f "$CONF" ] && sed -n "s/^$1=//p" "$CONF" | head -1; }
 
-stop() { pkill -x xautolock 2>/dev/null; }
+# Si ferma SOLO l'xautolock avviato da qui (PID salvato): con pkill per nome
+# si spegneva anche quello di un altro desktop dell'utente.
+stop() {
+  p=$(cat "$PIDF" 2>/dev/null) || return 0
+  [ -n "$p" ] && grep -qa xautolock "/proc/$p/cmdline" 2>/dev/null && kill "$p" 2>/dev/null
+  rm -f "$PIDF"
+}
 
 start() {
   command -v xautolock >/dev/null 2>&1 || exit 0
@@ -40,6 +47,7 @@ start() {
   # -detectsleep: riparte il conteggio dopo sospensione; -locker: il salvaschermo.
   xautolock -time "$timeout" -locker "vesper-screensaver" -detectsleep \
             -corners "0-00" >/dev/null 2>&1 &
+  mkdir -p "$(dirname "$PIDF")" && echo $! > "$PIDF"
 }
 
 case "${1:-start}" in

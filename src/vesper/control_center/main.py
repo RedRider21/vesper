@@ -118,6 +118,8 @@ VIEW_MAP = {
     "touchpad": views.open_mouse,
     "lingua": views.open_language,
     "language": views.open_language,
+    "energia": views.open_power,
+    "power": views.open_power,
     "zram": views.open_zram,
     "memoria": views.open_zram,
     "licenza": views.open_licenza,
@@ -236,6 +238,8 @@ def build_window() -> Gtk.Window:
     body.pack_start(section(_t("cc.sec.hardware"), [
         Tile("preferences-desktop-display", _t("cc.t.screens"),
              _t("cc.d.screens"), launch("schermi")),
+        Tile("battery", _t("cc.t.power"),
+             _t("cc.d.power"), launch("energia")),
         Tile("input-keyboard", _t("cc.t.keyboard"),
              _t("cc.d.keyboard"), launch("tastiera")),
         Tile("input-mouse", _t("cc.t.mouse"), _t("cc.d.mouse"), launch("mouse")),

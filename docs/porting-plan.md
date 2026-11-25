@@ -43,8 +43,10 @@ dei profili operativi.
    installato, se c'è.
 4. **Daemon XSettings** — propagazione di tema, cursore e DPI/HiDPI alle app
    che non rileggono `settings.ini`.
-5. **Power management completo** — coperchio, sospensione, batteria scarica
-   (oggi c'è l'applet batteria e l'avviso di batteria scarica).
+5. **Power management** — FATTO in gran parte (`vesper-power`, 0.7.2):
+   blocco prima della sospensione, spegnimento schermo, sospensione per
+   inattività, batteria critica. Coperchio e tasto di accensione restano a
+   logind.
 6. **Automount dei dispositivi rimovibili** (udisks2) nel file manager.
 7. **Pagine di manuale** per i comandi `vesper-*` (l'unico avviso che lintian
    segnala sul pacchetto).

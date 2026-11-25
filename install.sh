@@ -66,7 +66,8 @@ COMANDI="vesper-session vesper-panel vesper-panel-restart vesper-control-center
          vesper-screensaver vesper-screensaver-idle vesper-screenshot
          vesper-wifi vesper-wm
          vesper-player vesper-recorder vesper-video vesper-disks vesper-editor
-         vesper-launcherd vesper-launch vesper-zram vesper-viewer vesper-ram vesper-ripara"
+         vesper-launcherd vesper-launch vesper-zram vesper-viewer vesper-ram vesper-ripara
+         vesper-power"
 
 # Gestione delle licenze commerciali: NON entra nel pacchetto pubblico AGPL.
 # Si costruisce la variante commerciale con:  VESPER_COMMERCIALE=1 ./install.sh

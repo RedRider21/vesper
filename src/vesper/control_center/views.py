@@ -2161,6 +2161,113 @@ def _ss_write(cfg):
         cfg.get("style", "nebula"), cfg.get("lock", "0")))
 
 
+def open_power(_btn=None):
+    """Energia: blocco prima della sospensione, spegnimento schermo,
+    sospensione per inattivita', batteria critica (vesper.power)."""
+    from vesper import power as _pw
+    win, body = panel_window(_t("v.pw.title"), 540, 560)
+    cfg = _pw.read_conf()
+
+    intro = Gtk.Label(label=_t("v.pw.intro"))
+    intro.set_xalign(0); intro.set_line_wrap(True)
+    intro.get_style_context().add_class("vesper-val")
+    body.pack_start(intro, False, False, 0)
+
+    def riga(testo, widget):
+        r = Gtk.Box(orientation=Gtk.Orientation.HORIZONTAL, spacing=8)
+        lab = Gtk.Label(label=testo); lab.set_xalign(0); lab.set_line_wrap(True)
+        lab.get_style_context().add_class("vesper-key")
+        r.pack_start(lab, True, True, 0)
+        widget.set_valign(Gtk.Align.CENTER)
+        r.pack_end(widget, False, False, 0)
+        body.pack_start(r, False, False, 0)
+        return r
+
+    # blocco prima della sospensione (serve la password del salvaschermo)
+    sw_lock = Gtk.Switch()
+    sw_lock.set_active(cfg.get("lock_on_sleep") == "1")
+    riga(_t("v.pw.lock"), sw_lock)
+    try:
+        from vesper.screensaver import secret as _sec
+        ha_pw = _sec.has_password()
+    except Exception:                       # noqa: BLE001
+        ha_pw = False
+    if not ha_pw:
+        nota = Gtk.Label(label=_t("v.pw.lock_nopw"))
+        nota.set_xalign(0); nota.set_line_wrap(True)
+        nota.get_style_context().add_class("vesper-val")
+        body.pack_start(nota, False, False, 0)
+
+    def combo_minuti(valori, attuale):
+        c = Gtk.ComboBoxText()
+        for v in valori:
+            c.append(str(v), _t("v.pw.never") if v == 0 else _t("v.pw.minutes") % v)
+        c.set_active_id(str(attuale) if str(attuale) in [str(v) for v in valori] else str(valori[0]))
+        return c
+
+    c_off = combo_minuti([0, 5, 10, 15, 30, 60], _pw._int(cfg, "screen_off"))
+    riga(_t("v.pw.screen_off"), c_off)
+    c_idle = combo_minuti([0, 15, 30, 60, 120], _pw._int(cfg, "idle_suspend"))
+    riga(_t("v.pw.idle_suspend"), c_idle)
+
+    sep = Gtk.Separator(orientation=Gtk.Orientation.HORIZONTAL)
+    body.pack_start(sep, False, False, 4)
+    b = _pw.battery()
+    if b:
+        st_txt = _t("v.pw.st." + b[1].lower().replace(" ", "_"))
+        if st_txt.startswith("v.pw.st."):      # stato sconosciuto: com'e'
+            st_txt = b[1]
+        stato = Gtk.Label(label=_t("v.pw.battery_now") % (b[0], st_txt))
+    else:
+        stato = Gtk.Label(label=_t("v.pw.no_battery"))
+    stato.set_xalign(0); stato.get_style_context().add_class("vesper-val")
+    body.pack_start(stato, False, False, 0)
+    spin = Gtk.SpinButton.new_with_range(2, 25, 1)
+    spin.set_value(_pw._int(cfg, "battery_critical") or 5)
+    riga(_t("v.pw.critical"), spin)
+    c_act = Gtk.ComboBoxText()
+    for a in _pw.AZIONI:
+        c_act.append(a, _t("v.pw.act." + a))
+    c_act.set_active_id(cfg.get("battery_action", "suspend")
+                        if cfg.get("battery_action") in _pw.AZIONI else "suspend")
+    riga(_t("v.pw.action"), c_act)
+
+    nota_lid = Gtk.Label(label=_t("v.pw.lid_note"))
+    nota_lid.set_xalign(0); nota_lid.set_line_wrap(True)
+    nota_lid.get_style_context().add_class("vesper-val")
+    body.pack_start(nota_lid, False, False, 0)
+
+    status = Gtk.Label(label=""); status.set_xalign(0)
+    status.get_style_context().add_class("vesper-val")
+    body.pack_start(status, False, False, 0)
+
+    def applica(_b=None):
+        nuovo = {
+            "lock_on_sleep": "1" if sw_lock.get_active() else "0",
+            "screen_off": c_off.get_active_id() or "10",
+            "idle_suspend": c_idle.get_active_id() or "0",
+            "battery_critical": str(int(spin.get_value())),
+            "battery_action": c_act.get_active_id() or "suspend",
+        }
+        try:
+            _pw.write_conf(nuovo)
+            run_bg(["vesper-power", "--ricarica"])
+            status.set_text(_t("v.pw.saved"))
+        except OSError as e:
+            status.set_text(str(e))
+
+    btns = Gtk.Box(orientation=Gtk.Orientation.HORIZONTAL, spacing=8)
+    b_apply = icon_button(_t("v.apply"), "emblem-ok-symbolic")
+    b_apply.get_style_context().add_class("vesper-primary")
+    b_apply.connect("clicked", applica)
+    b_close = icon_button(_t("v.close"), "window-close")
+    b_close.connect("clicked", lambda _b: win.destroy())
+    btns.pack_start(b_apply, False, False, 0)
+    btns.pack_end(b_close, False, False, 0)
+    body.pack_end(btns, False, False, 0)
+    win.show_all()
+
+
 def open_screensaver(_btn=None):
     win, body = panel_window(_t("v.screensaver.title"), 540, 640)
     cfg = _ss_read()

@@ -177,5 +177,6 @@ WINDOW_STYLE_CSS = config("window-style.css")  # stile finestre (flat/vetro/tela
 PANEL_THEME_CONF = config("panel-theme")     # skin del pannello
 PANEL_CONF = config("panel.json")            # layout/applet del pannello
 PROFILE_CONF = config("profile")             # preset di aspetto attivo
+SESSION_PID = cache("session.pid")          # PID di vesper-session (lo scrive lei)
 DESKTOP_ITEMS = config("desktop-items.json")  # posizioni icone del desktop
 SCREENS_REFRESH = cache("screens-refresh")   # tocco dopo un cambio schermi

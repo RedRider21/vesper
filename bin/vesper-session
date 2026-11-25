@@ -205,6 +205,10 @@ if [ "$VLAUNCH" != "off" ] && command -v vesper-launcherd >/dev/null 2>&1; then
   (sleep 3; vesper-launcherd) &
 fi
 command -v vesper-nightlight >/dev/null 2>&1 && (sleep 2; vesper-nightlight restore) &
+# Energia: blocco dello schermo prima della sospensione, spegnimento schermo,
+# sospensione per inattivita', batteria critica (~/.config/vesper/power.conf).
+# Si chiude da solo quando la sessione finisce.
+command -v vesper-power >/dev/null 2>&1 && (sleep 2; vesper-power) &
 # Demone notifiche: senza, notify-send è un no-op. Si prende il primo presente.
 for n in dunst mako xfce4-notifyd; do
   command -v "$n" >/dev/null 2>&1 && { "$n" & break; }

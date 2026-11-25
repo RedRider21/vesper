@@ -208,6 +208,29 @@ for pp in $(pgrep -x picom); do
 done
 pgrep -x picom >/dev/null || na "picom: non avviato" "nessuna scheda video vera o tema senza compositor"
 
+# --- 9b. energia ------------------------------------------------------------
+if attendi 10 sh -c "[ -s $CACHE/power.pid ] && kill -0 \$(cat $CACHE/power.pid) 2>/dev/null"; then
+  ok "energia: vesper-power attivo"
+else ko "energia: vesper-power attivo" "power.pid assente o processo morto"; fi
+vesper-power >/dev/null 2>&1
+[ "$(pgrep -f 'vesper[.]power' | wc -l)" -le 1 ] && ok "energia: una sola istanza" \
+  || ko "energia: una sola istanza" "$(pgrep -f 'vesper[.]power' | wc -l) processi"
+vesper-power --stato 2>/dev/null | grep -q '^battery_action=' && ok "energia: --stato" \
+  || ko "energia: --stato" "uscita inattesa"
+
+# blocco schermo forzato (come prima della sospensione), con una password
+vpy 'from vesper.screensaver import secret; secret.set_password("collaudo")' >/dev/null 2>&1
+prima=$(wmctrl -l | wc -l)
+vesper-screensaver --blocca >/dev/null 2>&1 &
+if attendi 10 sh -c "[ \$(wmctrl -l | wc -l) -gt $prima ] || pgrep -f 'vesper[.]screensaver' >/dev/null"; then
+  ok "blocco: vesper-screensaver --blocca si apre"
+else ko "blocco: vesper-screensaver --blocca si apre" "nessun salvaschermo"; fi
+sleep 2; foto 06-blocco
+vesper-screensaver --blocca >/dev/null 2>&1; sleep 1
+[ "$(pgrep -f 'vesper[.]screensaver' | wc -l)" -eq 1 ] && ok "blocco: niente secondo salvaschermo" \
+  || ko "blocco: niente secondo salvaschermo" "$(pgrep -f 'vesper[.]screensaver' | wc -l) processi"
+p=$(cat "$CACHE/screensaver.pid" 2>/dev/null); [ -n "$p" ] && kill "$p" 2>/dev/null; sleep 0.5
+
 # --- 10. log senza errori Python ---------------------------------------------
 if grep -q 'Traceback' "$CACHE/session.log" /out/sessione-stdout.log "$CACHE"/*.log 2>/dev/null; then
   ko "log: nessun errore Python" "Traceback nel log (vedi /out)"

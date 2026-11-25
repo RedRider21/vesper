@@ -21,7 +21,11 @@ Blocco schermo: se abilitato (lock=1 in screensaver.conf) e c'e' una password
 impostata, al primo input compare la richiesta di sblocco; si esce solo con la
 password corretta. Altrimenti si esce a qualsiasi input.
 
-Uso: vesper-screensaver [stile]
+Uso: vesper-screensaver [stile] [--blocca]
+  --blocca  blocca subito (se c'e' una password), anche se in screensaver.conf
+            il blocco e' spento: lo usa vesper-power prima della sospensione.
+            Se un salvaschermo e' gia' aperto non se ne apre un secondo: gli
+            si chiede di bloccarsi (SIGUSR1).
 Nessuna dipendenza extra (Cairo/GTK via PyGObject, gia' nel desktop base).
 """
 import math
@@ -35,6 +39,7 @@ gi.require_version("Gtk", "3.0")
 from gi.repository import Gtk, Gdk, GLib  # noqa: E402
 
 from vesper.screensaver import secret  # noqa: E402
+from vesper import paths  # noqa: E402
 
 try:
     from vesper.i18n import t as _t
@@ -64,7 +69,7 @@ def _rgb01(hex_color):
 
 def _read_conf():
     cfg = {"style": "nebula", "lock": "0"}
-    path = os.path.expanduser("~/.config/vesper/screensaver.conf")
+    path = str(paths.config("screensaver.conf"))
     try:
         with open(path) as f:
             for line in f:
@@ -646,12 +651,59 @@ class Saver(Gtk.Window):
         cr.show_text(hint)
 
 
+_LOCKFILE = None
+
+
+def _istanza_unica():
+    """True se questo e' l'unico salvaschermo aperto (lock su file nella
+    cache); altrimenti ritorna il PID di quello gia' aperto."""
+    global _LOCKFILE
+    import fcntl
+    p = paths.cache("screensaver.pid")
+    try:
+        paths.ensure_cache()
+        f = open(p, "a+")
+        fcntl.flock(f, fcntl.LOCK_EX | fcntl.LOCK_NB)
+    except OSError:
+        try:
+            return int(open(p).read().strip() or 0)
+        except (OSError, ValueError):
+            return 0
+    f.seek(0); f.truncate(); f.write(str(os.getpid())); f.flush()
+    _LOCKFILE = f                       # resta aperto: il lock vive col processo
+    return True
+
+
 def main(argv=None):
     argv = argv if argv is not None else sys.argv[1:]
+    blocca = "--blocca" in argv
+    argv = [a for a in argv if a != "--blocca"]
     cfg = _read_conf()
+    unico = _istanza_unica()
+    if unico is not True:
+        # gia' aperto: niente secondo salvaschermo; se serve, che si blocchi
+        if blocca and unico:
+            import signal
+            try:
+                os.kill(unico, signal.SIGUSR1)
+            except OSError:
+                pass
+        return
     style = argv[0] if argv else cfg.get("style", "nebula")
-    lock = cfg.get("lock", "0") == "1"
-    Saver(style, lock=lock)
+    lock = blocca or cfg.get("lock", "0") == "1"
+    saver = Saver(style, lock=lock)
+
+    def _blocca_ora():
+        # richiesta da un secondo lancio con --blocca (sospensione in arrivo)
+        if secret.has_password() and not saver.locked:
+            saver.locked = True
+            saver.queue_draw()
+        return True
+    try:
+        import signal
+        GLib.unix_signal_add(GLib.PRIORITY_DEFAULT, signal.SIGUSR1, _blocca_ora)
+    except Exception:                    # noqa: BLE001
+        pass
     Gtk.main()
 
 

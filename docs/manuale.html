@@ -203,6 +203,29 @@ vesper-profile theme mac-scuro   # stile macOS scuro</pre>
 vesper-prompt set parrot     # system | default | parrot | plain</pre>
 </section>
 
+<section id="energia">
+  <h2>4b. Energia</h2>
+  <p class="intro">
+    Centro di Controllo → <em>Energia</em> (o <code>vesper-power --stato</code>).
+    Il servizio <code>vesper-power</code> parte con la sessione e:
+  </p>
+  <ul>
+    <li><strong>blocca lo schermo prima della sospensione</strong>, così al
+        risveglio serve la password (quella impostata in <em>Salvaschermo</em>:
+        senza password non può bloccare);</li>
+    <li><strong>spegne lo schermo</strong> dopo i minuti scelti (10 di serie);</li>
+    <li><strong>sospende</strong> dopo un'inattività lunga, se lo vuoi (spento
+        di serie);</li>
+    <li>a <strong>batteria critica</strong> (5% di serie) avvisa e, un minuto
+        dopo, sospende, iberna o spegne.</li>
+  </ul>
+  <p class="intro">
+    Chiudere il coperchio e premere il tasto di accensione restano alle
+    impostazioni del sistema (logind). Le scelte stanno in
+    <code>~/.config/vesper/power.conf</code>.
+  </p>
+</section>
+
 <section id="file">
   <h2>5. File e desktop</h2>
   <img src="img/file-manager.png" alt="Il file manager" style="width:100%;border-radius:12px;border:1px solid var(--bordo)">
@@ -305,6 +328,7 @@ vesper-prompt set parrot     # system | default | parrot | plain</pre>
     <tr><td><code>vesper-disks</code></td><td>dischi e chiavette: elenco, montaggio, smontaggio</td></tr>
     <tr><td><code>vesper-keys</code></td><td>scorciatoie del desktop (usato dal Centro di Controllo)</td></tr>
     <tr><td><code>vesper-launcherd</code>, <code>vesper-launch</code></td><td>avvio «caldo» delle finestre: <code>--status</code>, <code>--stop</code></td></tr>
+    <tr><td><code>vesper-power</code></td><td>energia: <code>--stato</code>, <code>--ricarica</code>, <code>--stop</code></td></tr>
     <tr><td><code>vesper-prompt</code></td><td>stile del prompt nei terminali della sessione</td></tr>
     <tr><td><code>vesper-zram</code></td><td>memoria compressa: <code>status</code>, <code>enable [%]</code>, <code>disable</code></td></tr>
     <tr><td><code>vesper-screenshot</code>, <code>vesper-clipboard</code>, <code>vesper-nightlight</code>, <code>vesper-screens</code>, <code>vesper-audio</code>, <code>vesper-wifi</code>, <code>vesper-bluetooth</code>, <code>vesper-battery</code>, <code>vesper-brightness</code></td><td>utilità richiamate dal pannello e dalle scorciatoie</td></tr>
@@ -326,6 +350,7 @@ vesper-prompt set parrot     # system | default | parrot | plain</pre>
     <tr><td><code>openbox-rc.xml</code>, <code>openbox-menu.xml</code></td><td>configurazione del gestore finestre (solo di Vesper)</td></tr>
     <tr><td><code>desktop-items.json</code></td><td>posizione delle icone sul desktop</td></tr>
     <tr><td><code>lang</code></td><td>lingua dell'interfaccia (assente = quella del sistema)</td></tr>
+    <tr><td><code>power.conf</code></td><td>energia: blocco alla sospensione, spegnimento schermo, sospensione, batteria critica</td></tr>
     <tr><td><code>prompt</code></td><td>stile del prompt: system, default, parrot, plain</td></tr>
     <tr><td><code>skin-coord</code></td><td>preset seguito da icone e sfondo quando la skin è coordinata</td></tr>
     <tr><td><code>picom.conf</code></td><td>(facoltativo) configurazione personale di picom</td></tr>

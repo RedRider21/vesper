@@ -26,7 +26,7 @@ RX_USO = re.compile(
     r"""\b(?:_?t|label|label_for)\(\s*["']([a-z][a-z0-9_]*(?:\.[a-z0-9_]+)+)["']""")
 # negli script shell: vesper_t <chiave> 'ripiego'
 RX_SHELL = re.compile(r"""\bvesper_t\s+([a-z][a-z0-9_]*(?:\.[a-z0-9_]+)+)""")
-ESTENSIONI = {"xml", "json", "py", "log", "sh", "txt", "png", "svg", "css",
+ESTENSIONI = {"xml", "json", "py", "log", "pid", "sh", "txt", "png", "svg", "css",
               "desktop", "conf", "ini", "wav", "gz", "deb"}
 # chiave scritta tale e quale in una tabella, fuori da una chiamata a t()
 RX_LETTERALE = re.compile(r"""["']((?:app|appcat|cc|cb|dk|ed|fm|iv|k|lang|menu|mnt|

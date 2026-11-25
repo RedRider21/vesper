@@ -178,6 +178,7 @@ serve.
 | `vesper-ram` | dove va la memoria: quanto il desktop, quanto gli altri programmi, quanto la cache |
 | `vesper-ripara` | rimette il tema, le icone e le scorciatoie che c'erano prima di Vesper |
 | `vesper-zram` | memoria compressa: stato e attivazione, sempre su richiesta esplicita |
+| `vesper-power` | energia: blocca lo schermo prima della sospensione, spegne lo schermo, sospende per inattività, agisce a batteria critica |
 | `vesper-prompt` | stile del prompt nei terminali della sessione (del sistema, Vesper, Parrot, minimale) |
 | altri `vesper-*` | audio, batteria, bluetooth, luminosità, appunti, data/ora, scorciatoie, lingua, luce blu, schermi, schermate, sfondo, terminale, wifi |
 
@@ -318,8 +319,8 @@ hash PBKDF2 in un file 600.
 ## Stato
 
 Il desktop è funzionante e installabile. Restano da fare: schermata di login
-(greeter), demone notifiche proprio, agente PolicyKit proprio, daemon XSettings,
-automount dei dispositivi rimovibili, set di icone proprio. Vedi [`docs/porting-plan.md`](docs/porting-plan.md).
+(greeter), notifiche nei colori del preset, agente PolicyKit proprio, daemon
+XSettings, automount dei dispositivi rimovibili, set di icone proprio. Vedi [`docs/porting-plan.md`](docs/porting-plan.md).
 
 ## Licenza e autore
 

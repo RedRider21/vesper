@@ -42,7 +42,7 @@
   <h2>1. Installare</h2>
 
   <h3>Debian, Ubuntu, Linux Mint</h3>
-<pre>sudo apt install ./vesper_0.7.0_all.deb</pre>
+<pre>sudo apt install ./vesper_0.7.1_all.deb</pre>
   <p class="intro">
     Il pacchetto tira dietro le dipendenze da solo. Per toglierlo:
     <code>sudo apt remove vesper</code> (la configurazione in
@@ -50,7 +50,7 @@
   </p>
 
   <h3>Qualsiasi distribuzione, dai sorgenti</h3>
-<pre>tar xzf vesper-0.7.0.tar.gz &amp;&amp; cd vesper-0.7.0
+<pre>tar xzf vesper-0.7.1.tar.gz &amp;&amp; cd vesper-0.7.1
 sudo ./install.sh --prefix=/usr     # come i pacchetti della distro
 sudo ./install.sh                   # in /usr/local
 ./install.sh --user                 # in ~/.local, senza root
@@ -218,7 +218,12 @@ vesper-prompt set parrot     # system | default | parrot | plain</pre>
     <li><kbd>Canc</kbd> sposta nel cestino, <kbd>Maiusc+Canc</kbd> elimina
         davvero (con conferma).</li>
     <li>Sul desktop le icone si posizionano liberamente e restano dove le
-        metti; il tasto destro apre il menu con le azioni.</li>
+        metti. Il <strong>tasto destro</strong> su un'icona apre le sue azioni;
+        sul desktop vuoto apre il menu di Vesper, uguale con Openbox e con
+        marco: terminale, file manager, nuova cartella, i sottomenu
+        <em>Strumenti</em>, <em>Schermo</em>, <em>Aspetto</em> e <em>Icone del
+        desktop</em> (allineamento automatico), il riavvio del pannello e
+        l'uscita.</li>
   </ul>
 </section>
 
@@ -439,6 +444,15 @@ vesper-prompt set parrot     # system | default | parrot | plain</pre>
     Con l'installazione utente (<code>--user</code>) finisce in
     <code>~/.local/share/xsessions</code>, che alcuni gestori di accesso non
     leggono: in quel caso installa con <code>sudo</code>.
+  </p>
+
+  <h3>Al login, accanto a "Vesper", c'è un disco vuoto</h3>
+  <p class="intro">
+    Il selettore di sessione di Linux Mint (slick-greeter) cerca l'icona in
+    <code>/usr/share/slick-greeter/badges/vesper.svg</code>: c'è se Vesper è
+    installato col pacchetto <code>.deb</code> o con
+    <code>sudo ./install.sh --prefix=/usr</code>. Installato in
+    <code>/usr/local</code> il greeter non la trova.
   </p>
 
   <h3>Il Centro di Controllo non si apre</h3>

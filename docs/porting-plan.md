@@ -3,7 +3,7 @@
 > Il porting del desktop è **fatto**. Questo documento tiene il conto di cosa è
 > stato portato, cosa è stato volutamente lasciato fuori e cosa manca ancora
 > per stare alla pari con gli altri ambienti desktop.
-> Ultimo aggiornamento: 2026-11-25 (0.7.0).
+> Ultimo aggiornamento: 2026-11-25 (0.7.1).
 
 ## 1. Fatto
 

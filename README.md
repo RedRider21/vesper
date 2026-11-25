@@ -23,13 +23,13 @@ login.
 **Debian, Ubuntu, Linux Mint** — pacchetto `.deb`:
 
 ```sh
-sudo apt install ./vesper_0.7.0_all.deb     # scarica il .deb dalle release
+sudo apt install ./vesper_0.7.1_all.deb     # scarica il .deb dalle release
 ```
 
 **Da sorgenti, su qualsiasi distribuzione:**
 
 ```sh
-tar xzf vesper-0.7.0.tar.gz && cd vesper-0.7.0
+tar xzf vesper-0.7.1.tar.gz && cd vesper-0.7.1
 sudo ./install.sh                 # in /usr/local
 sudo ./install.sh --prefix=/usr   # in /usr (come i pacchetti della distro)
 ./install.sh --user               # in ~/.local, senza root
@@ -50,6 +50,24 @@ tools/prova-xephyr.sh --stop                  # chiude tutto
 La sessione gira in un container (podman) e disegna in una finestra Xephyr:
 il progetto è montato in sola lettura, la home di prova è temporanea, senza
 rete, e il desktop vero non viene toccato.
+
+## Novità della 0.7.1
+
+- **Un solo menu col tasto destro sul desktop**, uguale con Openbox e con
+  marco: aspetto e voci del menu di NexusSec (intestazione Vesper, icone nel
+  colore del preset, Strumenti, Schermo, Aspetto) più *Nuova cartella* e
+  *Icone del desktop*. Anche il menu di Openbox ha le icone del preset.
+- **Al login** il selettore di sessione di Linux Mint (slick-greeter) mostra
+  la stella di Vesper invece del disco vuoto «sconosciuto».
+- **La barra non sparisce più** cambiando preset o skin: si ricolora a caldo.
+- **Colori**: con le skin chiare si leggono calendario, finestre di dialogo,
+  caselle dell'orario e grafici della barra; il calendario e il desktop attivo
+  seguono il colore del preset anche col preset bianco; i messaggi di Wi-Fi e
+  Bluetooth vanno a capo.
+- **Disinstallazione completa**: non restano più temi né voci di menu.
+- **Collaudo automatico** (`tools/collaudo.sh`), da lanciare prima di ogni
+  versione: sessione vera in un container, ~40 controlli, e `--popup` per
+  fotografare tutti i popup della barra.
 
 ## Novità della 0.7.0
 
@@ -287,6 +305,7 @@ Percorsi standard (FHS/XDG), gli stessi su ogni distribuzione:
 <prefisso>/share/themes/                     temi finestre (Openbox + GTK)
 <prefisso>/share/icons/hicolor/              marchio
 <prefisso>/share/xsessions/vesper.desktop    voce di sessione (login)
+<prefisso>/share/slick-greeter/badges/       icona della sessione al login (Mint)
 <prefisso>/share/applications/               voci di menu
 ~/.config/vesper/                            configurazione dell'utente
 ~/.cache/vesper/                             log e roba rigenerabile

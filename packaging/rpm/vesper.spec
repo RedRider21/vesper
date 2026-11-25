@@ -1,7 +1,7 @@
 # Ricetta per Fedora / openSUSE / RHEL. Stesso install.sh, layout identico:
 # cambiano solo i nomi dei pacchetti richiesti.
 Name:           vesper
-Version:        0.7.0
+Version:        0.7.1
 Release:        1%{?dist}
 Summary:        Ambiente desktop leggero in Python + GTK3 su Openbox
 License:        AGPL-3.0-or-later
@@ -52,6 +52,10 @@ find %{buildroot} -name '__pycache__' -type d -exec rm -rf {} + 2>/dev/null || t
 %{_datadir}/icons/hicolor/scalable/apps/vesper-logo*.svg
 
 %changelog
+* Wed Nov 25 2026 Daniele Deplano <deplano.d@gmail.com> - 0.7.1-1
+- Menu unico del desktop con icone, badge di sessione per slick-greeter,
+  barra ricolorata a caldo, colori delle skin chiare, collaudo automatico.
+
 * Wed Nov 25 2026 Daniele Deplano <deplano.d@gmail.com> - 0.7.0-1
 - Finestre stile macOS, aspetto coordinato, barra e Bluetooth da NexusSec OS,
   prompt e lingua per tutta la sessione, correzioni di isolamento.

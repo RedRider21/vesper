@@ -20,7 +20,24 @@ LANG_NAMES = {
     "it": "Italiano", "en": "English", "fr": "Français",
     "es": "Español", "de": "Deutsch",
 }
-DEFAULT = "it"
+DEFAULT = "en"          # ripiego se la lingua di sistema non e' tra le nostre
+
+
+def system_lang() -> str:
+    """Lingua del sistema (LANGUAGE, LC_ALL, LC_MESSAGES, LANG), se e' una
+    delle nostre; altrimenti DEFAULT. Senza una scelta esplicita Vesper parla
+    la lingua del sistema: prima partiva sempre in italiano."""
+    for var in ("LANGUAGE", "LC_ALL", "LC_MESSAGES", "LANG"):
+        v = os.environ.get(var, "").strip()
+        if not v:
+            continue
+        for pezzo in v.split(":"):
+            code = pezzo[:2].lower()
+            if code in LANGS:
+                return code
+        if var != "LANGUAGE" and v not in ("C", "POSIX", "C.UTF-8", "C.utf8"):
+            break           # locale vera ma non tradotta: non scendere oltre
+    return DEFAULT
 
 _DIR = Path(__file__).resolve().parent / "strings"
 _cache: dict[str, dict] = {}
@@ -43,7 +60,7 @@ def current_lang() -> str:
             lang = Path(_conf_path()).read_text(encoding="utf-8").strip().lower()
         except OSError:
             lang = ""
-    _active = lang if lang in LANGS else DEFAULT
+    _active = lang if lang in LANGS else system_lang()
     return _active
 
 

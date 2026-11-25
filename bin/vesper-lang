@@ -32,10 +32,9 @@ for c in i18n.LANGS: print(c, i18n.LANG_NAMES[c])'
     echo "$(vesper_t cli.lang.set_ok 'lingua impostata'): $2"
     # Variabili di lingua per i processi che riavviamo (i Name[xx]/Comment[xx]
     # dei file .desktop si risolvono tramite LANGUAGE).
-    case "$2" in
-      en) LC=en_US ;; fr) LC=fr_FR ;; es) LC=es_ES ;; de) LC=de_DE ;; *) LC=it_IT ;;
-    esac
-    export LANGUAGE="$2" LANG="${LC}.UTF-8"
+    # Solo LANGUAGE (come vesper-session): cambiare LANG con una locale non
+    # installata farebbe ripiegare tutto su "C", traduzioni comprese.
+    export LANGUAGE="$2"
     # Menu del tasto destro (Openbox): si sostituisce con quello della nuova
     # lingua SOLO se e' ancora uno dei nostri (se l'utente lo ha modificato,
     # con l'editor del menu o a mano, non si tocca).
@@ -48,7 +47,8 @@ for c in i18n.LANGS: print(c, i18n.LANG_NAMES[c])'
           if cmp -s "$MENU" "$sk"; then
             cp "$d/skel/openbox/openbox-menu.$2.xml" "$MENU" 2>/dev/null ||
               cp "$d/skel/openbox/openbox-menu.xml" "$MENU" 2>/dev/null
-            command -v openbox >/dev/null 2>&1 && openbox --reconfigure 2>/dev/null || true
+            [ "${VESPER_SESSION:-}" = 1 ] && command -v openbox >/dev/null 2>&1 &&
+              openbox --reconfigure 2>/dev/null || true
             break
           fi
         done

@@ -116,7 +116,17 @@ RC="$CONF/openbox-rc.xml"
 MENU="$CONF/openbox-menu.xml"
 # Il menu del tasto destro esiste in cinque lingue: si copia quello della
 # lingua scelta (~/.config/vesper/lang), con ripiego sull'italiano.
-VLANG=$(head -1 "$CONF/lang" 2>/dev/null || echo it)
+# Senza una scelta esplicita vale la lingua del sistema (vesper.i18n).
+VLANG=$(head -1 "$CONF/lang" 2>/dev/null || true)
+[ -n "$VLANG" ] || VLANG=$("${VESPER_PY:-python3}" -c \
+  'from vesper import i18n; print(i18n.current_lang())' 2>/dev/null || echo en)
+# La lingua scelta in Vesper vale per TUTTA la sessione: Openbox (menu della
+# finestra, tasto centrale), le finestre di dialogo GTK, i nomi nel menu delle
+# applicazioni. Si passa con LANGUAGE (lo legge gettext) e NON con LANG: una
+# locale non installata farebbe ripiegare tutto su "C", traduzioni comprese.
+if [ -s "$CONF/lang" ]; then
+  LANGUAGE="$VLANG"; export LANGUAGE
+fi
 for d in ${VESPER_DATA_DIRS:-} /usr/local/share/vesper /usr/share/vesper; do
   [ -d "$d/skel/openbox" ] || continue
   [ -f "$RC" ]   || cp "$d/skel/openbox/rc.xml" "$RC" 2>/dev/null

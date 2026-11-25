@@ -19,6 +19,7 @@ optdepends=('dunst: notifiche sul desktop'
             'brightnessctl: tasti luminosità sui portatili'
             'bluez: Bluetooth'
             'polkit-gnome: richieste grafiche dei privilegi'
+            'xdotool: riduci a icona dalla barra'
             'maim: cattura schermate'
             'xclip: appunti')
 source=("$pkgname-$pkgver.tar.gz")

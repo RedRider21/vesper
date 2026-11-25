@@ -19,6 +19,7 @@ Requires:       xrandr
 
 Recommends:     dunst
 Recommends:     xautolock
+Recommends:     xdotool
 Suggests:       picom
 Suggests:       lxappearance
 Suggests:       brightnessctl

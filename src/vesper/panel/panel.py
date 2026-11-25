@@ -860,7 +860,11 @@ class Panel(Gtk.Window):
         w.set_screen(self.get_screen())
         w.get_style_context().add_class("vesper-popup")
         w.add(content)
-        w.show_all()
+        # Il contenuto si prepara SENZA mostrare la finestra: prima si calcolano
+        # misura e posizione, poi si mostra gia' al suo posto. Prima show_all()
+        # stava qui e il popup compariva un istante altrove prima dello
+        # spostamento (flash con pezzi di sfondo, visibile sul popup Schermi).
+        content.show_all()
 
         _min, nat = w.get_preferred_size()
         pw, ph = nat.width, nat.height
@@ -881,6 +885,7 @@ class Panel(Gtk.Window):
         else:
             y = geo.y + geo.height - PANEL_HEIGHT - ph
         w.move(x, y)
+        w.show_all()                       # ora, gia' posizionato
 
         # Ancoraggio al FONDO per il pannello in basso: se il contenuto cambia
         # altezza (es. la ricerca del menu filtra le voci -> il popup si accorcia)
@@ -2425,8 +2430,12 @@ class Panel(Gtk.Window):
     def _refresh_tasks(self):
         self._refresh_pager()
         own = self._own_xids()
+        _n, cur = _wmctrl_desktops()
+        # solo le finestre del desktop CORRENTE (come MATE): una finestra
+        # spostata su un altro desktop sparisce dalla barra (2026-11-22)
         wins = [(wid, d, t) for (wid, d, t) in _wmctrl_list()
-                if _xid_int(wid) not in own]
+                if _xid_int(wid) not in own
+                and (cur < 0 or d in (str(cur), "-1"))]
         active = _active_window()
         sig = tuple((w, t) for w, _d, t in wins)
         if sig != self._last_sig:
@@ -2449,6 +2458,8 @@ class Panel(Gtk.Window):
                 b.set_tooltip_text(title)
                 b.get_style_context().add_class("vesper-task")
                 b.connect("clicked", self._on_task, wid)
+                # tasto destro: menu della finestra come in MATE (2026-11-22)
+                b.connect("button-press-event", self._on_task_press, wid)
                 # (False, False): larghezza naturale quando c'è spazio; sotto
                 # pressione GtkBox li comprime fra minimo e naturale, cosi' la
                 # tasklist (che occupa il centro, pack True) assorbe il deficit e
@@ -2471,6 +2482,60 @@ class Panel(Gtk.Window):
                 run_bg(["xdotool", "windowminimize", str(int(wid, 16))])
         else:
             run_bg(["wmctrl", "-i", "-a", wid])
+
+    def _on_task_press(self, btn, ev, wid):
+        """Menu della finestra col tasto DESTRO sul suo pulsante della barra:
+        riduci/ripristina, massimizza, sempre in primo piano, sposta su un
+        altro desktop, chiudi (wmctrl/xdotool, come il clic sinistro)."""
+        if ev.button != 3:
+            return False
+        dec = str(int(wid, 16))
+        menu = Gtk.Menu()
+
+        def voce(testo, cmd):
+            it = Gtk.MenuItem(label=testo)
+            it.connect("activate", lambda *_: run_bg(cmd))
+            menu.append(it)
+
+        visibile = True
+        try:
+            out = subprocess.run(["xdotool", "search", "--onlyvisible", "--class", ""],
+                                 capture_output=True, text=True, timeout=2).stdout.split()
+            visibile = dec in out
+        except (FileNotFoundError, subprocess.TimeoutExpired, OSError):
+            pass
+        if visibile:
+            # senza xdotool non c'e' modo di ridurre a icona: niente voce morta
+            if have("xdotool"):
+                voce(_t("pn.task.minimize"), ["xdotool", "windowminimize", dec])
+        else:
+            voce(_t("pn.task.restore"), ["wmctrl", "-i", "-a", wid])
+        voce(_t("pn.task.maximize"),
+             ["sh", "-c", "wmctrl -i -a %s; wmctrl -i -r %s -b "
+              "toggle,maximized_vert,maximized_horz" % (wid, wid)])
+        voce(_t("pn.task.above"), ["wmctrl", "-i", "-r", wid, "-b", "toggle,above"])
+        count, cur = _wmctrl_desktops()
+        if count and count > 1:
+            sub = Gtk.Menu()
+            for i in range(count):
+                it = Gtk.MenuItem(label=_t("pn.task.desktop_n", n=i + 1))
+                it.set_sensitive(i != cur)
+                it.connect("activate", lambda _w, n=i: run_bg(
+                    ["wmctrl", "-i", "-r", wid, "-t", str(n)]))
+                sub.append(it)
+            mv = Gtk.MenuItem(label=_t("pn.task.move_to"))
+            mv.set_submenu(sub)
+            menu.append(mv)
+        menu.append(Gtk.SeparatorMenuItem())
+        voce(_t("pn.task.close"), ["wmctrl", "-i", "-c", wid])
+        menu.show_all()
+        # il suggerimento del pulsante coprirebbe le voci in basso del menu
+        btn.set_has_tooltip(False)
+        menu.connect("deactivate", lambda *_: GLib.timeout_add(
+            300, lambda: (btn.set_has_tooltip(True), False)[1]))
+        menu.attach_to_widget(btn, None)
+        menu.popup_at_widget(btn, Gdk.Gravity.NORTH_WEST, Gdk.Gravity.SOUTH_WEST, ev)
+        return True
 
     # --- orologio ---
     def _adatta_altezza(self):

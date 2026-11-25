@@ -61,7 +61,8 @@ l'albero dei file è identico ovunque; cambiano solo i nomi delle dipendenze.
 | wmctrl | lista finestre e desktop virtuali del pannello | `wmctrl` |
 | xrandr | gestione schermi | `x11-xserver-utils` |
 
-Opzionali: `dunst` (notifiche), un agente PolicyKit, `xautolock` (salvaschermo
+Opzionali: `dunst` (notifiche), un agente PolicyKit, `xdotool` (riduci a icona
+dalla barra), `xautolock` (salvaschermo
 automatico), `picom` (vetro reale/angoli arrotondati), `brightnessctl`,
 `bluez` + `bluez-tools`, `xwallpaper`/`feh` (solo se si usa il pannello di
 Vesper sotto un altro desktop). L'installatore segnala cosa manca, con il

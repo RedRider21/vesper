@@ -130,12 +130,22 @@ fi
 for d in $(printf "%s" "${VESPER_DATA_DIRS:-}" | tr ":" " ") /usr/local/share/vesper /usr/share/vesper; do
   [ -d "$d/skel/openbox" ] || continue
   [ -f "$RC" ]   || cp "$d/skel/openbox/rc.xml" "$RC" 2>/dev/null
-  if [ ! -f "$MENU" ]; then
-    cp "$d/skel/openbox/openbox-menu.$VLANG.xml" "$MENU" 2>/dev/null ||
-      cp "$d/skel/openbox/openbox-menu.xml" "$MENU" 2>/dev/null
-  fi
   break
 done
+# Menu del tasto destro nella lingua scelta, con le icone tinte col preset
+# (da NexusSec). install_menu lo copia se manca e lo aggiorna se e' ancora
+# uno dei nostri (anche di una versione precedente, senza icone); un menu
+# modificato dall'utente resta com'e'. Ripiego in shell se Python non va.
+"${VESPER_PY:-python3}" -c 'import sys; from vesper.profiles import model
+model.install_menu(sys.argv[1]); model.write_menu_icons()' "$VLANG" 2>/dev/null || {
+  for d in $(printf "%s" "${VESPER_DATA_DIRS:-}" | tr ":" " ") /usr/local/share/vesper /usr/share/vesper; do
+    [ -f "$MENU" ] && break
+    [ -d "$d/skel/openbox" ] || continue
+    { cat "$d/skel/openbox/openbox-menu.$VLANG.xml" 2>/dev/null ||
+      cat "$d/skel/openbox/openbox-menu.xml"; } | sed "s#@ICONE@#$CACHE/menu-icons#g" > "$MENU"
+    break
+  done
+}
 # Prompt dei terminali (vesper-prompt): si carica SOLO in questa sessione e
 # senza toccare ~/.bashrc. bash esegue PROMPT_COMMAND prima di ogni prompt
 # (il .bashrc di Debian/Mint non lo ridefinisce), busybox ash legge $ENV.

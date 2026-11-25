@@ -27,8 +27,16 @@ ognuno con la propria licenza.
 | `Vesper-Cards-*` | template originale di Vesper; la geometria dei pulsanti a sfera deriva da Arc-Round | GPL-3.0 |
 | `Vesper-Retro-*` | template originale di Vesper, nel solco dell'estetica di 1977 | AGPL-3.0-or-later |
 | `Vesper-Core` | originale di Vesper | AGPL-3.0-or-later |
+| `Vesper-Mac*` | originali di Vesper (generati da `tools/make-mac-themes.py`, da NexusSec OS) | AGPL-3.0-or-later |
 
 Le attribuzioni originali sono conservate dentro i rispettivi file `themerc`.
+
+## Icone del menu del tasto destro (`data/menu-icons/`)
+
+Copie delle icone simboliche di **adwaita-icon-theme** (GNOME Project,
+CC-BY-SA 3.0 / LGPL-3.0), col colore sostituito da un segnaposto che Vesper
+riempie con l'accento del preset (`tools/make-menu-icons.py`). Le voci
+«Aspetto» e «Preset» usano invece la stella di Vesper.
 
 ## Set di icone
 

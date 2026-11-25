@@ -156,7 +156,7 @@ for c in $COMANDI; do
 done
 
 # --- dati ------------------------------------------------------------------
-for d in backgrounds panel-themes sourceview-styles skel; do
+for d in backgrounds panel-themes sourceview-styles skel menu-icons; do
   [ -d "$SRC/data/$d" ] || continue
   rm -rf "$SHARE/$d"
   mkdir -p "$SHARE/$d"

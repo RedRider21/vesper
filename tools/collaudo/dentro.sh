@@ -44,6 +44,11 @@ i=0; while [ ! -S /tmp/.X11-unix/X9 ] && [ $i -lt 50 ]; do sleep 0.1; i=$((i+1))
 dbus-run-session -- vesper-session >/out/sessione-stdout.log 2>&1 &
 SESS=$!
 
+# I comandi che seguono si comportano come se partissero DALLA sessione (dal
+# Centro di Controllo o dal selettore): fuori dalla sessione Vesper,
+# giustamente, non ricarica Openbox e il collaudo non vedrebbe i cambi.
+export VESPER_SESSION=1 VESPER_RC_XML="$CONF/openbox-rc.xml"
+
 # --- funzioni di osservazione ----------------------------------------------
 barra() {   # 0 se la barra (finestra larga quanto lo schermo, bassa) c'e'
   wmctrl -lG 2>/dev/null | awk -v w=$W '$5==w && $6>=20 && $6<=80 {f=1} END{exit !f}'
@@ -89,6 +94,16 @@ esac
 if grep -q 'Unable to find a valid menu' "$CACHE/session.log" /out/sessione-stdout.log 2>/dev/null; then
   ko "menu openbox: caricato" "Openbox non trova il menu"
 else ok "menu openbox: caricato"; fi
+
+# --- 2b. icone del menu (da NexusSec) ---------------------------------------
+n_ic=$(grep -c "icon=\"$CACHE/menu-icons/" "$CONF/openbox-menu.xml" 2>/dev/null)
+[ "${n_ic:-0}" -ge 15 ] && ok "menu openbox: icone con il percorso vero ($n_ic)" \
+  || ko "menu openbox: icone con il percorso vero" "trovate ${n_ic:-0}"
+grep -q '@ICONE@' "$CONF/openbox-menu.xml" && ko "menu openbox: segnaposto tradotto" "@ICONE@ rimasto" \
+  || ok "menu openbox: segnaposto tradotto"
+mancanti=$(grep -o "icon=\"[^\"]*\"" "$CONF/openbox-menu.xml" | cut -d'"' -f2 | while read -r f; do [ -f "$f" ] || echo "$f"; done | wc -l)
+[ "$mancanti" -eq 0 ] && ok "menu openbox: tutti i file delle icone esistono" \
+  || ko "menu openbox: tutti i file delle icone esistono" "$mancanti mancanti"
 
 # --- 3. lingua della sessione ---------------------------------------------------
 [ "$(env_sessione LANGUAGE)" = en ] && ok "lingua: LANGUAGE passa alla sessione" \
@@ -136,12 +151,22 @@ else ko "selettore: la barra si ricolora a caldo" "pixel diversi: ${d:-?}"; fi
 foto 02b-preset-bianco
 vesper-profile set lime >/dev/null 2>&1; sleep 1
 
+# icone del menu nel colore del preset (lime)
+grep -qi 'fill="#b8ff3b"' "$CACHE/menu-icons/terminal.svg" 2>/dev/null \
+  && ok "menu openbox: icone nel colore del preset" \
+  || ko "menu openbox: icone nel colore del preset" "$(grep -o 'fill="#[0-9a-fA-F]*"' "$CACHE/menu-icons/terminal.svg" | head -1)"
+
 # --- 6. famiglia macOS scuro -----------------------------------------------------
 vesper-profile theme mac-scuro >/dev/null 2>&1
 grep -q '<name>Vesper-Mac-Scuro-lime</name>' "$CONF/openbox-rc.xml" && ok "temi: macOS scuro nel colore del preset" \
   || ko "temi: macOS scuro nel colore del preset" "$(grep -o '<name>Vesper-[^<]*' "$CONF/openbox-rc.xml" | head -1)"
 grep -q '<titleLayout>CIMLN</titleLayout>' "$CONF/openbox-rc.xml" && ok "temi: pulsanti a sinistra" \
   || ko "temi: pulsanti a sinistra" "$(grep -o '<titleLayout>[^<]*' "$CONF/openbox-rc.xml")"
+
+# menu del tasto destro sul desktop, aperto e fotografato
+sleep 3   # Openbox ricaricato dal cambio di preset, grafici aggiornati
+xdotool mousemove 300 300 click 3; sleep 1.2; foto 02c-menu-tasto-destro
+xdotool key Escape; sleep 0.4
 
 # --- 7. una finestra si apre davvero (Centro di Controllo) --------------------
 prima=$(wmctrl -l | wc -l)

@@ -4,41 +4,43 @@
      frequenti, così non serve aprire il menu dal pannello. -->
 <openbox_menu xmlns="http://openbox.org/3.4/menu">
 
-  <menu id="vesper-tools" label="Strumenti">
-    <item label="Terminale"><action name="Execute"><command>vesper-terminal</command></action></item>
-    <item label="File manager"><action name="Execute"><command>vesper-files</command></action></item>
-    <item label="Appunti (cronologia)"><action name="Execute"><command>vesper-clipboard menu</command></action></item>
-    <item label="Filtro luce blu (on/off)"><action name="Execute"><command>vesper-nightlight toggle</command></action></item>
-    <item label="Scorciatoie da tastiera"><action name="Execute"><command>vesper-control-center hotkey</command></action></item>
-    <item label="Centro di Controllo"><action name="Execute"><command>vesper-control-center</command></action></item>
+  <menu id="vesper-tools" icon="@ICONE@/tools.svg" label="Strumenti">
+    <item icon="@ICONE@/terminal.svg" label="Terminale"><action name="Execute"><command>vesper-terminal</command></action></item>
+    <item icon="@ICONE@/files.svg" label="File manager"><action name="Execute"><command>vesper-files</command></action></item>
+    <item icon="@ICONE@/clipboard.svg" label="Appunti (cronologia)"><action name="Execute"><command>vesper-clipboard menu</command></action></item>
+    <item icon="@ICONE@/nightlight.svg" label="Filtro luce blu (on/off)"><action name="Execute"><command>vesper-nightlight toggle</command></action></item>
+    <item icon="@ICONE@/keyboard.svg" label="Scorciatoie da tastiera"><action name="Execute"><command>vesper-control-center hotkey</command></action></item>
+    <item icon="@ICONE@/control-center.svg" label="Centro di Controllo"><action name="Execute"><command>vesper-control-center</command></action></item>
   </menu>
 
-  <menu id="vesper-screen" label="Schermo">
-    <item label="Blocca schermo"><action name="Execute"><command>vesper-screensaver</command></action></item>
-    <item label="Cattura schermata (intero)"><action name="Execute"><command>vesper-screenshot full 1</command></action></item>
-    <item label="Cattura schermata (area)"><action name="Execute"><command>vesper-screenshot area 0</command></action></item>
+  <menu id="vesper-screen" icon="@ICONE@/screen.svg" label="Schermo">
+    <item icon="@ICONE@/lock.svg" label="Blocca schermo"><action name="Execute"><command>vesper-screensaver</command></action></item>
+    <item icon="@ICONE@/screenshot.svg" label="Cattura schermata (intero)"><action name="Execute"><command>vesper-screenshot full 1</command></action></item>
+    <item icon="@ICONE@/screenshot.svg" label="Cattura schermata (area)"><action name="Execute"><command>vesper-screenshot area 0</command></action></item>
     <separator/>
-    <item label="Disposizione schermi"><action name="Execute"><command>vesper-control-center schermi</command></action></item>
+    <item icon="@ICONE@/screen.svg" label="Disposizione schermi"><action name="Execute"><command>vesper-control-center schermi</command></action></item>
   </menu>
 
-  <menu id="vesper-look" label="Aspetto">
-    <item label="Preset (colore, sfondo, icone)"><action name="Execute"><command>vesper-profile</command></action></item>
-    <item label="Sfondo del desktop"><action name="Execute"><command>vesper-control-center sfondo</command></action></item>
-    <item label="Skin del pannello"><action name="Execute"><command>vesper-control-center aspetto</command></action></item>
+  <menu id="vesper-look" icon="@ICONE@/look.svg" label="Aspetto">
+    <item icon="@ICONE@/preset.svg" label="Preset (colore, sfondo, icone)"><action name="Execute"><command>vesper-profile</command></action></item>
+    <item icon="@ICONE@/wallpaper.svg" label="Sfondo del desktop"><action name="Execute"><command>vesper-control-center sfondo</command></action></item>
+    <item icon="@ICONE@/panel.svg" label="Skin del pannello"><action name="Execute"><command>vesper-control-center aspetto</command></action></item>
   </menu>
 
   <menu id="root-menu" label="Vesper">
-    <item label="Terminale"><action name="Execute"><command>vesper-terminal</command></action></item>
-    <item label="File manager"><action name="Execute"><command>vesper-files</command></action></item>
+    <!-- intestazione: Openbox la disegna con lo stile "menu.title" del tema -->
+    <separator label="Vesper"/>
+    <item icon="@ICONE@/terminal.svg" label="Terminale"><action name="Execute"><command>vesper-terminal</command></action></item>
+    <item icon="@ICONE@/files.svg" label="File manager"><action name="Execute"><command>vesper-files</command></action></item>
     <separator/>
-    <menu id="vesper-tools"/>
-    <menu id="vesper-screen"/>
-    <menu id="vesper-look"/>
+    <menu id="vesper-tools" icon="@ICONE@/tools.svg"/>
+    <menu id="vesper-screen" icon="@ICONE@/screen.svg"/>
+    <menu id="vesper-look" icon="@ICONE@/look.svg"/>
     <separator/>
-    <item label="Ricarica il gestore finestre"><action name="Reconfigure"/></item>
-    <item label="Riavvia il pannello"><action name="Execute"><command>vesper-panel-restart</command></action></item>
+    <item icon="@ICONE@/reload.svg" label="Ricarica il gestore finestre"><action name="Reconfigure"/></item>
+    <item icon="@ICONE@/reload.svg" label="Riavvia il pannello"><action name="Execute"><command>vesper-panel-restart</command></action></item>
     <separator/>
-    <item label="Esci / Spegni…"><action name="Execute"><command>vesper-logout</command></action></item>
+    <item icon="@ICONE@/shutdown.svg" label="Esci / Spegni…"><action name="Execute"><command>vesper-logout</command></action></item>
   </menu>
 
 </openbox_menu>

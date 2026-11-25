@@ -881,6 +881,115 @@ def _manage_picom(enable: bool) -> None:
             pass
 
 
+# ---------------------------------------------------------------- menu Openbox
+# Icone del menu del tasto destro (da NexusSec): modelli in data/menu-icons con
+# il segnaposto @COLORE@, tinti col preset in ~/.cache/vesper/menu-icons (mai
+# fuori dalle cartelle di Vesper). Il menu le indica con @ICONE@/<nome>.svg,
+# tradotto nel percorso vero da install_menu().
+MENU_ICONS_DIR = paths.cache("menu-icons")
+MENU_CONF = paths.config("openbox-menu.xml")
+_MENU_CHIARI = ("retro", "mac", "raw:Vesper-Arc-Light")
+
+
+def _luce(hexcol: str) -> float:
+    h = hexcol.lstrip("#")
+    try:
+        r, g, b = (int(h[i:i + 2], 16) for i in (0, 2, 4))
+    except ValueError:
+        return 0.5
+    return (0.299 * r + 0.587 * g + 0.114 * b) / 255
+
+
+def menu_icon_color(key: str | None = None) -> str:
+    """Accento del preset; sui menu CHIARI (Retro, macOS chiaro, Arc chiaro)
+    un accento chiaro (lime, giallo, ciano...) si scurisce, o non si vede."""
+    ac = accent(key)
+    if theme_family() in _MENU_CHIARI and _luce(ac) > 0.55:
+        return _mix("#000000", ac, 0.45)
+    return ac
+
+
+def write_menu_icons(key: str | None = None) -> int:
+    """Tinge le icone del menu col colore del preset. Riscrive solo i file
+    cambiati; ritorna quanti. Openbox le rilegge al reconfigure."""
+    src_dirs = paths.data_dirs("menu-icons")
+    if not src_dirs:
+        return 0
+    colore = menu_icon_color(key)
+    try:
+        MENU_ICONS_DIR.mkdir(parents=True, exist_ok=True)
+    except OSError:
+        return 0
+    n = 0
+    for f in sorted(Path(src_dirs[0]).glob("*.svg")):
+        try:
+            svg = f.read_text(encoding="utf-8").replace("@COLORE@", colore)
+            dst = MENU_ICONS_DIR / f.name
+            if dst.is_file() and dst.read_text(encoding="utf-8") == svg:
+                continue
+            tmp = dst.with_name(dst.name + ".tmp")
+            tmp.write_text(svg, encoding="utf-8")
+            os.replace(str(tmp), str(dst))
+            n += 1
+        except OSError:
+            continue
+    return n
+
+
+def _menu_spoglio(txt: str) -> str:
+    """Il menu senza icone, intestazione e spazi: serve a riconoscere un menu
+    ancora "nostro" (copiato da una versione precedente, senza icone)."""
+    txt = re.sub(r'\s+icon="[^"]*"', "", txt)
+    txt = re.sub(r'<separator label="Vesper"\s*/>', "", txt)
+    return re.sub(r"\s+", "", txt)
+
+
+def install_menu(lang: str | None = None, force: bool = False) -> bool:
+    """Mette in ~/.config/vesper/openbox-menu.xml il menu della lingua `lang`
+    (con le icone del preset), se manca o se e' ancora uno dei nostri (anche
+    di una versione precedente, senza icone). Un menu modificato dall'utente
+    non si tocca, salvo force. True se il file e' stato scritto."""
+    if lang is None:
+        try:
+            from vesper import i18n
+            lang = i18n.current_lang()
+        except Exception:                        # noqa: BLE001
+            lang = "it"
+    skel = None
+    for d in paths.data_dirs("skel", "openbox"):
+        for nome in ("openbox-menu.%s.xml" % lang, "openbox-menu.xml"):
+            if (Path(d) / nome).is_file():
+                skel = Path(d) / nome
+                break
+        if skel:
+            break
+    if skel is None:
+        return False
+    nuovo = skel.read_text(encoding="utf-8").replace("@ICONE@", str(MENU_ICONS_DIR))
+    if MENU_CONF.is_file() and not force:
+        try:
+            ora = MENU_CONF.read_text(encoding="utf-8")
+        except OSError:
+            return False
+        if ora == nuovo:
+            return False
+        nostri = set()
+        for d in paths.data_dirs("skel", "openbox"):
+            for f in Path(d).glob("openbox-menu*.xml"):
+                try:
+                    nostri.add(_menu_spoglio(f.read_text(encoding="utf-8")))
+                except OSError:
+                    pass
+        if _menu_spoglio(ora) not in nostri:
+            return False                         # personalizzato: resta suo
+    paths.ensure_config()
+    tmp = MENU_CONF.with_name(MENU_CONF.name + ".tmp")
+    tmp.write_text(nuovo, encoding="utf-8")
+    os.replace(str(tmp), str(MENU_CONF))
+    write_menu_icons()
+    return True
+
+
 def set_window_theme(key: str | None = None, reconfigure: bool = True) -> None:
     """Applica il tema finestre Openbox COORDINATO col preset.
     La famiglia scelta (~/.config/vesper/theme) decide QUALE tema statico usare:
@@ -894,6 +1003,7 @@ def set_window_theme(key: str | None = None, reconfigure: bool = True) -> None:
     name = resolve_ob_theme(fam, key)
     layout = OB_TITLELAYOUT_LEFT if fam in _LEFT_FAMILIES else OB_TITLELAYOUT_DEFAULT
     font = OB_TITLE_FONT_MAC if fam in _MAC_THEMES else OB_TITLE_FONT_DEFAULT
+    write_menu_icons(key)                # icone del menu: rilette al reconfigure
     _apply_rc(name, layout, reconfigure=reconfigure, title_font=font)
     _manage_picom(_picom_wanted())
 

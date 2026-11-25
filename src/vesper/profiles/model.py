@@ -200,7 +200,7 @@ def wallpaper_path(key: str | None = None) -> Path | None:
                 return p
     except OSError:
         pass
-    name = preset_data(key).get("wallpaper")
+    name = preset_data(key or skin_coord() or None).get("wallpaper")
     if not name:
         return None
     for d in wallpaper_dirs():
@@ -890,6 +890,79 @@ def set_window_theme(key: str | None = None, reconfigure: bool = True) -> None:
 # Scelta del set di icone: "auto" (segue il preset) o il nome di un tema
 # preciso, se l'utente ne vuole uno fisso.
 ICON_THEME_CONF = CONF_DIR / "icon-theme"
+# Aspetto coordinato con una skin del pannello (da NexusSec): il preset di
+# colore piu' vicino alla skin, di cui si prendono icone e sfondo. Vuoto o
+# assente = icone e sfondo seguono il preset attivo, come sempre.
+SKIN_COORD_CONF = CONF_DIR / "skin-coord"
+
+
+def skin_coord() -> str:
+    try:
+        k = SKIN_COORD_CONF.read_text().strip()
+        return k if k in presets() else ""
+    except OSError:
+        return ""
+
+
+def _set_skin_coord(key: str) -> None:
+    try:
+        if key:
+            paths.ensure_config()
+            SKIN_COORD_CONF.write_text(key + "\n")
+        else:
+            SKIN_COORD_CONF.unlink()
+    except OSError:
+        pass
+
+
+def preset_for_color(hexcol: str, light: bool | None = None) -> str:
+    """Preset col colore d'accento piu' vicino a hexcol; con light=True/False
+    si preferiscono i preset di quel tono (chiaro/scuro)."""
+    def rgb(h):
+        h = h.lstrip("#")
+        return [int(h[i:i + 2], 16) for i in (0, 2, 4)]
+    try:
+        c = rgb(hexcol)
+    except ValueError:
+        return current_preset()
+    tutti = presets()
+    scelta = {k: v for k, v in tutti.items()
+              if light is None or bool(v.get("light")) == light} or tutti
+    return min(scelta, key=lambda k: sum(
+        (a - b) ** 2 for a, b in zip(c, rgb(scelta[k].get("accent", "#000000")))))
+
+
+def coordina_con_skin(tid: str) -> str:
+    """Aspetto coordinato con la skin del pannello `tid`: icone e sfondo del
+    preset di colore piu' vicino, finestre macOS chiare o scure secondo il
+    tono della skin. "profile" (segui il preset) annulla la coordinazione.
+    Le scelte fatte A MANO (set di icone, sfondo) restano prioritarie.
+    Ritorna il preset usato."""
+    from vesper import paneltheme as _pt
+    chiara = None
+    key = ""
+    if tid != "profile":
+        try:
+            css = Path(_pt.css_path(tid)).read_text()
+            chiara = "/* tono: chiaro */" in css
+            m = re.search(r"\.vesper-panel button image \{ color:(#[0-9a-fA-F]{6})", css)
+            if m:
+                key = preset_for_color(m.group(1), chiara)
+        except (OSError, TypeError):
+            pass
+    _set_skin_coord(key)
+    eff = key or current_preset()
+    if chiara is None:
+        chiara = bool(preset_data(eff).get("light"))
+    if theme_family() in _MAC_THEMES:
+        try:
+            THEME_FAMILY_FILE.write_text(("mac" if chiara else "mac-scuro") + "\n")
+        except OSError:
+            pass
+    set_icon_theme()
+    set_wallpaper(wallpaper_path(), remember=False)
+    set_window_theme()
+    return eff
 ICON_FALLBACK = ["Mint-Y", "Papirus", "Adwaita", "gnome", "hicolor"]
 
 
@@ -907,7 +980,7 @@ def icon_theme_name(key: str | None = None) -> str:
     fixed = get_icon_choice()
     if fixed != "auto":
         return fixed
-    for name in icon_candidates(key):
+    for name in icon_candidates(key or skin_coord() or None):
         if _icon_theme_installed(name):
             return name
     return current_icon_theme()
@@ -1174,6 +1247,22 @@ def activate_preset(key: str, log=print) -> bool:
     if key not in presets():
         log(f"[!] preset sconosciuto: {key}")
         return False
+    # VINCE L'ULTIMA SCELTA (come in NexusSec): se l'aspetto era coordinato
+    # con una skin, scegliere un preset lo riporta al preset (barra compresa).
+    # Una skin scelta SENZA coordinazione resta: e' una scelta a parte.
+    if skin_coord():
+        _set_skin_coord("")
+        try:
+            from vesper import paneltheme as _pt
+            _pt.set_theme("profile")
+        except Exception:                        # noqa: BLE001
+            pass
+        if theme_family() in _MAC_THEMES:
+            try:
+                THEME_FAMILY_FILE.write_text(
+                    ("mac" if preset_data(key).get("light") else "mac-scuro") + "\n")
+            except OSError:
+                pass
     set_current(key)
     set_icon_theme(key)
     set_gtk_theme(key)
@@ -1188,9 +1277,9 @@ def apply_current() -> dict:
     """Riapplica l'aspetto del preset già corrente (uso all'avvio sessione)."""
     key = current_preset()
     ensure_themes_visible()
-    set_icon_theme(key)
+    set_icon_theme()           # senza key: vale anche la coordinazione con la skin
     set_gtk_theme(key)
-    set_wallpaper(wallpaper_path(key), remember=False)
+    set_wallpaper(wallpaper_path(), remember=False)
     write_accent_css(key)
     set_window_theme(key)
     set_wm_theme(key)          # se la sessione usa marco/metacity

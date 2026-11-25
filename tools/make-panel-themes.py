@@ -179,10 +179,64 @@ def _rgba(hexcol, alpha):
     return "rgba(%d,%d,%d,%.2f)" % (r, g, b, alpha)
 
 
+# COORDINAZIONE (da NexusSec): la skin colora anche l'INTERNO di tutte le
+# finestre di Vesper (Centro di Controllo, sessione, popup Wi-Fi/Bluetooth/
+# audio, ...), non solo barra e menu. Stesse classi del CSS base
+# (vesper/common.py), a priorita' piu' alta.
+CONTENUTO = """
+/* --- interno delle finestre di Vesper (coordinazione) ---
+   Tutto e' limitato a window:not(.vesper-panel): la barra e il suo menu hanno le
+   loro regole sopra (in GTK3 la priorita' del foglio vince sulla specificita',
+   una regola generica qui coprirebbe i colori della barra). */
+window:not(.vesper-panel), dialog {{ background-color:{win}; color:{text}; }}
+window:not(.vesper-panel) .vesper-headerbar {{ background-color:{bg}; color:{text}; border-bottom:1px solid {accent}; }}
+window:not(.vesper-panel) .vesper-headerbar label.title {{ color:{accent}; }}
+window:not(.vesper-panel) .vesper-headerbar label.subtitle {{ color:{dim}; }}
+window:not(.vesper-panel) .vesper-footer {{ background-color:{win}; color:{dim}; border-top:1px solid {border}; }}
+window:not(.vesper-panel) .vesper-section {{ color:{accent}; border-bottom:1px solid {border}; }}
+window:not(.vesper-panel) .vesper-key, window:not(.vesper-panel) .vesper-card-title, window:not(.vesper-panel) frame > label {{ color:{accent}; }}
+window:not(.vesper-panel) .vesper-val, window:not(.vesper-panel) radiobutton, window:not(.vesper-panel) checkbutton, window:not(.vesper-panel) combobox {{ color:{text}; }}
+window:not(.vesper-panel) .vesper-tile, window:not(.vesper-panel) .vesper-card {{ background-color:{card}; color:{text}; border:1px solid {border}; }}
+window:not(.vesper-panel) .vesper-tile label {{ color:{text}; }}
+window:not(.vesper-panel) .vesper-tile:hover {{ background-color:{hover}; border-color:{accent}; }}
+window:not(.vesper-panel) .vesper-tile-badge {{ background-color:{hover}; }}
+window:not(.vesper-panel) .vesper-tile-badge image, window:not(.vesper-panel) spinner {{ color:{accent}; }}
+window:not(.vesper-panel) textview, window:not(.vesper-panel) textview text, window:not(.vesper-panel) treeview {{ background-color:{card}; color:{text}; caret-color:{accent}; }}
+window:not(.vesper-panel) treeview:selected {{ background-color:{active}; color:{text}; }}
+window:not(.vesper-panel) treeview header button {{ background-color:{bg}; color:{accent}; border-bottom:1px solid {border}; }}
+window:not(.vesper-panel) button {{ background-color:{card}; color:{text}; border:1px solid {border}; }}
+window:not(.vesper-panel) button:hover {{ background-color:{hover}; border-color:{accent}; }}
+window:not(.vesper-panel) button:active, window:not(.vesper-panel) button:checked {{ background-color:{accent}; color:{on_accent}; }}
+window:not(.vesper-panel) button.vesper-primary {{ background-color:{active}; border-color:{accent}; color:{accent}; }}
+window:not(.vesper-panel) button.vesper-menu-item {{ background-color:transparent; border-color:transparent; }}
+window:not(.vesper-panel) button.vesper-menu-item:hover {{ background-color:{hover}; }}
+window:not(.vesper-panel) entry {{ background-color:{card}; color:{text}; border:1px solid {border}; caret-color:{accent}; }}
+window:not(.vesper-panel) entry:focus {{ border-color:{accent}; }}
+window:not(.vesper-panel) progressbar > trough, window:not(.vesper-panel) switch {{ background-color:{card}; border:1px solid {border}; }}
+window:not(.vesper-panel) progressbar > trough > progress, window:not(.vesper-panel) levelbar block.filled, window:not(.vesper-panel) switch:checked slider {{ background-color:{accent}; }}
+window:not(.vesper-panel) switch:checked {{ background-color:{active}; border-color:{accent}; }}
+window:not(.vesper-panel) switch slider {{ background-color:{dim}; }}
+window:not(.vesper-panel) notebook header {{ background-color:{bg}; }}
+window:not(.vesper-panel) notebook tab {{ color:{dim}; }}
+window:not(.vesper-panel) notebook tab:checked {{ color:{accent}; background-color:{card}; box-shadow: inset 0 -2px {accent}; }}
+window:not(.vesper-panel) frame > border {{ border:1px solid {border}; }}
+"""
+
+
+def _luce(hexcol):
+    h = hexcol.lstrip("#")
+    r, g, b = (int(h[i:i + 2], 16) for i in (0, 2, 4))
+    return (0.299 * r + 0.587 * g + 0.114 * b) / 255.0
+
+
 def main():
     os.makedirs(OUT, exist_ok=True)
     for tid, p in THEMES.items():
-        css = TEMPLATE.format(
+        chiara = _luce(p["bg"]) > 0.5
+        win = p.get("win") or p["bg"]
+        card = p.get("card") or p["pop"]
+        css = (TEMPLATE + CONTENUTO + "/* tono: %s */\n" % ("chiaro" if chiara else "scuro")).format(
+            win=win, card=card,
             name=p["name"], bg=p["bg"], pop=p["pop"], border=p["border"],
             text=p["text"], dim=p["dim"], accent=p["accent"],
             on_accent=p["on_accent"], brand=p["brand"],

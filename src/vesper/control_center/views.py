@@ -3175,6 +3175,13 @@ def open_appearance(_btn=None):
     row_pt.pack_start(pt_combo, True, True, 0)
     body.pack_start(row_pt, False, False, 0)
 
+    # COORDINAZIONE (da NexusSec): con la skin cambiano anche icone e sfondo
+    # (quelli del preset di colore piu' vicino) e le finestre macOS passano a
+    # chiaro o scuro. L'interno delle finestre lo colora gia' la skin stessa.
+    pt_coord = Gtk.CheckButton(label=_t("v.pt.coord"))
+    pt_coord.set_active(True)
+    body.pack_start(pt_coord, False, False, 0)
+
     pt_status = Gtk.Label(label=""); pt_status.set_xalign(0)
     pt_status.get_style_context().add_class("vesper-val")
     body.pack_start(pt_status, False, False, 0)
@@ -3187,6 +3194,12 @@ def open_appearance(_btn=None):
             return
         tid = pt_ids[i]
         _pt.set_theme(tid)                 # il pannello si ricolora a caldo;
+        try:
+            from vesper.profiles import model as _mm
+            # senza la casella: icone e sfondo tornano a seguire il preset
+            _mm.coordina_con_skin(tid if pt_coord.get_active() else "profile")
+        except Exception:                 # noqa: BLE001
+            pass
         try:                              # riavvio comunque per sicurezza.
             panelcfg.restart_panel()
         except Exception:                 # noqa: BLE001

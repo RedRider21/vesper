@@ -72,3 +72,41 @@ entry.vesper-menu-search:focus { border-color:#2aa198; }
 .vesper-popup calendar.header, .vesper-popup calendar.button,
 .vesper-popup calendar.highlight { color:#2aa198; }
 .vesper-popup calendar:indeterminate { color:#93a1a1; }
+
+/* --- interno delle finestre di Vesper (coordinazione) ---
+   Tutto e' limitato a window:not(.vesper-panel): la barra e il suo menu hanno le
+   loro regole sopra (in GTK3 la priorita' del foglio vince sulla specificita',
+   una regola generica qui coprirebbe i colori della barra). */
+window:not(.vesper-panel), dialog { background-color:#002b36; color:#eee8d5; }
+window:not(.vesper-panel) .vesper-headerbar { background-color:#002b36; color:#eee8d5; border-bottom:1px solid #2aa198; }
+window:not(.vesper-panel) .vesper-headerbar label.title { color:#2aa198; }
+window:not(.vesper-panel) .vesper-headerbar label.subtitle { color:#93a1a1; }
+window:not(.vesper-panel) .vesper-footer { background-color:#002b36; color:#93a1a1; border-top:1px solid #586e75; }
+window:not(.vesper-panel) .vesper-section { color:#2aa198; border-bottom:1px solid #586e75; }
+window:not(.vesper-panel) .vesper-key, window:not(.vesper-panel) .vesper-card-title, window:not(.vesper-panel) frame > label { color:#2aa198; }
+window:not(.vesper-panel) .vesper-val, window:not(.vesper-panel) radiobutton, window:not(.vesper-panel) checkbutton, window:not(.vesper-panel) combobox { color:#eee8d5; }
+window:not(.vesper-panel) .vesper-tile, window:not(.vesper-panel) .vesper-card { background-color:#073642; color:#eee8d5; border:1px solid #586e75; }
+window:not(.vesper-panel) .vesper-tile label { color:#eee8d5; }
+window:not(.vesper-panel) .vesper-tile:hover { background-color:rgba(42,161,152,0.14); border-color:#2aa198; }
+window:not(.vesper-panel) .vesper-tile-badge { background-color:rgba(42,161,152,0.14); }
+window:not(.vesper-panel) .vesper-tile-badge image, window:not(.vesper-panel) spinner { color:#2aa198; }
+window:not(.vesper-panel) textview, window:not(.vesper-panel) textview text, window:not(.vesper-panel) treeview { background-color:#073642; color:#eee8d5; caret-color:#2aa198; }
+window:not(.vesper-panel) treeview:selected { background-color:rgba(42,161,152,0.24); color:#eee8d5; }
+window:not(.vesper-panel) treeview header button { background-color:#002b36; color:#2aa198; border-bottom:1px solid #586e75; }
+window:not(.vesper-panel) button { background-color:#073642; color:#eee8d5; border:1px solid #586e75; }
+window:not(.vesper-panel) button:hover { background-color:rgba(42,161,152,0.14); border-color:#2aa198; }
+window:not(.vesper-panel) button:active, window:not(.vesper-panel) button:checked { background-color:#2aa198; color:#002b36; }
+window:not(.vesper-panel) button.vesper-primary { background-color:rgba(42,161,152,0.24); border-color:#2aa198; color:#2aa198; }
+window:not(.vesper-panel) button.vesper-menu-item { background-color:transparent; border-color:transparent; }
+window:not(.vesper-panel) button.vesper-menu-item:hover { background-color:rgba(42,161,152,0.14); }
+window:not(.vesper-panel) entry { background-color:#073642; color:#eee8d5; border:1px solid #586e75; caret-color:#2aa198; }
+window:not(.vesper-panel) entry:focus { border-color:#2aa198; }
+window:not(.vesper-panel) progressbar > trough, window:not(.vesper-panel) switch { background-color:#073642; border:1px solid #586e75; }
+window:not(.vesper-panel) progressbar > trough > progress, window:not(.vesper-panel) levelbar block.filled, window:not(.vesper-panel) switch:checked slider { background-color:#2aa198; }
+window:not(.vesper-panel) switch:checked { background-color:rgba(42,161,152,0.24); border-color:#2aa198; }
+window:not(.vesper-panel) switch slider { background-color:#93a1a1; }
+window:not(.vesper-panel) notebook header { background-color:#002b36; }
+window:not(.vesper-panel) notebook tab { color:#93a1a1; }
+window:not(.vesper-panel) notebook tab:checked { color:#2aa198; background-color:#073642; box-shadow: inset 0 -2px #2aa198; }
+window:not(.vesper-panel) frame > border { border:1px solid #586e75; }
+/* tono: scuro */

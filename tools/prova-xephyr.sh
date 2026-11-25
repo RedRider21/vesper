@@ -24,7 +24,9 @@
 # Angoli arrotondati: in produzione Vesper avvia picom solo con una scheda
 # video vera (backend GLX). Qui la home di prova riceve un picom.conf
 # personale (~/.config/vesper/picom.conf) col backend software xrender, solo
-# per vedere l'effetto: nelle VM quel backend puo' dare finestre bianche.
+# per vedere l'effetto: nelle VM quel backend puo' dare finestre bianche, e
+# con use-damage lasciava strisce bianche sui bordi quando Openbox ridisegna i
+# pulsanti al passaggio del mouse (qui si spegne).
 set -eu
 ROOT="$(cd "$(dirname "$0")/.." && pwd)"
 DISP="${VESPER_PROVA_DISPLAY:-:7}"
@@ -75,6 +77,7 @@ if [ "${1:-}" != "--tieni" ] || [ ! -d "$HOMEP" ]; then
   echo "$TEMA" > "$HOMEP/.config/vesper/theme"
   sed -e 's/backend = "glx";/backend = "xrender";/' -e 's/^vsync = true;/vsync = false;/' \
       -e 's/^blur-background = true;/blur-background = false;/' \
+      -e 's/^use-damage = true;/use-damage = false;/' \
       "$ROOT/data/picom.conf" > "$HOMEP/.config/vesper/picom.conf"
 fi
 

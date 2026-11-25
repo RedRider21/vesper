@@ -444,6 +444,7 @@ def apply_css() -> None:
     # (sopra l'accent), cosi' un cambio stile lo rimuove e rimpiazza in modo
     # pulito (prima il provider d'avvio restava e i cambi non si vedevano).
     apply_window_style_live()
+    _install_window_style_monitor()
     # Skin del pannello: caricata SOPRA l'accent (APPLICATION+2), cosi' una skin
     # a palette fissa vince sull'accent del profilo (barra indipendente). La
     # skin "profile" non e' un file: niente provider -> resta base+accent.
@@ -765,6 +766,46 @@ def _reset_widgets_kick() -> bool:
         except Exception:                # noqa: BLE001
             pass
     return False
+
+
+_style_mon = None
+_style_timer = [0]
+
+
+def _on_window_style_changed(_m, _f, _o, etype) -> None:
+    """window-style.css riscritto (cambio di preset o di stile): ricarica a
+    caldo in OGNI processo di Vesper, barra compresa. Prima lo ricaricava solo
+    il Centro di Controllo, e la barra restava scura passando al preset chiaro
+    (lo nascondeva il riavvio del pannello, poi tolto). Breve ritardo: il file
+    si legge a scrittura finita e una volta sola anche con piu' eventi."""
+    if etype not in (Gio.FileMonitorEvent.CHANGED,
+                     Gio.FileMonitorEvent.CHANGES_DONE_HINT,
+                     Gio.FileMonitorEvent.CREATED,
+                     Gio.FileMonitorEvent.MOVED):
+        return
+    if _style_timer[0]:
+        GLib.source_remove(_style_timer[0])
+
+    def fire():
+        _style_timer[0] = 0
+        apply_window_style_live()
+        return False
+    _style_timer[0] = GLib.timeout_add(150, fire)
+
+
+def _install_window_style_monitor() -> None:
+    global _style_mon
+    if _style_mon is not None:
+        return
+    try:
+        mon = Gio.File.new_for_path(str(WINDOW_STYLE_CSS_FILE)).monitor_file(
+            Gio.FileMonitorFlags.NONE, None)
+        if mon is None:
+            return
+        mon.connect("changed", _on_window_style_changed)
+        _style_mon = mon
+    except Exception:                    # noqa: BLE001
+        _style_mon = None
 
 
 def apply_window_style_live() -> None:

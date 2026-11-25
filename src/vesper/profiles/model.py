@@ -530,6 +530,18 @@ frame > border {{ border-color: rgba({rgb},0.16); }}
 progressbar > trough {{ background-color: #1a2d3a; border-radius: 999px; }}
 progressbar > trough > progress {{ border-radius: 999px; background-color: {ac}; }}
 """
+    # Desktop attivo nella barra: fondo d'accento e cifra leggibile. Sta QUI
+    # (priorita' +3) e non in accent.css (+1): in GTK3 vince la priorita' del
+    # foglio, e la regola generica `button` di questo file copriva il fondo.
+    # Colori fuori dalla mappa chiaro/scuro (palette.LIGHT), quindi restano.
+    luce = (0.299 * r + 0.587 * g + 0.114 * b) / 255
+    on = "#0b1015" if luce > 0.55 else "#fefefe"
+    css += f"""
+.vesper-panel button.vesper-pager-active,
+.vesper-panel button.vesper-pager-active:hover {{
+  background-color: {ac}; background-image: none; border-color: {ac}; color: {on}; }}
+.vesper-panel button.vesper-pager-active label {{ color: {on}; }}
+"""
     paths.ensure_config()
     WINDOW_STYLE_CSS.write_text(_maybe_light(css, key))
 

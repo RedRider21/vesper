@@ -1,0 +1,12 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!-- SPDX-License-Identifier: AGPL-3.0-or-later
+     Copyright (C) 2026 Daniele Deplano (RedRider21). Parte di Vesper.
+     Badge della sessione Vesper per il selettore di sessione dei greeter
+     (slick-greeter di Linux Mint, unity/arctica-greeter): stesso stile dei
+     badge di sistema, disco bianco 22x22 con la stella della sera e
+     l'orizzonte SCAVATI dentro (un solo tracciato, fill-rule evenodd: niente
+     maschere, che alcuni renderizzatori ignorano). Senza questo file il
+     greeter mostrava il badge "sconosciuto", un disco bianco vuoto. -->
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 22 22" width="22" height="22">
+  <path fill="#ffffff" fill-rule="evenodd" d="M11 0 A11 11 0 1 1 11 22 A11 11 0 1 1 11 0 Z M11.0 3.802 Q11.756 8.878 15.968 9.85 Q11.756 10.822 11.0 15.898 Q10.244 10.822 6.032 9.85 Q10.244 8.878 11.0 3.802 Z M6.518 17.194 H15.482 A0.702 0.702 0 0 1 15.482 18.598 H6.518 A0.702 0.702 0 0 1 6.518 17.194 Z"/>
+</svg>

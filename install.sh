@@ -54,6 +54,8 @@ PIXMAPS="$DESTDIR$PREFIX/share/pixmaps"
 XSESS="$DESTDIR$PREFIX/share/xsessions"
 APPS="$DESTDIR$PREFIX/share/applications"
 THEMES="$DESTDIR$PREFIX/share/themes"
+# icona della sessione nel selettore di slick-greeter (Linux Mint, Ubuntu MATE)
+BADGES="$DESTDIR$PREFIX/share/slick-greeter/badges"
 
 COMANDI="vesper-session vesper-panel vesper-panel-restart vesper-control-center
          vesper-files vesper-profile vesper-logout vesper-shutdown
@@ -76,8 +78,10 @@ if [ "$ACTION" = uninstall ]; then
   echo "Disinstallo Vesper da $PREFIX"
   for c in $COMANDI; do rm -f "$BIN/$c"; done
   rm -rf "$LIB" "$SHARE"
-  for t in Vesper-Core Vesper-Arc-Dark Vesper-Arc-Light; do rm -rf "$THEMES/$t"; done
-  rm -rf "$THEMES"/Vesper-Retro-* "$THEMES"/Vesper-Cards-* "$THEMES"/1977-*
+  # tutti i temi finestre di Vesper (Core, Retro, Cards, Mac, Arc e varianti
+  # per preset) e i 1977 inclusi: prima restavano le varianti Core e Mac
+  rm -rf "$THEMES"/Vesper-* "$THEMES"/1977-*
+  rm -f "$BADGES/vesper.svg" "$BADGES/vesper.png"
   rm -f "$XSESS/vesper.desktop"
   rm -f "$APPS/vesper-control-center.desktop" "$APPS/vesper-files.desktop" \
         "$APPS/vesper-profile.desktop"
@@ -194,6 +198,12 @@ mkdir -p "$PIXMAPS"
 cp "$SRC/data/pixmaps/vesper.png" "$PIXMAPS/" 2>/dev/null || true
 cp "$SRC/data/pixmaps/vesper-logo.png" "$PIXMAPS/" 2>/dev/null || true
 cp "$SRC/data/xsessions/vesper.desktop" "$XSESS/vesper.desktop"
+# Badge della sessione per slick-greeter: lo cerca come <sessione>.svg|png in
+# /usr/share/slick-greeter/badges. Senza, mostrava il badge "sconosciuto" (un
+# disco bianco vuoto) e il marchio non si vedeva mai al login.
+mkdir -p "$BADGES"
+cp "$SRC/data/greeter/vesper-badge.svg" "$BADGES/vesper.svg"
+cp "$SRC/data/greeter/vesper-badge.png" "$BADGES/vesper.png"
 cp "$SRC/data/applications/"*.desktop "$APPS/"
 
 # --- permessi: cartelle 755, dati 644, comandi 755 -----------------------
@@ -250,4 +260,10 @@ if [ "$PREFIX" = "${XDG_DATA_HOME:-$HOME/.local}" ]; then
   echo "Installazione utente: assicurati che $PREFIX/bin sia nel PATH."
   echo "La voce di sessione è in $PREFIX/share/xsessions: alcuni display"
   echo "manager leggono solo /usr/share/xsessions (allora installa con sudo)."
+fi
+if [ "$PREFIX" != /usr ] && [ -d /usr/share/slick-greeter/badges ]; then
+  echo
+  echo "Nota: slick-greeter cerca l'icona della sessione solo in"
+  echo "/usr/share/slick-greeter/badges: con --prefix=/usr (o il pacchetto .deb)"
+  echo "al login compare il marchio di Vesper invece del disco vuoto."
 fi

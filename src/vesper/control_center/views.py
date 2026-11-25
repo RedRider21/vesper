@@ -3202,10 +3202,8 @@ def open_appearance(_btn=None):
             _mm.coordina_con_skin(tid if pt_coord.get_active() else "profile")
         except Exception:                 # noqa: BLE001
             pass
-        try:                              # riavvio comunque per sicurezza.
-            panelcfg.restart_panel()
-        except Exception:                 # noqa: BLE001
-            pass
+        # niente riavvio della barra: la skin si ricarica a caldo (sorvegliante
+        # in vesper.common); il riavvio la faceva sparire per mezzo secondo
         pt_status.set_text(_t("v.pt.applied") % tid)
     # collega DOPO set_active cosi' l'apertura della finestra non riavvia la barra
     pt_combo.connect("changed", pt_changed)

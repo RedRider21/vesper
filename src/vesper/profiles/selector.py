@@ -9,7 +9,6 @@ sorvegliati da vesper.common, che li ricarica a caldo).
 """
 from __future__ import annotations
 
-import subprocess
 import sys
 
 import gi
@@ -221,15 +220,10 @@ class Selector(Gtk.Window):
 
     def _on_apply(self, _btn):
         model.activate_preset(self._selected)
-        # Il pannello è un processo a sé: va riavviato perché rilegga l'accent e
-        # il nome del preset. Il riavvio passa da vesper-panel-restart, il cui
-        # argv NON contiene il pattern del pkill (altrimenti si autouccide).
-        try:
-            subprocess.Popen(["vesper-panel-restart"],
-                             stdout=subprocess.DEVNULL, stderr=subprocess.DEVNULL,
-                             start_new_session=True)
-        except OSError:
-            pass
+        # Niente riavvio del pannello: accento, skin e chiaro/scuro li
+        # ricaricano a caldo i sorveglianti di vesper.common, e il nome del
+        # preset si rilegge a ogni apertura del menu. Il riavvio faceva
+        # sparire la barra per circa mezzo secondo a ogni cambio.
         self.destroy()
 
 

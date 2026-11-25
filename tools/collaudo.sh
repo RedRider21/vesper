@@ -6,6 +6,7 @@
 #
 #   tools/collaudo.sh            controlli statici + sessione vera nel container
 #   tools/collaudo.sh --statico  solo i controlli statici (veloce, niente container)
+#   tools/collaudo.sh --popup [preset[:skin] ...]   foto dei popup della barra
 #
 # 1. Controlli statici sull'host: traduzioni (check-i18n), sintassi di tutti i
 #    .py e degli script sh, segnaposto rimasti nei temi generati, file privati
@@ -54,6 +55,18 @@ if (cd "$ROOT" && git ls-files | grep -qE '^docs/privato/|^Appunti'); then
   riga KO "file privati tracciati da git (docs/privato, appunti)"
 else riga OK "nessun file privato tracciato da git"; fi
 
+# campionario dei popup della barra, da guardare a occhio
+if [ "${1:-}" = "--popup" ]; then
+  shift
+  [ $# -gt 0 ] || set -- cyan bianco cyan:light ambra:amber
+  rm -rf "$BASE"; mkdir -p "$BASE/out"
+  podman run --rm --network none --user "$(id -u):$(id -g)" --userns=keep-id \
+    --shm-size=256m --security-opt seccomp=unconfined --security-opt label=disable \
+    -v "$ROOT:/vesper:ro" -v "$BASE/out:/out" \
+    "$IMG" timeout 600 sh /vesper/tools/collaudo/popup.sh "$@" >"$BASE/out/popup.log" 2>&1
+  ls "$BASE"/out/popup-*.png 2>/dev/null
+  exit 0
+fi
 [ "${1:-}" = "--statico" ] && { [ $KO = 0 ] && echo "ESITO: OK" || echo "ESITO: KO"; exit $KO; }
 
 echo "== sessione nel container ($IMG)"

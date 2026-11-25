@@ -123,6 +123,19 @@ if [ "$n" -eq 0 ]; then ok "preset: la barra non sparisce"; else ko "preset: la 
 attendi 10 barra && ok "preset: barra presente dopo il cambio" || ko "preset: barra presente dopo il cambio" "barra non tornata"
 sleep 1; foto 02-preset-lime
 
+# --- 5b. cambio preset dal SELETTORE (come il pulsante "Applica"), con
+# passaggio a interfaccia chiara: la barra deve restare e cambiare colore
+crop_barra() { import -window root -crop ${W}x40+0+$((H-40)) "$1" 2>/dev/null; }
+crop_barra /tmp/barra-prima.png
+n=$(buchi_barra vpy 'from vesper.profiles import model as m; m.activate_preset("bianco")')
+if [ "$n" -eq 0 ]; then ok "selettore: la barra non sparisce (preset bianco)"; else ko "selettore: la barra non sparisce (preset bianco)" "assente per ~$((n*100)) ms"; fi
+sleep 1; crop_barra /tmp/barra-dopo.png
+d=$(compare -metric AE /tmp/barra-prima.png /tmp/barra-dopo.png /dev/null 2>&1 | cut -d' ' -f1 | cut -d. -f1)
+if [ "${d:-0}" -gt 1000 ] 2>/dev/null; then ok "selettore: la barra si ricolora a caldo"
+else ko "selettore: la barra si ricolora a caldo" "pixel diversi: ${d:-?}"; fi
+foto 02b-preset-bianco
+vesper-profile set lime >/dev/null 2>&1; sleep 1
+
 # --- 6. famiglia macOS scuro -----------------------------------------------------
 vesper-profile theme mac-scuro >/dev/null 2>&1
 grep -q '<name>Vesper-Mac-Scuro-lime</name>' "$CONF/openbox-rc.xml" && ok "temi: macOS scuro nel colore del preset" \
@@ -144,11 +157,16 @@ sleep 1
 
 # --- 8. skin coordinata e "vince l'ultima scelta" -------------------------------
 # come fa il Centro di Controllo quando si sceglie una skin (con Coordina)
-n=$(buchi_barra vpy 'from vesper import paneltheme as p, panelcfg as c
+crop_barra /tmp/barra-prima.png
+n=$(buchi_barra vpy 'from vesper import paneltheme as p
 from vesper.profiles import model as m
-p.set_theme("amber"); m.coordina_con_skin("amber"); c.restart_panel()')
+p.set_theme("amber"); m.coordina_con_skin("amber")')
 if [ "$n" -eq 0 ]; then ok "skin: la barra non sparisce"; else ko "skin: la barra non sparisce" "assente per ~$((n*100)) ms"; fi
 attendi 10 barra && ok "skin: barra presente dopo il cambio" || ko "skin: barra presente dopo il cambio" "barra non tornata"
+sleep 1; crop_barra /tmp/barra-dopo.png
+d=$(compare -metric AE /tmp/barra-prima.png /tmp/barra-dopo.png /dev/null 2>&1 | cut -d' ' -f1 | cut -d. -f1)
+if [ "${d:-0}" -gt 1000 ] 2>/dev/null; then ok "skin: la barra si ricolora a caldo"
+else ko "skin: la barra si ricolora a caldo" "pixel diversi: ${d:-?}"; fi
 sleep 1; foto 04-skin-ambra
 [ "$(cat "$CONF/skin-coord" 2>/dev/null)" = ambra ] && ok "skin: coordinata col preset piu' vicino (ambra)" \
   || ko "skin: coordinata col preset piu' vicino (ambra)" "skin-coord='$(cat "$CONF/skin-coord" 2>/dev/null)'"

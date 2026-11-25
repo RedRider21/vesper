@@ -23,13 +23,13 @@ login.
 **Debian, Ubuntu, Linux Mint** — pacchetto `.deb`:
 
 ```sh
-sudo apt install ./vesper_0.6.8_all.deb     # scarica il .deb dalle release
+sudo apt install ./vesper_0.7.0_all.deb     # scarica il .deb dalle release
 ```
 
 **Da sorgenti, su qualsiasi distribuzione:**
 
 ```sh
-tar xzf vesper-0.6.8.tar.gz && cd vesper-0.6.8
+tar xzf vesper-0.7.0.tar.gz && cd vesper-0.7.0
 sudo ./install.sh                 # in /usr/local
 sudo ./install.sh --prefix=/usr   # in /usr (come i pacchetti della distro)
 ./install.sh --user               # in ~/.local, senza root
@@ -38,6 +38,44 @@ sudo ./install.sh --uninstall     # rimuove (la configurazione utente resta)
 
 Poi si esce dalla sessione e al login si sceglie **Vesper** nell'elenco delle
 sessioni.
+
+### Provarlo senza installarlo
+
+```sh
+tools/prova-xephyr.sh                         # il desktop in una finestra
+VESPER_PROVA_TEMA=mac tools/prova-xephyr.sh   # partendo dalle finestre macOS chiare
+tools/prova-xephyr.sh --stop                  # chiude tutto
+```
+
+La sessione gira in un container (podman) e disegna in una finestra Xephyr:
+il progetto è montato in sola lettura, la home di prova è temporanea, senza
+rete, e il desktop vero non viene toccato.
+
+## Novità della 0.7.0
+
+Portate dal desktop di NexusSec OS, da cui Vesper è nato, più correzioni:
+
+- **Finestre stile macOS**, chiare e scure, nel colore di ogni preset:
+  semafori a sinistra, titolo centrato, icona del programma a destra, angoli
+  arrotondati e ombre (picom, solo con una scheda video vera).
+- **Aspetto coordinato**: la skin del pannello colora anche l'interno delle
+  finestre; con *Coordina*, icone e sfondo seguono il preset di colore più
+  vicino e le finestre macOS passano a chiare o scure.
+- **Barra**: menu col tasto destro sui pulsanti delle finestre (riduci,
+  massimizza, sempre in primo piano, sposta su un altro desktop, chiudi); solo
+  le finestre del desktop corrente; popup che compaiono già al loro posto.
+- **Bluetooth**: dispositivi senza nome riconosciuti dal produttore e nascosti
+  di default (come su Android/iOS), MAC sotto il nome, pulsanti leggibili.
+- **Editor**: barra strumenti e menu rifatti, versione chiara per i preset chiari.
+- **Prompt del terminale** finalmente attivo (senza toccare `~/.bashrc`) e
+  nuovo stile «del sistema», il predefinito.
+- **Lingua**: senza una scelta esplicita segue quella del sistema; quella
+  scelta vale per tutta la sessione, menu di Openbox compresi.
+- **Temi finestre**: titoli e pulsanti leggibili su ogni colore, finestre
+  inattive Retro di nuovo visibili, menu del tasto destro più arioso.
+- **Correzioni**: il menu di Openbox ora si carica davvero; l'avvio
+  automatico di sistema di picom non scavalca più Vesper; più rigore
+  sull'isolamento (vedi *Convive con gli altri desktop*).
 
 ### Pacchetti
 
@@ -122,6 +160,7 @@ serve.
 | `vesper-ram` | dove va la memoria: quanto il desktop, quanto gli altri programmi, quanto la cache |
 | `vesper-ripara` | rimette il tema, le icone e le scorciatoie che c'erano prima di Vesper |
 | `vesper-zram` | memoria compressa: stato e attivazione, sempre su richiesta esplicita |
+| `vesper-prompt` | stile del prompt nei terminali della sessione (del sistema, Vesper, Parrot, minimale) |
 | altri `vesper-*` | audio, batteria, bluetooth, luminosità, appunti, data/ora, scorciatoie, lingua, luce blu, schermi, schermate, sfondo, terminale, wifi |
 
 Tutti i comandi trovano da soli il pacchetto Python e i dati a partire da dove
@@ -133,9 +172,17 @@ prefisso qualunque o direttamente dal repo dei sorgenti.
 Un **preset** è un look completo: colore d'accento, sfondo, tema icone e stile
 finestre. Cambiandolo si ricolorano **subito** barra, menu, Centro di Controllo
 e finestre già aperte — i CSS generati sono sorvegliati e ricaricati a caldo.
-Di serie ci sono 14 preset, uno per colore (cyan, acquamarina, verde, lime,
-giallo, ambra, arancio, rosso, rosa, magenta, viola, indaco, blu, argento),
-ognuno col proprio sfondo.
+Di serie ci sono 15 preset, uno per colore (cyan, acquamarina, verde, lime,
+giallo, ambra, arancio, rosso, rosa, magenta, viola, indaco, blu, argento e
+bianco, chiaro), ognuno col proprio sfondo.
+
+La **skin del pannello** (Centro di Controllo → *Aspetto coordinato*) può
+avere colori fissi, indipendenti dal preset: colora barra, menu, popup e
+l'interno delle finestre di Vesper. Con la casella **Coordina** anche icone e
+sfondo seguono la skin (quelli del preset di colore più vicino) e le finestre
+macOS diventano chiare o scure secondo il suo tono. Scegliere poi un preset
+riporta tutto al preset. Le scelte fatte a mano (set di icone, sfondo) restano
+sempre prioritarie.
 
 Gli sfondi si rigenerano con `python3 tools/make-wallpapers.py` (anche a
 risoluzioni diverse: `--size 2560x1440`), le skin del pannello con
@@ -149,11 +196,27 @@ disponibile:
 - se sul sistema c'è **marco** (o metacity), la sessione parte con quello e le
   finestre hanno le **decorazioni vere di Mint** (i temi `metacity-1` di
   Mint-Y/Mint-L), col colore del preset attivo;
-- altrimenti si usa **Openbox** con le decorazioni di Vesper: barra piatta,
-  titolo centrato, pulsanti completi a destra e il chiudi colorato.
+- altrimenti si usa **Openbox** con le decorazioni di Vesper, in sei famiglie
+  tutte nel colore del preset:
+
+  | Famiglia | Aspetto |
+  |---|---|
+  | **Core** (predefinita) | barra piatta scura, pulsanti completi a destra, chiudi colorato |
+  | **Retro** | flat chiaro, dal tema 1977 |
+  | **Cards** | barra graphite, pulsanti a sfera a sinistra |
+  | **macOS chiaro / scuro** | semafori rosso/giallo/verde a sinistra (simbolo al passaggio del mouse), titolo centrato, icona del programma a destra |
+  | **Arc** chiaro/scuro | i classici pulsanti tondi |
+
+  Con macOS e Cards gli **angoli arrotondati e le ombre** li aggiunge picom.
+  Vesper lo avvia da sé, con la sua configurazione (`data/picom.conf`, o una
+  propria in `~/.config/vesper/picom.conf`), e solo con una scheda video vera
+  (Intel, AMD, nouveau): nelle macchine virtuali il rendering software dava
+  finestre bianche o nere. Con un driver proprietario si forza con
+  `VESPER_PICOM_FORZA=1`.
 
 Si cambia quando si vuole: `vesper-wm marco`, `vesper-wm openbox`, oppure dal
-Centro di Controllo → *Aspetto coordinato*. Openbox non sa leggere i temi di
+Centro di Controllo → *Aspetto coordinato*; la famiglia con
+`vesper-profile theme mac-scuro` (o `core`, `retro`, `cards`, `mac`). Openbox non sa leggere i temi di
 Mint (sono in un formato diverso): è il motivo per cui la scelta esiste.
 
 ## File manager
@@ -197,6 +260,19 @@ Vesper le cambia perché è un ambiente desktop e deve vestirsi, ma:
 - la sessione **fotografa i valori all'avvio e li rimette all'uscita**, così
   rientrando nel proprio desktop lo si ritrova com'era.
 
+Lo stesso vale per il resto:
+
+- **picom**: Vesper avvia il proprio, con la propria configurazione, solo
+  nella sua sessione, e ferma solo quello (per PID); un picom avviato
+  dall'utente non viene né duplicato né spento. La voce di avvio automatico
+  che il pacchetto picom installa in `/etc/xdg/autostart` viene saltata.
+- **prompt**: lo stile scelto (`vesper-prompt`) vale solo nei terminali della
+  sessione Vesper, attraverso `PROMPT_COMMAND`; `~/.bashrc` non si tocca.
+- **lingua**: quella di Vesper passa ai programmi della sessione con
+  `LANGUAGE`, senza cambiare `LANG` né le impostazioni di sistema.
+- **scorciatoie e Openbox**: `vesper-keys` modifica le scorciatoie di marco,
+  e il Centro di Controllo ricarica Openbox, solo dentro la sessione Vesper.
+
 Chi ha provato una versione fino alla 0.4.1, che scriveva senza salvare prima,
 rimette le cose a posto con **`vesper-ripara`**.
 
@@ -224,8 +300,7 @@ hash PBKDF2 in un file 600.
 
 Il desktop è funzionante e installabile. Restano da fare: schermata di login
 (greeter), demone notifiche proprio, agente PolicyKit proprio, daemon XSettings,
-automount dei dispositivi rimovibili, temi icone per preset e pacchetti
-nativi (deb/rpm/apk). Vedi [`docs/porting-plan.md`](docs/porting-plan.md).
+automount dei dispositivi rimovibili, set di icone proprio. Vedi [`docs/porting-plan.md`](docs/porting-plan.md).
 
 ## Licenza e autore
 

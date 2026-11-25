@@ -3,7 +3,7 @@
 > Il porting del desktop è **fatto**. Questo documento tiene il conto di cosa è
 > stato portato, cosa è stato volutamente lasciato fuori e cosa manca ancora
 > per stare alla pari con gli altri ambienti desktop.
-> Ultimo aggiornamento: 2026-09-19.
+> Ultimo aggiornamento: 2026-11-25 (0.7.0).
 
 ## 1. Fatto
 
@@ -17,6 +17,7 @@
 | 6. Centro di Controllo | 19 viste native + salvaschermo con blocco schermo | `src/vesper/control_center/`, `src/vesper/screensaver/` |
 | 7. Aspetto coordinato | icone del colore del preset, temi finestre Retro/Cards per ogni preset, 1977 e Arc inclusi | `tools/make-openbox-themes.py`, `data/themes/` |
 | 8. Distribuzione | `.deb` pulito secondo lintian, tarball, PKGBUILD, spec RPM, APKBUILD | `tools/make-deb.sh`, `packaging/` |
+| 9. Allineamento con NexusSec (0.7.0) | migliorie fatte nel frattempo sul desktop della distro: temi finestre macOS chiaro/scuro per preset, aspetto coordinato con la skin, menu delle finestre nella barra, Bluetooth (dispositivi senza nome), editor, prompt colorato, picom solo con GPU vera, menu del window manager più arioso | `tools/make-mac-themes.py`, `src/vesper/profiles/model.py`, `src/vesper/panel/panel.py`, `bin/vesper-bluetooth`, `data/skel/shrc` |
 
 ## 2. Lasciato fuori di proposito
 
@@ -24,8 +25,12 @@ Roba della distribuzione di origine, non di un ambiente desktop: arsenale di
 strumenti e relativo catalogo, profili di sicurezza, firewall, Tor/anonimato,
 MAC spoofing, panico/wipe, write-blocker forense, gestione pacchetti apk,
 gestione utenti, hardening, dischi e casi forensi, OSINT, assistente IA,
-persistenza e installazione della distro, splash di avvio, demone
-"launcher caldo".
+persistenza e installazione della distro, splash di avvio. Dall'allineamento
+della 0.7.0 restano fuori anche: login grafico in stile Mint (legato a
+`chkpwd`/Alpine), splash animata, finestra di benvenuto, procedure guidate,
+registro degli incarichi, icone tinte del menu Openbox (Vesper ha già il suo
+menu GTK del desktop con icone e colori del preset), «mantieni il mio aspetto»
+dei profili operativi.
 
 ## 3. Ancora da fare
 

@@ -133,10 +133,41 @@ vesper/
 - **Cambio di risoluzione**: certi driver (schede video virtuali) accettano
   `--mode` senza fare nulla finché non si dichiara anche `--fb`. Si verifica
   l'esito e si ritenta, invece di lasciare all'utente il «secondo tentativo».
+- **Menu di Openbox**: in `rc.xml` va il percorso ASSOLUTO
+  (`<file>~/.config/vesper/openbox-menu.xml</file>`, lo scrive
+  `vesper-session`). Col nome relativo Openbox lo cerca solo in
+  `~/.config/openbox` e `/etc/xdg/openbox`, e il menu non si caricava mai.
+- **picom**: lo gestisce SOLO `model._manage_picom` — dentro la sessione, con
+  la nostra configurazione (`~/.config/vesper/picom.conf` o `data/picom.conf`,
+  MAI `~/.config/picom.conf`), solo con una GPU vera (`_gpu_3d`: i915, xe,
+  amdgpu, radeon, nouveau; `VESPER_PICOM_FORZA=1` per forzare), backend GLX e
+  niente ripiego xrender (finestre bianche in VirtualBox). Si ferma per PID
+  (`~/.cache/vesper/picom.pid`), un picom altrui non si tocca. Il pacchetto
+  picom installa `/etc/xdg/autostart/picom.desktop`: `autostart_entries` salta
+  i compositor nelle voci di SISTEMA (quelle utente restano).
+- **Prompt**: niente aggancio in `~/.bashrc`. `vesper-session` esporta
+  `PROMPT_COMMAND` (bash) e `ENV` (ash) che caricano `data/skel/shrc`, il quale
+  agisce solo con `VESPER_SESSION=1`. Gira a OGNI prompt: solo builtin, PS1
+  ricalcolato quando cambiano stile o accento. Stile predefinito «system».
+- **Lingua della sessione**: si passa con `LANGUAGE`, MAI forzando `LANG`: una
+  locale non generata fa ripiegare tutto su "C" e gettext ignora LANGUAGE.
+  Senza `~/.config/vesper/lang` vale la lingua di sistema (`i18n.system_lang`).
+- **`VESPER_DATA_DIRS`** è separata da DUE PUNTI: nei cicli shell spezzarla con
+  `tr ":" " "`, non con gli spazi.
+- **Testo sopra l'accento** (titoli Retro, voce attiva dei menu): scuro sugli
+  accenti chiari, bianco sugli altri (`@ON_ACCENT@` in make-openbox-themes.py).
+  Un colore fisso è illeggibile su metà dei preset.
 - **Luce blu**: gamma via `xrandr`. L'overlay traslucido è stato SCARTATO: in VM
   senza compositore diventa opaco e copre lo schermo.
 
 ## Come si prova senza rompere niente
+
+- **Prova completa in finestra**: `tools/prova-xephyr.sh` (container podman con
+  Openbox/picom + Xephyr, progetto in sola lettura, home temporanea in
+  `$XDG_RUNTIME_DIR/vesper-prova`, `--stop` per chiudere). Immagine predefinita
+  `localhost/nxs-prova` (quella di NexusSec). Lì picom gira in xrender senza
+  use-damage solo per vedere gli angoli: LXTerminal (VTE) può lasciare strisce
+  al passaggio sui pulsanti, artefatto della prova.
 
 - X annidato: `Xephyr :7 -screen 1280x800 -ac &` e poi `DISPLAY=:7 ...`.
   Avviare Xephyr e il comando nello STESSO comando di shell (altrimenti Xephyr
@@ -151,7 +182,9 @@ vesper/
   per il tema di marco/metacity: in prova si esporta `VESPER_NO_GSETTINGS=1`,
   altrimenti si cambiano tema e pulsanti del desktop vero dell'utente
   (successo: tema marco e button-layout modificati e poi ripristinati a mano).
-- Chiudere sempre le finestre Xephyr a fine prova (`pkill Xephyr`).
+- Chiudere sempre le finestre Xephyr a fine prova: `tools/prova-xephyr.sh --stop`
+  oppure `kill` del PID salvato all'avvio (MAI `pkill Xephyr`: l'utente può
+  averne una sua aperta).
 - **MAI `pkill` per NOME su processi che esistono anche nella sessione vera**
   dell'utente (`marco`, `metacity`, `openbox`, `dunst`, ...): si uccide il suo
   desktop, non quello di prova. Successo con `pkill -f "^marco"`, che ha

@@ -8,7 +8,7 @@
     vesper-profile set <id>        applica un preset
     vesper-profile apply           riapplica il preset corrente (avvio sessione)
     vesper-profile style [stile]   stile finestre: flat | vetro | telaio | aero
-    vesper-profile theme [fam]     famiglia tema finestre: core | retro | cards
+    vesper-profile theme [fam]     famiglia tema finestre: core | retro | cards | mac | mac-scuro
                                    (oppure raw:<NomeTema> per un tema fisso)
 
 Nessuna dipendenza GTK: si può usare da terminale e dagli script di sessione.

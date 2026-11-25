@@ -103,10 +103,24 @@
     </div>
     <div class="scheda">
       <h3>Cinque lingue</h3>
-      <p>Italiano, inglese, francese, spagnolo e tedesco: si cambia dal menu o
-         dal Centro di Controllo, e il pannello si riavvia da solo.</p>
+      <p>Italiano, inglese, francese, spagnolo e tedesco. Di serie segue la
+         lingua del sistema; si cambia dal menu o dal Centro di Controllo e vale
+         per tutta la sessione, menu delle finestre compresi.</p>
     </div>
   </div>
+</section>
+
+<section id="novita">
+  <h2>Novità della 0.7.0</h2>
+  <ul class="intro">
+    <li><strong>Finestre stile macOS</strong>, chiare e scure, nel colore di ogni preset.</li>
+    <li><strong>Aspetto coordinato</strong>: la skin colora anche l'interno delle finestre e, se vuoi, icone e sfondo.</li>
+    <li><strong>Barra</strong>: menu col tasto destro sulle finestre aperte, solo quelle del desktop corrente.</li>
+    <li><strong>Bluetooth</strong>: i dispositivi senza nome si riconoscono dal produttore e restano nascosti finché non li chiedi.</li>
+    <li><strong>Editor</strong> rinnovato, <strong>prompt del terminale</strong> a scelta, lingua che segue il sistema.</li>
+    <li>Più rigore nel convivere con gli altri desktop: picom, prompt, lingua e scorciatoie restano dentro la sessione Vesper.</li>
+  </ul>
+  <p class="intro">Per provarlo senza installarlo: <code>tools/prova-xephyr.sh</code> apre il desktop in una finestra.</p>
 </section>
 
 <section id="schermate">
@@ -170,17 +184,27 @@
     Vesper sceglie da solo il modo migliore di disegnarle: se sul sistema c'è
     <code>marco</code> (o <code>metacity</code>) usa le <strong>decorazioni vere
     di Mint</strong> nel colore del preset; altrimenti usa <strong>Openbox</strong>
-    con le decorazioni di Vesper. Si cambia quando si vuole con
-    <code>vesper-wm</code> o dal Centro di Controllo.
+    con le decorazioni di Vesper, in sei famiglie tutte nel colore del preset:
+    Core, Retro, Cards, Arc e le nuove <strong>macOS chiaro e scuro</strong>,
+    con i semafori a sinistra, il titolo centrato e l'icona del programma a
+    destra. Angoli arrotondati e ombre li aggiunge picom, che Vesper avvia da
+    sé solo con una scheda video vera. Si cambia quando si vuole con
+    <code>vesper-wm</code>, <code>vesper-profile theme</code> o dal Centro di
+    Controllo.
+  </p>
+  <p class="intro">
+    La <strong>skin del pannello</strong> può avere colori propri: colora barra,
+    menu e l'interno delle finestre di Vesper, e con <em>Coordina</em> si porta
+    dietro anche icone, sfondo e finestre macOS chiare o scure.
   </p>
 </section>
 
 <section id="installazione">
   <h2>Installazione</h2>
   <p class="intro">Debian, Ubuntu, Linux Mint — pacchetto <code>.deb</code>:</p>
-<pre>sudo apt install ./vesper_0.3.0_all.deb</pre>
+<pre>sudo apt install ./vesper_0.7.0_all.deb</pre>
   <p class="intro">Qualsiasi distribuzione, dai sorgenti:</p>
-<pre>tar xzf vesper-0.3.0.tar.gz &amp;&amp; cd vesper-0.3.0
+<pre>tar xzf vesper-0.7.0.tar.gz &amp;&amp; cd vesper-0.7.0
 sudo ./install.sh --prefix=/usr</pre>
   <p class="intro">
     Poi si esce dalla sessione e al login si sceglie <strong>Vesper</strong>

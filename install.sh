@@ -175,6 +175,7 @@ if [ -d "$SRC/data/themes" ]; then
   cp "$SRC/data/themes/ATTRIBUZIONI.md" "$SHARE/ATTRIBUZIONI-temi.md" 2>/dev/null || true
 fi
 [ -f "$SRC/data/presets.json" ] && cp "$SRC/data/presets.json" "$SHARE/presets.json"
+[ -f "$SRC/data/picom.conf" ] && cp "$SRC/data/picom.conf" "$SHARE/picom.conf"
 
 # --- icone, sessione, voci di menu ----------------------------------------
 cp "$SRC/data/icons/hicolor/scalable/apps/vesper-logo.svg" "$ICONS/scalable/apps/"

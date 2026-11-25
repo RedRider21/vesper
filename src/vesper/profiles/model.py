@@ -60,8 +60,11 @@ FALLBACK_OB_THEME = "Vesper-Core"
 # Cards (stile macOS) = pulsanti a SINISTRA (C=chiudi, I=minimizza, M=massimizza).
 OB_TITLELAYOUT_DEFAULT = "NLIMC"
 OB_TITLELAYOUT_LEFT = "CIMLN"     # N = icona del programma, a destra
-# Compositor per angoli arrotondati/vetro reale: attivo con Cards o stile aero.
-PICOM_CONF = HOME / ".config" / "picom.conf"
+# Compositor per angoli arrotondati/vetro reale: attivo con le famiglie a
+# pulsanti sinistri (macOS, Cards) o con lo stile aero. La configurazione e'
+# SEMPRE la nostra (~/.config/vesper/picom.conf se l'utente ne ha fatta una,
+# altrimenti data/picom.conf), mai ~/.config/picom.conf dell'utente.
+PICOM_PID = paths.cache("picom.pid")
 
 DEFAULT_ACCENT = "#00e5ff"
 
@@ -756,30 +759,90 @@ def _picom_wanted() -> bool:
         return False
 
 
-def _manage_picom(enable: bool) -> None:
-    """Compositor per gli angoli arrotondati dello stile Cards. Avvia picom se
-    serve (e non gira gia'), lo ferma altrimenti. Best-effort: se picom non c'e'
-    o il backend GLX non e' disponibile (certe VM), non blocca nulla."""
-    try:
-        running = subprocess.run(["pgrep", "-x", "picom"],
-                                 stdout=subprocess.DEVNULL,
-                                 stderr=subprocess.DEVNULL).returncode == 0
-    except (FileNotFoundError, OSError):
-        running = False
-    if enable and not running:
+# Driver DRM delle schede video VERE con accelerazione 3D. Solo con queste si
+# avvia il compositor. Nelle VM (vmwgfx di VirtualBox/VMware, bochs/qxl/cirrus
+# di QEMU) e senza driver (simpledrm, vesa) l'OpenGL e' software (llvmpipe):
+# picom rendeva le finestre BIANCHE (VirtualBox) e NERE quelle col motore web
+# (QEMU). Collaudato su NexusSec, 2026-11-22.
+_GPU_3D = ("i915", "xe", "amdgpu", "radeon", "nouveau")
+
+
+def _gpu_3d() -> bool:
+    """True se c'e' una scheda video vera con driver 3D (vedi _GPU_3D).
+    VESPER_PICOM_FORZA=1 salta il controllo (driver proprietari, es. nvidia)."""
+    if os.environ.get("VESPER_PICOM_FORZA") == "1":
+        return True
+    import glob
+    for d in glob.glob("/sys/class/drm/card[0-9]*/device/driver"):
         try:
-            cmd = ["picom", "-b"]
-            if PICOM_CONF.is_file():
-                cmd += ["--config", str(PICOM_CONF)]
-            subprocess.Popen(cmd, stdout=subprocess.DEVNULL,
-                             stderr=subprocess.DEVNULL)
+            if os.path.basename(os.readlink(d)) in _GPU_3D:
+                return True
+        except OSError:
+            continue
+    return False
+
+
+def _picom_conf() -> Path | None:
+    mio = paths.config("picom.conf")
+    return mio if mio.is_file() else paths.find_data("picom.conf")
+
+
+def _picom_nostro() -> int:
+    """PID del picom avviato da Vesper se gira ancora, altrimenti 0. Si
+    controlla anche la riga di comando: un PID riciclato non va ucciso."""
+    try:
+        pid = int(PICOM_PID.read_text().strip())
+        with open(f"/proc/{pid}/cmdline", "rb") as f:
+            argv = f.read().split(b"\0")
+        if os.path.basename(argv[0].decode(errors="replace")) == "picom":
+            return pid
+    except (OSError, ValueError, IndexError):
+        pass
+    return 0
+
+
+def _picom_altrui() -> bool:
+    """C'e' un picom che NON e' il nostro (autostart dell'utente, ecc.)?"""
+    try:
+        out = subprocess.run(["pgrep", "-u", str(os.getuid()), "-x", "picom"],
+                             capture_output=True, text=True).stdout.split()
+    except (FileNotFoundError, OSError):
+        return False
+    nostro = str(_picom_nostro())
+    return any(p != nostro for p in out)
+
+
+def _manage_picom(enable: bool) -> None:
+    """Accende o spegne il compositor di Vesper. Regole (isolamento):
+    - solo DENTRO la sessione Vesper: fuori il display e' di un altro desktop;
+    - solo con una scheda video vera (_gpu_3d), niente ripiego software;
+    - un picom che non abbiamo avviato noi non si tocca e non si duplica;
+    - si ferma SOLO il nostro, per PID: mai pkill per nome.
+    Best-effort: se picom non c'e' non blocca nulla."""
+    if not paths.sessione_vesper():
+        return
+    pid = _picom_nostro()
+    if enable and not pid:
+        conf = _picom_conf()
+        if not _gpu_3d() or conf is None or _picom_altrui():
+            return
+        try:
+            p = subprocess.Popen(["picom", "--config", str(conf)],
+                                 stdout=subprocess.DEVNULL,
+                                 stderr=subprocess.DEVNULL,
+                                 start_new_session=True)
+            paths.ensure_cache()
+            PICOM_PID.write_text(str(p.pid) + "\n")
         except (FileNotFoundError, OSError):
             pass
-    elif not enable and running:
+    elif not enable and pid:
         try:
-            subprocess.run(["pkill", "-x", "picom"],
-                           stdout=subprocess.DEVNULL, stderr=subprocess.DEVNULL)
-        except (FileNotFoundError, OSError):
+            os.kill(pid, 15)
+        except OSError:
+            pass
+        try:
+            PICOM_PID.unlink()
+        except OSError:
             pass
 
 

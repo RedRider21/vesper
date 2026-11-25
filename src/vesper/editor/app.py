@@ -115,6 +115,13 @@ def _mix(colore: str, fattore: float) -> str:
                               min(255, int(b * fattore)))
 
 
+def _sfuma(a: str, b: str, t: float) -> str:
+    """Colore a mescolato con b: t=1 -> a, t=0 -> b."""
+    ra = [int(a.lstrip("#")[i:i + 2], 16) for i in (0, 2, 4)]
+    rb = [int(b.lstrip("#")[i:i + 2], 16) for i in (0, 2, 4)]
+    return "#%02x%02x%02x" % tuple(round(x * t + y * (1 - t)) for x, y in zip(ra, rb))
+
+
 def _chiaro() -> bool:
     try:
         from vesper import palette
@@ -170,22 +177,85 @@ def _schema_colore(chiaro: bool):
 
 
 def _css_editor() -> bytes:
-    """Ritocchi CSS specifici dell'editor (schede, barre, campo ricerca)."""
+    """Ritocchi CSS dell'editor: menu leggibili col colore del preset, barre,
+    schede e campo ricerca (da NexusSec). Caricato a priorita' USER, sopra la
+    skin del pannello, che altrimenti dava ai menu un testo troppo scuro.
+    Colori dal preset attivo via @AC@ e derivati, in versione chiara o scura
+    secondo la modalita' dell'interfaccia."""
     ac = _accento()
-    return ("""
-    .vesper-editor-barra { padding: 4px 6px; }
-    .vesper-editor-stato { padding: 2px 8px; font-size: 90%%; }
-    .vesper-editor-stato label { color: alpha(currentColor, 0.75); }
-    .vesper-editor-modificato { color: %s; font-weight: bold; }
-    .vesper-editor-trova entry { min-width: 220px; }
+    css = """
+    /* ---- barra strumenti ---- */
+    .vesper-editor-barra { padding: 6px 8px; border-bottom: 1px solid @LINE@;
+        background: @BAR@; }
+    .vesper-editor-barra button { background: none; border: 1px solid transparent;
+        border-radius: 8px; padding: 6px; }
+    .vesper-editor-barra button:hover { background: @TINT@; border-color: @LINE@; }
+    .vesper-editor-barra button image { color: @INK@; }
+    .vesper-editor-barra button:hover image { color: @AC@; }
+    .vesper-tb-btn { min-width: 30px; min-height: 30px; padding: 4px; margin: 0 1px; }
+    .vesper-editor-barra separator { background: @LINE@; margin: 6px 4px; min-width: 1px; }
+    /* pill lingua/linguaggio a destra */
+    .vesper-lang-pill { padding: 3px 12px; border-radius: 12px; border: 1px solid @LINE@;
+        background: @TINT@; }
+    .vesper-lang-pill label { color: @DIM@; font-size: 90%; }
+    .vesper-lang-pill:hover { border-color: @AC@; }
+    .vesper-lang-pill:hover label { color: @AC@; }
+    .vesper-stato-sep { background: @LINE@; margin: 3px 2px; min-width: 1px; }
+
+    /* ---- schede ---- */
+    notebook header { background: @BAR@; }
+    notebook tab { padding: 5px 12px; border: none;
+        box-shadow: inset 0 -2px transparent; }
+    notebook tab:checked { box-shadow: inset 0 -2px @AC@; }
+    notebook tab label { color: @DIM@; }
+    notebook tab:checked label { color: @INK@; }
     .vesper-editor-tab button { padding: 0; margin: 0;
         min-width: 20px; min-height: 20px;
-        background: none; border: none; box-shadow: none;
-        opacity: 0.55; }
+        background: none; border: none; box-shadow: none; opacity: 0.55; }
     .vesper-editor-tab button:hover { opacity: 1; }
-    notebook tab { padding: 4px 8px; }
+
+    /* ---- barra di stato ---- */
+    .vesper-editor-stato { padding: 3px 10px; font-size: 90%; border-top: 1px solid @LINE@;
+        background: @BAR@; }
+    .vesper-editor-stato label { color: @DIM@; }
+    .vesper-editor-modificato { color: @AC@; font-weight: bold; }
+
+    /* ---- campo ricerca ---- */
+    .vesper-editor-trova { background: @BAR@; border-top: 1px solid @LINE@; }
+    .vesper-editor-trova entry { min-width: 220px; }
     .vesper-editor-trova.vesper-nulla entry { color: #ff5a8a; }
-    """ % ac).encode("ascii", "replace")
+
+    /* ---- MENU: testo leggibile e voce attiva col colore del preset ---- */
+    menu, .menu, menu.background { background-color: @MENU@;
+        border: 1px solid @LINE@; border-radius: 10px; padding: 6px; }
+    menu menuitem { padding: 7px 14px; border-radius: 7px; }
+    menu label { color: @INK@; }
+    menu menuitem label { color: @INK@; }
+    menu menuitem .vesper-val { color: @DIM@; }
+    menu menuitem:hover, menu menuitem:selected {
+        background-color: @AC@; background-image: none; }
+    menu menuitem:hover label, menu menuitem:selected label,
+    menu menuitem:hover .vesper-val, menu menuitem:selected .vesper-val {
+        color: @ON@; }
+    menu menuitem:disabled label { color: @DIM@; }
+    menu separator { background-color: @LINE@; margin: 4px 8px; }
+    menu check { min-width: 16px; min-height: 16px; }
+    menu menuitem:hover check, menu menuitem:selected check { color: @ON@; }
+    """
+    h = ac.lstrip("#")
+    luce = sum(w * int(h[i:i + 2], 16) for w, i in ((0.299, 0), (0.587, 2), (0.114, 4))) / 255
+    on = "#04121a" if luce > 0.55 else "#ffffff"      # testo sopra l'accento
+    if _chiaro():
+        subs = {"@AC@": ac, "@INK@": "#1b2733", "@DIM@": "#5b6b78",
+                "@LINE@": _sfuma(ac, "#ffffff", 0.35), "@MENU@": "#ffffff",
+                "@BAR@": "#f3f6f9", "@TINT@": "#e7eef4", "@ON@": on}
+    else:
+        subs = {"@AC@": ac, "@INK@": "#d4f3ff", "@DIM@": _mix(ac, 0.75),
+                "@LINE@": _mix(ac, 0.45), "@MENU@": "#0a1a26",
+                "@BAR@": "#0b1c2a", "@TINT@": "#12283a", "@ON@": on}
+    for k, v in subs.items():
+        css = css.replace(k, v)
+    return css.encode("ascii", "replace")
 
 
 # ---------------------------------------------------------------------------
@@ -534,15 +604,18 @@ class Editor(Gtk.Window):
             prov.load_from_data(_css_editor())
             Gtk.StyleContext.add_provider_for_screen(
                 Gdk.Screen.get_default(), prov,
-                Gtk.STYLE_PROVIDER_PRIORITY_APPLICATION + 1)
+                Gtk.STYLE_PROVIDER_PRIORITY_USER)
         except Exception:                           # noqa: BLE001
             pass
 
     def _bottone(self, icona, tooltip, callback):
         b = Gtk.Button(relief=Gtk.ReliefStyle.NONE)
-        b.add(Gtk.Image.new_from_icon_name(icona, Gtk.IconSize.LARGE_TOOLBAR))
+        img = Gtk.Image.new_from_icon_name(icona, Gtk.IconSize.MENU)
+        img.set_pixel_size(18)
+        b.add(img)
         b.set_tooltip_text(tooltip)
         b.set_focus_on_click(False)
+        b.get_style_context().add_class("vesper-tb-btn")
         b.connect("clicked", lambda _b: callback())
         return b
 
@@ -569,14 +642,24 @@ class Editor(Gtk.Window):
         # menu delle preferenze e delle azioni meno frequenti
         menu_b = Gtk.MenuButton()
         menu_b.set_relief(Gtk.ReliefStyle.NONE)
-        menu_b.add(Gtk.Image.new_from_icon_name("open-menu-symbolic",
-                                                Gtk.IconSize.LARGE_TOOLBAR))
+        mimg = Gtk.Image.new_from_icon_name("open-menu-symbolic", Gtk.IconSize.MENU)
+        mimg.set_pixel_size(18)
+        menu_b.add(mimg)
         menu_b.set_tooltip_text(_t("ed.options"))
         menu_b.set_popup(self._menu())
+        menu_b.get_style_context().add_class("vesper-tb-btn")
         barra.pack_end(menu_b, False, False, 0)
+        # lingua/linguaggio: pill cliccabile (apre la scelta del linguaggio)
+        self.btn_lingua = Gtk.Button(relief=Gtk.ReliefStyle.NONE)
+        self.btn_lingua.set_focus_on_click(False)
         self.lbl_lingua = Gtk.Label(label=_t("ed.plaintext"))
-        self.lbl_lingua.get_style_context().add_class("vesper-val")
-        barra.pack_end(self.lbl_lingua, False, False, 8)
+        self.btn_lingua.add(self.lbl_lingua)
+        self.btn_lingua.get_style_context().add_class("vesper-lang-pill")
+        self.btn_lingua.set_tooltip_text(_t("ed.m.language"))
+        self.btn_lingua.connect("clicked", lambda _b: self.dialogo_linguaggio())
+        barra.pack_end(self.btn_lingua, False, False, 8)
+        sep = Gtk.Separator(orientation=Gtk.Orientation.VERTICAL)
+        barra.pack_end(sep, False, False, 6)
         return barra
 
     def _voce(self, menu, etichetta, callback, scorciatoia=""):
@@ -692,13 +775,16 @@ class Editor(Gtk.Window):
         return box
 
     def _barra_stato(self):
-        barra = Gtk.Box(orientation=Gtk.Orientation.HORIZONTAL, spacing=14)
+        barra = Gtk.Box(orientation=Gtk.Orientation.HORIZONTAL, spacing=10)
         barra.get_style_context().add_class("vesper-editor-stato")
         self.lbl_pos = Gtk.Label(label=_t("ed.pos0"))
         self.lbl_pos.set_xalign(0)
         barra.pack_start(self.lbl_pos, False, False, 0)
         self.lbl_info = Gtk.Label(label="")
         barra.pack_end(self.lbl_info, False, False, 0)
+        sep = Gtk.Separator(orientation=Gtk.Orientation.VERTICAL)
+        sep.get_style_context().add_class("vesper-stato-sep")
+        barra.pack_end(sep, False, False, 2)
         return barra
 
     # --- scorciatoie da tastiera -----------------------------------------

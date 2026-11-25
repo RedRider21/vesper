@@ -85,6 +85,18 @@ if [ -n "$p" ] && tr '\0' ' ' < /proc/$p/cmdline | grep -q -- "--config-file $CO
   ok "openbox: parte col rc.xml di Vesper"
 else ko "openbox: parte col rc.xml di Vesper" "cmdline: $(tr '\0' ' ' < /proc/$p/cmdline 2>/dev/null)"; fi
 
+# --- 1b. notifiche: dunst con la configurazione di Vesper ---------------------
+dp=$(cat "$CACHE/dunst.pid" 2>/dev/null)
+if [ -n "$dp" ] && tr '\0' ' ' < /proc/$dp/cmdline 2>/dev/null | grep -q -- "-config $CONF/dunstrc"; then
+  ok "notifiche: dunst con la configurazione di Vesper"
+else ko "notifiche: dunst con la configurazione di Vesper" "pid '$dp': $(tr '\0' ' ' < /proc/$dp/cmdline 2>/dev/null)"; fi
+grep -qi 'frame_color = "#00e5ff"' "$CONF/dunstrc" 2>/dev/null && ok "notifiche: colori del preset" \
+  || ko "notifiche: colori del preset" "$(grep -m1 frame_color "$CONF/dunstrc" 2>/dev/null)"
+# sul bus di sessione di Vesper (fuori, il sistema avvierebbe un dunst di serie)
+DBUS_SESSION_BUS_ADDRESS=$(env_sessione DBUS_SESSION_BUS_ADDRESS) \
+  notify-send -a Vesper -i dialog-information "Notifica di prova" "Colori del preset, bordo d'accento." 2>/dev/null
+sleep 1.5; foto 01b-notifica
+
 # --- 2. menu del gestore finestre --------------------------------------------
 f=$(sed -n 's#.*<file>\(.*\)</file>.*#\1#p' "$CONF/openbox-rc.xml" | head -1)
 case "$f" in
@@ -132,6 +144,8 @@ fi
 n=$(buchi_barra vesper-profile set lime)
 grep -qi 'b8ff3b' "$CONF/accent.css" 2>/dev/null && ok "preset: accento applicato (lime)" \
   || ko "preset: accento applicato (lime)" "accent.css non aggiornato"
+grep -qi 'frame_color = "#b8ff3b"' "$CONF/dunstrc" 2>/dev/null && ok "notifiche: ricolorate al cambio preset" \
+  || ko "notifiche: ricolorate al cambio preset" "$(grep -m1 frame_color "$CONF/dunstrc" 2>/dev/null)"
 grep -q '<name>Vesper-Core-lime</name>' "$CONF/openbox-rc.xml" && ok "preset: tema finestre coordinato" \
   || ko "preset: tema finestre coordinato" "$(grep -o '<name>Vesper-[^<]*' "$CONF/openbox-rc.xml" | head -1)"
 if [ "$n" -eq 0 ]; then ok "preset: la barra non sparisce"; else ko "preset: la barra non sparisce" "assente per ~$((n*100)) ms"; fi

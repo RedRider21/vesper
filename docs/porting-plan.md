@@ -3,7 +3,7 @@
 > Il porting del desktop è **fatto**. Questo documento tiene il conto di cosa è
 > stato portato, cosa è stato volutamente lasciato fuori e cosa manca ancora
 > per stare alla pari con gli altri ambienti desktop.
-> Ultimo aggiornamento: 2026-11-25 (0.7.1).
+> Ultimo aggiornamento: 2026-11-25 (0.7.2).
 
 ## 1. Fatto
 
@@ -37,8 +37,8 @@ dei profili operativi.
 1. **Schermata di login (greeter)** — c'era nella sorgente ma legata a
    `chkpwd` setuid e ad Alpine. Su una distro qualunque conviene appoggiarsi
    al display manager, oppure portare il greeter con autenticazione PAM.
-2. **Demone notifiche proprio** — oggi Vesper avvia quello che trova (dunst,
-   mako, xfce4-notifyd). Un demone nostro darebbe notifiche a tema.
+2. **Notifiche a tema** — FATTO (0.7.2) senza demone proprio: dunst con una
+   configurazione di Vesper nei colori del preset.
 3. **Agente PolicyKit proprio** — stessa logica: oggi si avvia quello
    installato, se c'è.
 4. **Daemon XSettings** — propagazione di tema, cursore e DPI/HiDPI alle app

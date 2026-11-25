@@ -1016,6 +1016,135 @@ def rc_tasto_destro_al_desktop() -> bool:
     return True
 
 
+# ---------------------------------------------------------------- notifiche
+# Le notifiche le mostra dunst (se c'e'), ma con una configurazione NOSTRA
+# nei colori del preset: ~/.config/vesper/dunstrc, passata con -config. La
+# configurazione di dunst dell'utente (~/.config/dunst) non si legge ne' si
+# tocca. Chiavi sia vecchie (geometry, dunst <= 1.6, Mint 20) sia nuove
+# (width/offset/origin, dunst >= 1.7): ognuno ignora quelle che non conosce.
+DUNSTRC = paths.config("dunstrc")
+DUNST_PID = paths.cache("dunst.pid")
+
+
+def write_dunstrc(key: str | None = None) -> Path:
+    ac = accent(key)
+    try:
+        from vesper import palette
+        chiaro = palette.is_light()
+    except Exception:                            # noqa: BLE001
+        chiaro = False
+    if chiaro:
+        bg, fg, dim = "#ffffff", "#1b2733", "#5b6b78"
+    else:
+        bg, fg, dim = "#0a1a26", "#c8f5ff", "#5a8a9a"
+    testo = f"""# Notifiche di Vesper (generato da vesper.profiles.model: non modificare,
+# si riscrive a ogni cambio di preset)
+[global]
+    font = DejaVu Sans 10
+    markup = full
+    format = "<b>%s</b>\\n%b"
+    alignment = left
+    icon_position = left
+    max_icon_size = 48
+    min_icon_size = 32
+    word_wrap = yes
+    ellipsize = end
+    show_age_threshold = 60
+    stack_duplicates = true
+    hide_duplicate_count = false
+    show_indicators = no
+    sticky_history = yes
+    history_length = 20
+    follow = mouse
+    # posizione e misura: chiavi vecchie (geometry) e nuove
+    geometry = "360x5-16+48"
+    width = 360
+    height = (0, 300)
+    origin = top-right
+    offset = (16, 48)
+    notification_limit = 5
+    padding = 10
+    horizontal_padding = 12
+    text_icon_padding = 12
+    frame_width = 2
+    corner_radius = 10
+    separator_height = 2
+    separator_color = frame
+    gap_size = 6
+    mouse_left_click = do_action, close_current
+    mouse_middle_click = close_all
+    mouse_right_click = close_current
+
+[urgency_low]
+    background = "{bg}"
+    foreground = "{dim}"
+    frame_color = "{_mix(ac, bg, 0.45)}"
+    timeout = 5
+
+[urgency_normal]
+    background = "{bg}"
+    foreground = "{fg}"
+    frame_color = "{ac}"
+    timeout = 8
+
+[urgency_critical]
+    background = "{bg}"
+    foreground = "{fg}"
+    frame_color = "#ff5a8a"
+    timeout = 0
+"""
+    paths.ensure_config()
+    tmp = DUNSTRC.with_name(DUNSTRC.name + ".tmp")
+    tmp.write_text(testo)
+    os.replace(str(tmp), str(DUNSTRC))
+    return DUNSTRC
+
+
+def _dunst_nostro() -> int:
+    """PID del dunst avviato da Vesper con la NOSTRA configurazione, o 0."""
+    try:
+        pid = int(DUNST_PID.read_text().strip())
+        with open("/proc/%d/cmdline" % pid, "rb") as f:
+            argv = f.read().split(b"\0")
+        if os.path.basename(argv[0].decode(errors="replace")) == "dunst" and \
+                str(DUNSTRC).encode() in argv:
+            return pid
+    except (OSError, ValueError, IndexError):
+        pass
+    return 0
+
+
+def start_notifications(restart: bool = False) -> bool:
+    """Avvia (o riavvia, dopo un cambio di preset) il dunst di Vesper. Solo
+    dentro la sessione Vesper; si ferma SOLO il nostro, per PID. False se
+    dunst non c'e' (la sessione ripiega su mako/xfce4-notifyd)."""
+    if not paths.sessione_vesper() or not shutil.which("dunst"):
+        return False
+    pid = _dunst_nostro()
+    if pid and not restart:
+        return True
+    write_dunstrc()
+    if pid:
+        try:
+            os.kill(pid, 15)
+            for _ in range(20):                  # al massimo un secondo
+                if not os.path.isdir("/proc/%d" % pid):
+                    break
+                import time
+                time.sleep(0.05)
+        except OSError:
+            pass
+    try:
+        p = subprocess.Popen(["dunst", "-config", str(DUNSTRC)],
+                             stdout=subprocess.DEVNULL, stderr=subprocess.DEVNULL,
+                             start_new_session=True)
+        paths.ensure_cache()
+        DUNST_PID.write_text(str(p.pid) + "\n")
+    except OSError:
+        return False
+    return True
+
+
 def set_window_theme(key: str | None = None, reconfigure: bool = True) -> None:
     """Applica il tema finestre Openbox COORDINATO col preset.
     La famiglia scelta (~/.config/vesper/theme) decide QUALE tema statico usare:
@@ -1418,6 +1547,8 @@ def activate_preset(key: str, log=print) -> bool:
     write_accent_css(key)
     set_window_theme(key)
     set_wm_theme(key)          # se la sessione usa marco/metacity
+    if _dunst_nostro():
+        start_notifications(restart=True)   # notifiche nei colori nuovi
     return True
 
 

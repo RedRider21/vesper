@@ -209,10 +209,15 @@ command -v vesper-nightlight >/dev/null 2>&1 && (sleep 2; vesper-nightlight rest
 # sospensione per inattivita', batteria critica (~/.config/vesper/power.conf).
 # Si chiude da solo quando la sessione finisce.
 command -v vesper-power >/dev/null 2>&1 && (sleep 2; vesper-power) &
-# Demone notifiche: senza, notify-send è un no-op. Si prende il primo presente.
-for n in dunst mako xfce4-notifyd; do
-  command -v "$n" >/dev/null 2>&1 && { "$n" & break; }
-done
+# Demone notifiche: senza, notify-send è un no-op. dunst parte con la NOSTRA
+# configurazione nei colori del preset (~/.config/vesper/dunstrc, vedi
+# vesper.profiles.model.start_notifications); altrimenti il primo presente.
+if ! "${VESPER_PY:-python3}" -c 'import sys; from vesper.profiles import model
+sys.exit(0 if model.start_notifications() else 1)' 2>/dev/null; then
+  for n in mako xfce4-notifyd; do
+    command -v "$n" >/dev/null 2>&1 && { "$n" & break; }
+  done
+fi
 # Agente PolicyKit: prompt grafici per i privilegi (installarne uno è opzionale).
 for pk in lxpolkit lxqt-policykit-agent polkit-mate-authentication-agent-1 \
           polkit-gnome-authentication-agent-1 /usr/lib/policykit-1-gnome/polkit-gnome-authentication-agent-1; do

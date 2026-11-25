@@ -42,7 +42,7 @@
   <h2>1. Installare</h2>
 
   <h3>Debian, Ubuntu, Linux Mint</h3>
-<pre>sudo apt install ./vesper_0.7.1_all.deb</pre>
+<pre>sudo apt install ./vesper_0.7.2_all.deb</pre>
   <p class="intro">
     Il pacchetto tira dietro le dipendenze da solo. Per toglierlo:
     <code>sudo apt remove vesper</code> (la configurazione in
@@ -50,7 +50,7 @@
   </p>
 
   <h3>Qualsiasi distribuzione, dai sorgenti</h3>
-<pre>tar xzf vesper-0.7.1.tar.gz &amp;&amp; cd vesper-0.7.1
+<pre>tar xzf vesper-0.7.2.tar.gz &amp;&amp; cd vesper-0.7.2
 sudo ./install.sh --prefix=/usr     # come i pacchetti della distro
 sudo ./install.sh                   # in /usr/local
 ./install.sh --user                 # in ~/.local, senza root
@@ -239,6 +239,18 @@ vesper-prompt set parrot     # system | default | parrot | plain</pre>
   </p>
 </section>
 
+<section id="notifiche">
+  <h2>4d. Notifiche</h2>
+  <p class="intro">
+    Le notifiche le mostra <code>dunst</code> con una configurazione di Vesper,
+    nei colori del preset (bordo d'accento, fondo chiaro o scuro): si rigenera
+    a ogni cambio di preset in <code>~/.config/vesper/dunstrc</code>. La
+    configurazione di dunst che usi negli altri desktop
+    (<code>~/.config/dunst</code>) non viene letta né modificata. Senza dunst
+    Vesper usa mako o xfce4-notifyd, se ci sono.
+  </p>
+</section>
+
 <section id="file">
   <h2>5. File e desktop</h2>
   <img src="img/file-manager.png" alt="Il file manager" style="width:100%;border-radius:12px;border:1px solid var(--bordo)">
@@ -363,6 +375,7 @@ vesper-prompt set parrot     # system | default | parrot | plain</pre>
     <tr><td><code>openbox-rc.xml</code>, <code>openbox-menu.xml</code></td><td>configurazione del gestore finestre (solo di Vesper)</td></tr>
     <tr><td><code>desktop-items.json</code></td><td>posizione delle icone sul desktop</td></tr>
     <tr><td><code>lang</code></td><td>lingua dell'interfaccia (assente = quella del sistema)</td></tr>
+    <tr><td><code>dunstrc</code></td><td>notifiche nei colori del preset (generato: non modificare)</td></tr>
     <tr><td><code>automount.conf</code></td><td>montaggio automatico dei supporti rimovibili (enabled, open)</td></tr>
     <tr><td><code>power.conf</code></td><td>energia: blocco alla sospensione, spegnimento schermo, sospensione, batteria critica</td></tr>
     <tr><td><code>prompt</code></td><td>stile del prompt: system, default, parrot, plain</td></tr>

@@ -23,13 +23,13 @@ login.
 **Debian, Ubuntu, Linux Mint** — pacchetto `.deb`:
 
 ```sh
-sudo apt install ./vesper_0.7.1_all.deb     # scarica il .deb dalle release
+sudo apt install ./vesper_0.7.2_all.deb     # scarica il .deb dalle release
 ```
 
 **Da sorgenti, su qualsiasi distribuzione:**
 
 ```sh
-tar xzf vesper-0.7.1.tar.gz && cd vesper-0.7.1
+tar xzf vesper-0.7.2.tar.gz && cd vesper-0.7.2
 sudo ./install.sh                 # in /usr/local
 sudo ./install.sh --prefix=/usr   # in /usr (come i pacchetti della distro)
 ./install.sh --user               # in ~/.local, senza root
@@ -50,6 +50,21 @@ tools/prova-xephyr.sh --stop                  # chiude tutto
 La sessione gira in un container (podman) e disegna in una finestra Xephyr:
 il progetto è montato in sola lettura, la home di prova è temporanea, senza
 rete, e il desktop vero non viene toccato.
+
+## Novità della 0.7.2
+
+- **Energia** (`vesper-power`, Centro di Controllo → *Energia*): lo schermo
+  si blocca **prima** della sospensione (al risveglio serve la password),
+  si spegne dopo i minuti scelti, il PC si sospende per inattività se lo
+  vuoi, e a batteria critica arriva un avviso e poi sospensione, ibernazione
+  o spegnimento.
+- **Chiavette e dischi USB** si montano da soli (udisks2, come negli altri
+  desktop), con notifica e file manager sulla cartella; mai i dischi interni,
+  i supporti cifrati si aprono da *Dischi*. Si spegne da *Supporti rimovibili*.
+- **Notifiche nei colori del preset**: dunst con una configurazione di Vesper
+  (`~/.config/vesper/dunstrc`), che cambia insieme al preset; quella di dunst
+  dell'utente non si tocca.
+- Caselle numeriche leggibili, salvaschermo a istanza unica, collaudo esteso.
 
 ## Novità della 0.7.1
 
@@ -117,7 +132,8 @@ l'albero dei file è identico ovunque; cambiano solo i nomi delle dipendenze.
 | wmctrl | lista finestre e desktop virtuali del pannello | `wmctrl` |
 | xrandr | gestione schermi | `x11-xserver-utils` |
 
-Opzionali: `dunst` (notifiche), un agente PolicyKit, `xdotool` (riduci a icona
+Opzionali: `dunst` (notifiche, nei colori del preset), `udisks2` (montaggio
+automatico delle chiavette), un agente PolicyKit, `xdotool` (riduci a icona
 dalla barra), `xautolock` (salvaschermo
 automatico), `picom` (vetro reale/angoli arrotondati), `brightnessctl`,
 `bluez` + `bluez-tools`, `xwallpaper`/`feh` (solo se si usa il pannello di
@@ -319,8 +335,7 @@ hash PBKDF2 in un file 600.
 ## Stato
 
 Il desktop è funzionante e installabile. Restano da fare: schermata di login
-(greeter), notifiche nei colori del preset, agente PolicyKit proprio, daemon
-XSettings, set di icone proprio. Vedi [`docs/porting-plan.md`](docs/porting-plan.md).
+(greeter), agente PolicyKit proprio, daemon XSettings, set di icone proprio. Vedi [`docs/porting-plan.md`](docs/porting-plan.md).
 
 ## Licenza e autore
 

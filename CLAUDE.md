@@ -188,6 +188,12 @@ vesper/
   (InterfacesAdded), mai se gia' montati; i cifrati solo avviso. La decisione
   e' in `decidi()` (logica pura, provabile senza udisks). Verificato in sola
   lettura sui dischi veri: interni e Windows -> ignorati.
+- **Notifiche**: dunst con la NOSTRA configurazione (`model.write_dunstrc`,
+  `~/.config/vesper/dunstrc`, `-config`), avviato da `start_notifications`
+  con PID in `~/.cache/vesper/dunst.pid` e riavviato SOLO lui al cambio di
+  preset. Chiavi vecchie (geometry, dunst 1.5 di Mint 20) e nuove insieme.
+  Un `notify-send` fuori dal bus della sessione fa partire per attivazione un
+  dunst di serie (successo nel collaudo): le prove vanno fatte sul bus giusto.
 - **Luce blu**: gamma via `xrandr`. L'overlay traslucido è stato SCARTATO: in VM
   senza compositore diventa opaco e copre lo schermo.
 

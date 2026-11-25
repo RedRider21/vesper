@@ -861,42 +861,97 @@ class Desktop(Gtk.Window):
         m.show_all()
         m.popup_at_pointer(ev)
 
+    def _titolo(self, menu, text):
+        """Intestazione del menu, come quella di Openbox in NexusSec: una riga
+        non selezionabile col nome, centrata (stile .vesper-menu-title)."""
+        mi = Gtk.MenuItem()
+        mi.set_sensitive(False)
+        lab = Gtk.Label(label=text)
+        lab.get_style_context().add_class("vesper-menu-title")
+        mi.add(lab)
+        menu.append(mi)
+        return mi
+
+    def _sub(self, menu, text, icon):
+        """Voce con sottomenu (freccia a destra); ritorna il sottomenu."""
+        mi = self._mi(menu, text, lambda: None, icon)
+        sub = Gtk.Menu()
+        sub.get_style_context().add_class("vesper-popup")
+        sub.set_reserve_toggle_size(False)
+        mi.set_submenu(sub)
+        return sub
+
     def desktop_menu(self, ev, _it):
+        """Menu del tasto destro sul desktop: UNO SOLO, uguale con Openbox e
+        con marco (Openbox non lo intercetta piu', vedi rc.xml). Voci e ordine
+        presi dal menu di NexusSec, piu' le azioni del desktop."""
+        sp = self._spawn
         m = Gtk.Menu()
         m.get_style_context().add_class("vesper-popup")
-        self._head(m, label("fm.desktop", "Desktop"))
+        # niente colonna vuota a sinistra per le spunte: qui non ce ne sono
+        m.set_reserve_toggle_size(False)
+        self._titolo(m, "Vesper")
+        self._mi(m, label("app.terminal", "Terminale"), self.open_terminal,
+                 "utilities-terminal-symbolic")
+        self._mi(m, label("app.files", "File manager"),
+                 lambda: sp(["vesper-files", str(self.desktop_dir)]),
+                 "system-file-manager-symbolic")
         self._mi(m, label("fm.new_folder", "Nuova cartella"), self.new_folder,
                  "folder-new-symbolic")
-        self._mi(m, label("fm.open_files", "Apri il file manager"),
-                 lambda: self._spawn(["vesper-files", str(self.desktop_dir)]),
-                 "system-file-manager-symbolic")
-        self._mi(m, label("fm.open_terminal", "Apri un terminale qui"),
-                 self.open_terminal, "utilities-terminal-symbolic")
         m.append(Gtk.SeparatorMenuItem())
 
-        self._head(m, label("fm.icons", "Icone"))
+        st = self._sub(m, label("fm.dm.tools", "Strumenti"),
+                       "applications-utilities-symbolic")
+        self._mi(st, label("fm.dm.clipboard", "Appunti (cronologia)"),
+                 lambda: sp(["vesper-clipboard", "menu"]), "edit-paste-symbolic")
+        self._mi(st, label("fm.dm.nightlight", "Filtro luce blu (on/off)"),
+                 lambda: sp(["vesper-nightlight", "toggle"]), "night-light-symbolic")
+        self._mi(st, label("fm.dm.shortcuts", "Scorciatoie da tastiera"),
+                 lambda: sp(["vesper-control-center", "hotkey"]),
+                 "input-keyboard-symbolic")
+        self._mi(st, label("app.control_center", "Centro di Controllo"),
+                 lambda: sp(["vesper-control-center"]), "preferences-system-symbolic")
+
+        sc = self._sub(m, label("fm.dm.screen", "Schermo"), "video-display-symbolic")
+        self._mi(sc, label("fm.dm.lock", "Blocca schermo"),
+                 lambda: sp(["vesper-screensaver"]), "system-lock-screen-symbolic")
+        self._mi(sc, label("fm.dm.shot_full", "Cattura schermata (intero)"),
+                 lambda: sp(["vesper-screenshot", "full", "1"]), "camera-photo-symbolic")
+        self._mi(sc, label("fm.dm.shot_area", "Cattura schermata (area)"),
+                 lambda: sp(["vesper-screenshot", "area", "0"]), "camera-photo-symbolic")
+        sc.append(Gtk.SeparatorMenuItem())
+        self._mi(sc, label("fm.dm.screens", "Disposizione schermi"),
+                 lambda: sp(["vesper-control-center", "schermi"]),
+                 "video-display-symbolic")
+
+        lk = self._sub(m, label("fm.dm.look", "Aspetto"), "vesper-logo-symbolic")
+        self._mi(lk, label("fm.dm.preset", "Preset (colore, sfondo, icone)"),
+                 lambda: sp(["vesper-profile"]), "vesper-logo-symbolic")
+        self._mi(lk, label("fm.dm.wallpaper", "Sfondo del desktop"),
+                 lambda: sp(["vesper-control-center", "sfondo"]),
+                 "preferences-desktop-wallpaper-symbolic")
+        self._mi(lk, label("fm.dm.skin", "Skin del pannello"),
+                 lambda: sp(["vesper-control-center", "aspetto"]),
+                 "view-app-grid-symbolic")
+
+        ic = self._sub(m, label("fm.dm.desk_icons", "Icone del desktop"),
+                       "user-desktop-symbolic")
         chk = Gtk.CheckMenuItem(label=label("fm.auto_arrange",
                                             "Allinea automaticamente"))
         chk.set_active(self.state.auto_arrange)
         chk.connect("toggled", self.on_toggle_arrange)
-        m.append(chk)
-        self._mi(m, label("fm.refresh", "Aggiorna"), self.load_icons,
+        ic.append(chk)
+        self._mi(ic, label("fm.refresh", "Aggiorna"), self.load_icons,
                  "view-refresh-symbolic", "F5")
         m.append(Gtk.SeparatorMenuItem())
 
-        self._head(m, label("fm.look", "Aspetto"))
-        self._mi(m, label("fm.appearance", "Preset di aspetto…"),
-                 lambda: self._spawn(["vesper-profile"]), "vesper-logo-symbolic")
-        self._mi(m, label("fm.wallpaper", "Cambia sfondo…"),
-                 lambda: self._spawn(["vesper-control-center", "sfondo"]),
-                 "preferences-desktop-wallpaper-symbolic")
-        self._mi(m, label("fm.settings", "Impostazioni di Vesper…"),
-                 lambda: self._spawn(["vesper-control-center"]),
-                 "preferences-system-symbolic")
-        m.append(Gtk.SeparatorMenuItem())
+        if os.environ.get("VESPER_WM", "") == "openbox" or _gira("openbox"):
+            self._mi(m, label("fm.dm.reload_wm", "Ricarica il gestore finestre"),
+                     lambda: sp(["openbox", "--reconfigure"]), "view-refresh-symbolic")
+        self._mi(m, label("fm.dm.restart_panel", "Riavvia il pannello"),
+                 lambda: sp(["vesper-panel-restart"]), "view-refresh-symbolic")
         self._mi(m, label("fm.session", "Esci / Spegni…"),
-                 lambda: self._spawn(["vesper-logout"]),
-                 "system-shutdown-symbolic")
+                 lambda: sp(["vesper-logout"]), "system-shutdown-symbolic")
         m.show_all()
         m.popup_at_pointer(ev)
 
@@ -909,6 +964,27 @@ class Desktop(Gtk.Window):
                 self.state.positions[it.key] = [it.x, it.y]
         self.state.save()
         self.canvas.queue_draw()
+
+
+def _gira(nome: str) -> bool:
+    """C'e' un processo `nome` di QUESTO utente (per mostrare le voci che
+    servono solo con quel gestore finestre)? Sola lettura di /proc."""
+    uid = os.getuid()
+    try:
+        for pid in os.listdir("/proc"):
+            if not pid.isdigit():
+                continue
+            try:
+                if os.stat("/proc/" + pid).st_uid != uid:
+                    continue
+                with open("/proc/%s/comm" % pid) as f:
+                    if f.read().strip() == nome:
+                        return True
+            except OSError:
+                continue
+    except OSError:
+        pass
+    return False
 
 
 def main(argv=None):

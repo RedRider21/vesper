@@ -137,7 +137,8 @@ done
 # uno dei nostri (anche di una versione precedente, senza icone); un menu
 # modificato dall'utente resta com'e'. Ripiego in shell se Python non va.
 "${VESPER_PY:-python3}" -c 'import sys; from vesper.profiles import model
-model.install_menu(sys.argv[1]); model.write_menu_icons()' "$VLANG" 2>/dev/null || {
+model.install_menu(sys.argv[1]); model.write_menu_icons()
+model.rc_tasto_destro_al_desktop()' "$VLANG" 2>/dev/null || {
   for d in $(printf "%s" "${VESPER_DATA_DIRS:-}" | tr ":" " ") /usr/local/share/vesper /usr/share/vesper; do
     [ -f "$MENU" ] && break
     [ -d "$d/skel/openbox" ] || continue

@@ -990,6 +990,32 @@ def install_menu(lang: str | None = None, force: bool = False) -> bool:
     return True
 
 
+def rc_tasto_destro_al_desktop() -> bool:
+    """Nel rc.xml di Vesper toglie lo ShowMenu del tasto destro dal contesto
+    "Desktop": il clic deve arrivare al desktop di Vesper, che mostra lo
+    stesso menu con Openbox e con marco. Serve a chi ha un openbox-rc.xml
+    copiato da una versione precedente; tocca SOLO quel legame. True se il
+    file e' cambiato."""
+    try:
+        txt = RC_XML.read_text()
+    except OSError:
+        return False
+    m = re.search(r'<context name="Desktop">.*?</context>', txt, re.S)
+    if not m:
+        return False
+    blocco = m.group(0)
+    nuovo = re.sub(r'(<mousebind button="Right" action="Press">.*?)'
+                   r'\s*<action name="ShowMenu"><menu>root-menu</menu></action>'
+                   r'(.*?</mousebind>)', r"\1\2", blocco, flags=re.S)
+    if nuovo == blocco:
+        return False
+    try:
+        RC_XML.write_text(txt.replace(blocco, nuovo, 1))
+    except OSError:
+        return False
+    return True
+
+
 def set_window_theme(key: str | None = None, reconfigure: bool = True) -> None:
     """Applica il tema finestre Openbox COORDINATO col preset.
     La famiglia scelta (~/.config/vesper/theme) decide QUALE tema statico usare:

@@ -610,10 +610,11 @@
       <action name="Focus"/>
       <action name="Raise"/>
     </mousebind>
+    <!-- tasto destro: NIENTE ShowMenu, il clic passa al desktop di Vesper,
+         che mostra il suo menu (uguale con Openbox e con marco) -->
     <mousebind button="Right" action="Press">
       <action name="Focus"/>
       <action name="Raise"/>
-      <action name="ShowMenu"><menu>root-menu</menu></action>
     </mousebind>
   </context>
 

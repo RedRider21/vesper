@@ -218,6 +218,12 @@ menu label.vesper-menu-head {
   padding: 2px 2px 4px 2px;
 }
 menu separator { background-color: #1a3a52; margin: 4px 10px; }
+/* intestazione del menu del desktop, come quella del menu di NexusSec:
+   centrata, in grassetto, col colore del preset su una fascia piu' scura */
+menu label.vesper-menu-title {
+  color: #00e5ff; font-weight: bold; padding: 5px 0 6px 0;
+  background-color: rgba(0,0,0,0.28); border-radius: 6px;
+}
 
 /* Popup del pannello come finestre toplevel (menu start, calendario) */
 .vesper-popup, .vesper-popup.background {

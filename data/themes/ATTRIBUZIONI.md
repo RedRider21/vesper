@@ -26,3 +26,13 @@ Generati da `tools/make-openbox-themes.py` a partire dai template in
   (rosso/giallo/verde) col simbolo scavato dentro, angoli arrotondati (serve
   picom, che Vesper accende da solo quando la famiglia è Cards). Le maschere
   dei pulsanti derivano dalla geometria di Arc-Round (GPL-3).
+
+## Vesper-Mac, Vesper-Mac-Scuro e Vesper-Mac[-Scuro]-<preset>
+
+Temi propri (portati da NexusSec OS), generati da `tools/make-mac-themes.py`:
+stile macOS chiaro e scuro con i semafori a sinistra disegnati pixel per pixel
+(maschere `.xbm` a 1 bit: Openbox 3.6 non accetta PNG per i pulsanti), un
+colore per pulsante, grigi a finestra inattiva, simbolo al passaggio del
+mouse, titolo centrato con un font neutro. La barra prende una tinta leggera
+del preset. Angoli arrotondati e ombre li aggiunge picom (vedi
+`data/picom.conf`), solo con una scheda video vera.

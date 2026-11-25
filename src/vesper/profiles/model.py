@@ -51,9 +51,18 @@ RC_XML = Path(os.environ.get(
 #            pulsanti completi a destra, filetto d'accento del preset)
 #   retro -> Vesper-Retro-<preset> (flat chiaro)
 #   cards -> Vesper-Cards-<preset> (stile "scheda", header colorato)
+#   mac       -> Vesper-Mac-<preset> (stile macOS chiaro: semafori a sinistra,
+#   mac-scuro -> Vesper-Mac-Scuro-<preset>  titolo centrato, font neutro,
+#                angoli arrotondati e ombre con picom). Da NexusSec.
 #   raw:<nome> -> un qualsiasi tema Openbox installato, fisso (non coordinato)
 THEME_FAMILY_FILE = CONF_DIR / "theme"
-THEME_FAMILIES = ("core", "retro", "cards")
+THEME_FAMILIES = ("core", "retro", "cards", "mac", "mac-scuro")
+_MAC_THEMES = {"mac": "Vesper-Mac", "mac-scuro": "Vesper-Mac-Scuro"}
+# famiglie con i pulsanti a SINISTRA (e picom per angoli arrotondati)
+_LEFT_FAMILIES = ("cards", "mac", "mac-scuro")
+# font del titolo finestre: quello di Vesper e quello "neutro" stile Mac
+OB_TITLE_FONT_DEFAULT = "Chakra Petch, Cantarell, Sans"
+OB_TITLE_FONT_MAC = "Cantarell, DejaVu Sans, Sans"
 THEME_PREFIX = "Vesper"
 FALLBACK_OB_THEME = "Vesper-Core"
 # titleLayout di Openbox: default = pulsanti a DESTRA (N=icona, L=titolo, I/M/C);
@@ -715,6 +724,13 @@ def resolve_ob_theme(family: str | None = None, key: str | None = None) -> str:
     if family.startswith("raw:"):
         name = family[4:].strip()
         return name if _theme_installed(name) else FALLBACK_OB_THEME
+    if family in _MAC_THEMES:
+        # variante nel colore del preset, poi quella neutra
+        pre = _MAC_THEMES[family]
+        for name in ("%s-%s" % (pre, key), pre):
+            if _theme_installed(name):
+                return name
+        return FALLBACK_OB_THEME
     fam_suffix = {"core": "Core", "retro": "Retro", "cards": "Cards"}.get(family)
     if fam_suffix is None:
         return FALLBACK_OB_THEME
@@ -725,9 +741,11 @@ def resolve_ob_theme(family: str | None = None, key: str | None = None) -> str:
     return cand
 
 
-def _apply_rc(name: str, layout: str, reconfigure: bool = True) -> None:
-    """Scrive in rc.xml sia <theme><name> sia <titleLayout> (una sola
-    read-modify-write) e ricarica Openbox una volta sola."""
+def _apply_rc(name: str, layout: str, reconfigure: bool = True,
+              title_font: str | None = None) -> None:
+    """Scrive in rc.xml <theme><name>, <titleLayout> e (se dato) il font del
+    titolo delle finestre attive/inattive, in una sola read-modify-write, e
+    ricarica Openbox una volta sola."""
     try:
         txt = RC_XML.read_text()
     except OSError:
@@ -736,6 +754,11 @@ def _apply_rc(name: str, layout: str, reconfigure: bool = True) -> None:
                  r"\g<1>" + name + r"\g<2>", txt, count=1, flags=re.DOTALL)
     new = re.sub(r"<titleLayout>[^<]*</titleLayout>",
                  "<titleLayout>" + layout + "</titleLayout>", new, count=1)
+    if title_font:
+        for place in ("ActiveWindow", "InactiveWindow"):
+            new = re.sub(r'(<font place="%s">\s*<name>)[^<]*(</name>)' % place,
+                         lambda m: m.group(1) + title_font + m.group(2),
+                         new, count=1)
     if new != txt:
         try:
             RC_XML.write_text(new)
@@ -754,7 +777,7 @@ def _picom_wanted() -> bool:
     lo stile finestre e' 'aero' (trasparenza + sfocatura reale). Cosi' la
     scelta del vetro reale e' INDIPENDENTE dal preset e dalla decorazione."""
     try:
-        return theme_family() == "cards" or get_window_style() == "aero"
+        return theme_family() in _LEFT_FAMILIES or get_window_style() == "aero"
     except Exception:                            # noqa: BLE001
         return False
 
@@ -857,8 +880,9 @@ def set_window_theme(key: str | None = None, reconfigure: bool = True) -> None:
     i pulsanti a destra e spegne picom."""
     fam = theme_family()
     name = resolve_ob_theme(fam, key)
-    layout = OB_TITLELAYOUT_LEFT if fam == "cards" else OB_TITLELAYOUT_DEFAULT
-    _apply_rc(name, layout, reconfigure=reconfigure)
+    layout = OB_TITLELAYOUT_LEFT if fam in _LEFT_FAMILIES else OB_TITLELAYOUT_DEFAULT
+    font = OB_TITLE_FONT_MAC if fam in _MAC_THEMES else OB_TITLE_FONT_DEFAULT
+    _apply_rc(name, layout, reconfigure=reconfigure, title_font=font)
     _manage_picom(_picom_wanted())
 
 

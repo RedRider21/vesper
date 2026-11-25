@@ -2989,6 +2989,8 @@ _THEME_FAMILIES = [
      _t("v.ac.arc_light_desc")),
 ]
 _PROMPT_STYLES = [
+    ("system", _t("v.ac.prompt_system"),
+     _t("v.ac.prompt_system_desc")),
     ("default", _t("v.ac.prompt_one"),
      _t("v.ac.prompt_one_desc")),
     ("parrot",  _t("v.ac.prompt_parrot"),
@@ -3213,9 +3215,9 @@ def open_appearance(_btn=None):
     h2.get_style_context().add_class("vesper-section")
     body.pack_start(h2, False, False, 0)
 
-    cur_pr = "default"
+    cur_pr = "system"
     try:
-        cur_pr = (HOME / ".config" / "vesper" / "prompt").read_text().strip() or "default"
+        cur_pr = (HOME / ".config" / "vesper" / "prompt").read_text().strip() or "system"
     except OSError:
         pass
     pr_group = None; pr_radios = {}
@@ -3241,7 +3243,7 @@ def open_appearance(_btn=None):
         for k, rb in pr_radios.items():
             if rb.get_active():
                 return k
-        return "default"
+        return "system"
 
     def pr_apply(_b=None):
         st = pr_chosen()

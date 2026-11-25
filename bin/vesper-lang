@@ -40,7 +40,7 @@ for c in i18n.LANGS: print(c, i18n.LANG_NAMES[c])'
     # con l'editor del menu o a mano, non si tocca).
     MENU="${VESPER_CONFIG_HOME:-$HOME/.config/vesper}/openbox-menu.xml"
     if [ -f "$MENU" ]; then
-      for d in ${VESPER_DATA_DIRS:-} /usr/local/share/vesper /usr/share/vesper; do
+      for d in $(printf "%s" "${VESPER_DATA_DIRS:-}" | tr ":" " ") /usr/local/share/vesper /usr/share/vesper; do
         [ -d "$d/skel/openbox" ] || continue
         for sk in "$d/skel/openbox"/openbox-menu*.xml; do
           [ -f "$sk" ] || continue

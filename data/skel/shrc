@@ -1,41 +1,73 @@
-# ~/.config/vesper/shrc - prompt della shell di Vesper, commutabile.
-# Sorgiato dalle shell interattive: bash via ~/.bashrc, busybox ash via $ENV
-# (esportato in ~/.profile, quindi ereditato da X, pannello e terminali). Lo
-# stile e' in ~/.config/vesper/prompt (default | parrot | plain) e si cambia con
-# "vesper-prompt set <stile>": apri un NUOVO terminale per vederlo.
+# SPDX-License-Identifier: AGPL-3.0-or-later
+# Copyright (C) 2026 Daniele Deplano (RedRider21). Parte di Vesper.
+#
+# shrc - prompt della shell di Vesper, commutabile.
+#
+# NON si aggancia a ~/.bashrc (file dell'utente: Vesper non lo tocca). Lo
+# carica la sessione Vesper e SOLO lei:
+#   - bash: PROMPT_COMMAND esportato da vesper-session, eseguito prima di ogni
+#     prompt (il ~/.bashrc di Debian/Mint imposta PS1 ma non PROMPT_COMMAND,
+#     quindi il nostro vince e fuori dalla sessione non c'e' nulla);
+#   - busybox ash: $ENV, esportato anch'esso da vesper-session.
+# Lo stile e' in ~/.config/vesper/prompt:
+#   system (predefinito)  il prompt dell'utente, intatto
+#   default               una riga: utente nel colore del preset
+#   parrot                due righe stile Parrot/Kali, cornici nel colore del preset
+#   plain                 minimale, senza colori
+# Gira a OGNI prompt: niente processi esterni (solo comandi interni della
+# shell) e PS1 ricalcolato solo quando cambiano stile o accento.
 
-# Agisci solo sulle shell INTERATTIVE (l'$ENV di ash viene letto anche da
-# script non interattivi: la' non tocchiamo il prompt).
 case "$-" in
   *i*) ;;
   *) return 0 2>/dev/null || exit 0 ;;
 esac
+[ "${VESPER_SESSION:-}" = 1 ] || return 0 2>/dev/null || exit 0
 
-_vesper_pstyle=default
-if [ -r "$HOME/.config/vesper/prompt" ]; then
-  _vesper_pstyle=$(cat "$HOME/.config/vesper/prompt" 2>/dev/null)
+_vp_conf="${XDG_CONFIG_HOME:-$HOME/.config}/vesper"
+_vp_st=system
+[ -r "$_vp_conf/prompt" ] && read -r _vp_st < "$_vp_conf/prompt"
+_vp_ac=""
+if [ -r "$_vp_conf/accent.css" ]; then
+  # primo colore #rrggbb del file, senza grep (niente fork a ogni prompt)
+  while read -r _vp_l; do
+    case "$_vp_l" in
+      *\#[0-9a-fA-F][0-9a-fA-F][0-9a-fA-F][0-9a-fA-F][0-9a-fA-F][0-9a-fA-F]*)
+        _vp_ac=${_vp_l#*\#}; _vp_ac=${_vp_ac%"${_vp_ac#??????}"}; break ;;
+    esac
+  done < "$_vp_conf/accent.css"
 fi
+_vp_key="$_vp_st:$_vp_ac:${TERM:-}"
 
-# Utente e host li calcoliamo UNA volta e li incorporiamo nel PS1: alcune
-# versioni di busybox espandono male \u/\h nel prompt. La cartella (\w) resta
-# dinamica (funziona sia in bash sia in busybox). \[ \] marcano le sequenze a
-# larghezza zero (bash le usa per il ritorno a capo; busybox le tollera).
-_vesper_u="${USER:-$(id -un 2>/dev/null || echo user)}"
-_vesper_h="$(hostname 2>/dev/null || echo host)"
-
-case "$_vesper_pstyle" in
-  parrot)
-    # Stile Parrot/Kali a due righe. Box-drawing UTF-8 (terminale UTF-8).
-    PS1="\[\033[1;34m\]┌──[\[\033[1;32m\]${_vesper_u}@${_vesper_h}\[\033[1;34m\]]─[\[\033[1;37m\]\w\[\033[1;34m\]]
-└──╼\[\033[0m\] "
-    ;;
-  plain)
-    PS1="${_vesper_u}@${_vesper_h}:\w\\$ "
-    ;;
-  *)
-    # default: una riga con l'accento di Vesper.
-    PS1="\[\033[1;36m\]${_vesper_u}\[\033[0m\]@\[\033[1;34m\]${_vesper_h}\[\033[0m\]:\[\033[1;35m\]\w\[\033[0m\]\\$ "
-    ;;
-esac
-unset _vesper_pstyle _vesper_u _vesper_h
-export PS1
+if [ "$_vp_key" != "${_VESPER_PS1_KEY:-}" ]; then
+  _VESPER_PS1_KEY=$_vp_key
+  _VESPER_PS1=""
+  _vp_u="${USER:-${LOGNAME:-user}}"
+  _vp_h="${HOSTNAME:-}"
+  [ -n "$_vp_h" ] || { [ -r /etc/hostname ] && read -r _vp_h < /etc/hostname; }
+  _vp_h="${_vp_h%%.*}"; _vp_h="${_vp_h:-host}"
+  _vp_e=$(printf '\033')
+  # Colori: cornici/utente nell'ACCENTO del preset, il resto neutro. Sulla
+  # console di testo (TERM=linux, niente truecolor) si ripiega sui colori base.
+  if [ "${TERM:-}" = linux ] || [ -z "$_vp_ac" ]; then
+    _vp_a="1;36"; _vp_t="1;37"; _vp_w="1;37"; _vp_r="1;31"
+  else
+    _vp_a="1;38;2;$((0x${_vp_ac%????}));$((0x$(echo "$_vp_ac" | cut -c3-4)));$((0x${_vp_ac#????}))"
+    _vp_t="1;38;2;200;245;255"; _vp_w="1;38;2;255;255;255"; _vp_r="1;38;2;255;90;138"
+  fi
+  _vp_id=$_vp_t
+  [ "${EUID:-$(id -u 2>/dev/null)}" = 0 ] && _vp_id=$_vp_r
+  case "$_vp_st" in
+    parrot)
+      _vp_c="\[${_vp_e}[${_vp_a}m\]"
+      _VESPER_PS1="${_vp_c}┌──[\[${_vp_e}[${_vp_id}m\]${_vp_u}@${_vp_h}${_vp_c}]─[\[${_vp_e}[${_vp_w}m\]\w${_vp_c}]
+${_vp_c}└──╼ \\\$\[${_vp_e}[0m\] " ;;
+    plain)
+      _VESPER_PS1="${_vp_u}@${_vp_h}:\w\\\$ " ;;
+    default)
+      _VESPER_PS1="\[${_vp_e}[${_vp_a}m\]${_vp_u}\[${_vp_e}[0m\]@\[${_vp_e}[${_vp_id}m\]${_vp_h}\[${_vp_e}[0m\]:\[${_vp_e}[${_vp_w}m\]\w\[${_vp_e}[0m\]\\\$ " ;;
+  esac
+  unset _vp_u _vp_h _vp_e _vp_a _vp_t _vp_w _vp_r _vp_id _vp_c
+fi
+# "system": nessun PS1 nostro, resta quello dell'utente
+[ -n "$_VESPER_PS1" ] && PS1=$_VESPER_PS1
+unset _vp_conf _vp_st _vp_ac _vp_key _vp_l

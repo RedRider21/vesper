@@ -127,7 +127,7 @@ VLANG=$(head -1 "$CONF/lang" 2>/dev/null || true)
 if [ -s "$CONF/lang" ]; then
   LANGUAGE="$VLANG"; export LANGUAGE
 fi
-for d in ${VESPER_DATA_DIRS:-} /usr/local/share/vesper /usr/share/vesper; do
+for d in $(printf "%s" "${VESPER_DATA_DIRS:-}" | tr ":" " ") /usr/local/share/vesper /usr/share/vesper; do
   [ -d "$d/skel/openbox" ] || continue
   [ -f "$RC" ]   || cp "$d/skel/openbox/rc.xml" "$RC" 2>/dev/null
   if [ ! -f "$MENU" ]; then
@@ -135,6 +135,18 @@ for d in ${VESPER_DATA_DIRS:-} /usr/local/share/vesper /usr/share/vesper; do
       cp "$d/skel/openbox/openbox-menu.xml" "$MENU" 2>/dev/null
   fi
   break
+done
+# Prompt dei terminali (vesper-prompt): si carica SOLO in questa sessione e
+# senza toccare ~/.bashrc. bash esegue PROMPT_COMMAND prima di ogni prompt
+# (il .bashrc di Debian/Mint non lo ridefinisce), busybox ash legge $ENV.
+for d in $(printf "%s" "${VESPER_DATA_DIRS:-}" | tr ":" " ") /usr/local/share/vesper /usr/share/vesper; do
+  if [ -r "$d/skel/shrc" ]; then
+    VESPER_SHRC="$d/skel/shrc"; export VESPER_SHRC
+    PROMPT_COMMAND="${PROMPT_COMMAND:+$PROMPT_COMMAND;}"'[ -r "$VESPER_SHRC" ] && . "$VESPER_SHRC"'
+    export PROMPT_COMMAND
+    [ -n "${ENV:-}" ] || { ENV="$VESPER_SHRC"; export ENV; }
+    break
+  fi
 done
 # Il menu va indicato col percorso ASSOLUTO: un nome relativo Openbox lo
 # cerca solo in ~/.config/openbox e /etc/xdg/openbox, cioe' fuori da Vesper,
@@ -242,7 +254,7 @@ case "$WM" in
     # SEMPRE --config-file col rc.xml di Vesper: `openbox` nudo leggerebbe
     # ~/.config/openbox/rc.xml, cioè la configurazione Openbox dell'utente.
     if [ ! -f "$RC" ]; then
-      for d in ${VESPER_DATA_DIRS:-} /usr/local/share/vesper /usr/share/vesper; do
+      for d in $(printf "%s" "${VESPER_DATA_DIRS:-}" | tr ":" " ") /usr/local/share/vesper /usr/share/vesper; do
         [ -f "$d/skel/openbox/rc.xml" ] && { cp "$d/skel/openbox/rc.xml" "$RC"; break; }
       done
     fi

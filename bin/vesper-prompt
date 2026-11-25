@@ -2,12 +2,13 @@
 # SPDX-License-Identifier: AGPL-3.0-or-later
 # Copyright (C) 2026 Daniele Deplano (RedRider21). Parte di Vesper.
 # vesper-prompt - stile del prompt del terminale, commutabile.
-# La scelta e' salvata in ~/.config/vesper/prompt e letta da ~/.config/vesper/shrc
-# (bash via ~/.bashrc, ash via $ENV). Ha effetto sui NUOVI terminali.
+# La scelta e' salvata in ~/.config/vesper/prompt e letta dallo shrc di Vesper,
+# che carica la sessione (bash via PROMPT_COMMAND, ash via $ENV) senza toccare
+# ~/.bashrc. Vale solo dentro la sessione Vesper, sui NUOVI terminali.
 #
 #   vesper-prompt get                 stampa lo stile attivo
 #   vesper-prompt list                elenca gli stili
-#   vesper-prompt set <stile>         default | parrot | plain
+#   vesper-prompt set <stile>         system | default | parrot | plain
 # Messaggi tradotti (it/en/fr/es/de). Senza i18n.sh restano in italiano.
 vesper_t() { printf '%s\n' "${2:-$1}"; }
 _vt_self=$(readlink -f "$0" 2>/dev/null || echo "$0"); _vt_d=$(dirname "$_vt_self")
@@ -22,20 +23,21 @@ CONF="$HOME/.config/vesper/prompt"
 
 case "${1:-get}" in
   get)
-    [ -r "$CONF" ] && cat "$CONF" || echo default ;;
+    [ -r "$CONF" ] && cat "$CONF" || echo system ;;
   list)
+    echo "system   $(vesper_t cli.prompt.system 'il prompt del sistema, intatto (predefinito)')"
     echo "default  $(vesper_t cli.prompt.default 'prompt di Vesper a una riga (accent ciano)')"
     echo "parrot   $(vesper_t cli.prompt.parrot 'due righe stile Parrot'): ┌──[user@host]─[dir] / └──╼"
     echo "plain    $(vesper_t cli.prompt.plain 'minimale'): user@host:dir\$" ;;
   set)
     st="${2:-}"
     case "$st" in
-      default|parrot|plain) ;;
+      system|default|parrot|plain) ;;
       *) echo "$(vesper_t cli.prompt.invalid 'stile non valido') : '$st' (vesper-prompt list)" >&2; exit 1 ;;
     esac
     mkdir -p "$(dirname "$CONF")"
     printf '%s\n' "$st" > "$CONF"
     echo "$(vesper_t cli.prompt.set_ok 'prompt impostato'): $st ($(vesper_t cli.prompt.reopen 'apri un nuovo terminale per vederlo'))" ;;
   *)
-    echo "$(vesper_t cli.prompt.usage 'uso: vesper-prompt [get|list|set <default|parrot|plain>]')" >&2; exit 2 ;;
+    echo "$(vesper_t cli.prompt.usage 'uso: vesper-prompt [get|list|set <system|default|parrot|plain>]')" >&2; exit 2 ;;
 esac

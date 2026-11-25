@@ -127,6 +127,13 @@ entry {
   border: 1px solid #17293a; border-radius: 9px; caret-color: #00e5ff; padding: 6px 12px;
 }
 entry:focus { border-color: #00e5ff; }
+/* caselle numeriche: senza regola i pulsanti - e + prendevano il tema GTK
+   (chiari, coi simboli quasi invisibili sulle finestre scure) */
+spinbutton { background-color: #070f1a; color: #c8f5ff; border-color: #17293a; }
+spinbutton button { background-color: #0a1422; color: #c8f5ff; border: none;
+  border-left: 1px solid #17293a; }
+spinbutton button:hover { color: #00e5ff; background-color: #12202e; }
+spinbutton button:disabled { color: #45606e; }
 treeview {
   background-color: #050a14; color: #c8f5ff;
 }

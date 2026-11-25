@@ -226,6 +226,19 @@ vesper-prompt set parrot     # system | default | parrot | plain</pre>
   </p>
 </section>
 
+<section id="supporti">
+  <h2>4c. Chiavette e dischi USB</h2>
+  <p class="intro">
+    Collegando una chiavetta, un disco USB o una scheda SD, Vesper la monta da
+    sola in <code>/media/&lt;utente&gt;/&lt;nome&gt;</code>, lo dice con una
+    notifica e apre il file manager sulla cartella. Passa da udisks2, come gli
+    altri desktop: niente password per i supporti rimovibili, mai i dischi
+    interni. I supporti cifrati non si aprono da soli: si aprono da
+    <em>Dischi</em>. Si spegne (o si toglie l'apertura del file manager) da
+    Centro di Controllo → <em>Supporti rimovibili</em>.
+  </p>
+</section>
+
 <section id="file">
   <h2>5. File e desktop</h2>
   <img src="img/file-manager.png" alt="Il file manager" style="width:100%;border-radius:12px;border:1px solid var(--bordo)">
@@ -350,6 +363,7 @@ vesper-prompt set parrot     # system | default | parrot | plain</pre>
     <tr><td><code>openbox-rc.xml</code>, <code>openbox-menu.xml</code></td><td>configurazione del gestore finestre (solo di Vesper)</td></tr>
     <tr><td><code>desktop-items.json</code></td><td>posizione delle icone sul desktop</td></tr>
     <tr><td><code>lang</code></td><td>lingua dell'interfaccia (assente = quella del sistema)</td></tr>
+    <tr><td><code>automount.conf</code></td><td>montaggio automatico dei supporti rimovibili (enabled, open)</td></tr>
     <tr><td><code>power.conf</code></td><td>energia: blocco alla sospensione, spegnimento schermo, sospensione, batteria critica</td></tr>
     <tr><td><code>prompt</code></td><td>stile del prompt: system, default, parrot, plain</td></tr>
     <tr><td><code>skin-coord</code></td><td>preset seguito da icone e sfondo quando la skin è coordinata</td></tr>

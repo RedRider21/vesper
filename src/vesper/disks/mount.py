@@ -4,9 +4,10 @@
 
 Scelte di comportamento:
 
-  1. NIENTE automount: ogni montaggio nasce da un clic dell'utente. Chi vuole
-     il montaggio automatico dei supporti rimovibili installa udisks2 e il suo
-     agente; Vesper non lo fa di nascosto.
+  1. Qui NIENTE automount: ogni montaggio di questa finestra nasce da un clic
+     dell'utente. Il montaggio automatico dei supporti rimovibili e' un'altra
+     cosa, passa da udisks2 ed e' visibile e spegnibile (vesper.automount,
+     Centro di Controllo -> Supporti rimovibili).
   2. In LETTURA E SCRITTURA di default (mount_rw), come ci si aspetta da un
      desktop quando si collega una chiavetta. Resta `mount_ro()` per montare
      in SOLA LETTURA quando serve davvero.

@@ -47,7 +47,8 @@ dei profili operativi.
    blocco prima della sospensione, spegnimento schermo, sospensione per
    inattività, batteria critica. Coperchio e tasto di accensione restano a
    logind.
-6. **Automount dei dispositivi rimovibili** (udisks2) nel file manager.
+6. **Automount dei dispositivi rimovibili** — FATTO (0.7.2): udisks2, dentro
+   `vesper-power`, scheda *Supporti rimovibili*.
 7. **Pagine di manuale** per i comandi `vesper-*` (l'unico avviso che lintian
    segnala sul pacchetto).
 8. **Set di icone proprio** — oggi si usano quelli del sistema, scelti per

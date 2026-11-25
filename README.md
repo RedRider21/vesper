@@ -173,12 +173,12 @@ serve.
 | `vesper-viewer` | visualizzatore di immagini: zoom, rotazione, presentazione, «imposta come sfondo» |
 | `vesper-player`, `vesper-video` | lettore audio (playlist) e riproduttore video |
 | `vesper-recorder` | registratore vocale |
-| `vesper-disks` | dischi e chiavette: elenco, montaggio, smontaggio |
+| `vesper-disks` | dischi e chiavette: elenco, montaggio, smontaggio (le chiavette si montano anche da sole, vedi *Supporti rimovibili*) |
 | `vesper-launcherd` | avvio «caldo»: tiene GTK importato e apre le finestre senza ripagare gli import (`--off` per spegnerlo e liberare ~33 MiB) |
 | `vesper-ram` | dove va la memoria: quanto il desktop, quanto gli altri programmi, quanto la cache |
 | `vesper-ripara` | rimette il tema, le icone e le scorciatoie che c'erano prima di Vesper |
 | `vesper-zram` | memoria compressa: stato e attivazione, sempre su richiesta esplicita |
-| `vesper-power` | energia: blocca lo schermo prima della sospensione, spegne lo schermo, sospende per inattività, agisce a batteria critica |
+| `vesper-power` | servizio di sessione: energia (blocca lo schermo prima della sospensione, spegne lo schermo, sospende per inattività, batteria critica) e montaggio automatico dei supporti rimovibili |
 | `vesper-prompt` | stile del prompt nei terminali della sessione (del sistema, Vesper, Parrot, minimale) |
 | altri `vesper-*` | audio, batteria, bluetooth, luminosità, appunti, data/ora, scorciatoie, lingua, luce blu, schermi, schermate, sfondo, terminale, wifi |
 
@@ -320,7 +320,7 @@ hash PBKDF2 in un file 600.
 
 Il desktop è funzionante e installabile. Restano da fare: schermata di login
 (greeter), notifiche nei colori del preset, agente PolicyKit proprio, daemon
-XSettings, automount dei dispositivi rimovibili, set di icone proprio. Vedi [`docs/porting-plan.md`](docs/porting-plan.md).
+XSettings, set di icone proprio. Vedi [`docs/porting-plan.md`](docs/porting-plan.md).
 
 ## Licenza e autore
 

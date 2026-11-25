@@ -182,6 +182,12 @@ vesper/
   (`paths.SESSION_PID`). Nel container del collaudo logind non c'e': la parte
   D-Bus si prova solo su VM/PC veri. MAI provare la sospensione sul PC
   dell'utente.
+- **Montaggio automatico (src/vesper/automount.py)**: gira DENTRO
+  `vesper-power` (un processo solo). Solo udisks2 via D-Bus, solo Block con
+  HintAuto e non HintSystem/HintIgnore, solo dispositivi comparsi dopo l'avvio
+  (InterfacesAdded), mai se gia' montati; i cifrati solo avviso. La decisione
+  e' in `decidi()` (logica pura, provabile senza udisks). Verificato in sola
+  lettura sui dischi veri: interni e Windows -> ignorati.
 - **Luce blu**: gamma via `xrandr`. L'overlay traslucido è stato SCARTATO: in VM
   senza compositore diventa opaco e copre lo schermo.
 

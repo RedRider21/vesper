@@ -231,6 +231,18 @@ vesper-screensaver --blocca >/dev/null 2>&1; sleep 1
   || ko "blocco: niente secondo salvaschermo" "$(pgrep -f 'vesper[.]screensaver' | wc -l) processi"
 p=$(cat "$CACHE/screensaver.pid" 2>/dev/null); [ -n "$p" ] && kill "$p" 2>/dev/null; sleep 0.5
 
+# schede nuove del Centro di Controllo: si aprono senza errori
+for vista in energia supporti; do
+  prima=$(wmctrl -l | wc -l)
+  vesper-control-center $vista >/dev/null 2>&1 &
+  if attendi 20 sh -c "[ \$(wmctrl -l | wc -l) -gt $prima ]"; then ok "centro di controllo: scheda $vista"
+  else ko "centro di controllo: scheda $vista" "non si apre"; fi
+  sleep 1.5; foto 07-$vista
+  wmctrl -lG | awk -v w=$W '$NF!="desktop" && !($5==w && $6<=80) {print $1}' |
+    while read -r id; do wmctrl -i -c "$id"; done
+  sleep 1
+done
+
 # --- 10. log senza errori Python ---------------------------------------------
 if grep -q 'Traceback' "$CACHE/session.log" /out/sessione-stdout.log "$CACHE"/*.log 2>/dev/null; then
   ko "log: nessun errore Python" "Traceback nel log (vedi /out)"

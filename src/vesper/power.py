@@ -14,6 +14,8 @@ Controllo -> Energia):
   - BATTERIA CRITICA: sotto la soglia, in scarica, avvisa e dopo un minuto
     sospende / iberna / spegne (o niente).
 Coperchio e tasto di accensione restano a logind (impostazioni di sistema).
+Nello stesso processo gira anche il montaggio automatico dei supporti
+rimovibili (vesper.automount): un servizio di sessione solo, meno memoria.
 
 Isolamento: gira SOLO dentro la sessione Vesper (paths.sessione_vesper), una
 istanza per volta, e si chiude da se' quando la sessione finisce. Parla solo
@@ -304,6 +306,8 @@ class Servizio:
 
     def ricarica(self, *_a):
         self.cfg = read_conf()
+        if getattr(self, "am", None) is not None:
+            self.am.ricarica()
         apply_dpms(_int(self.cfg, "screen_off"))
         if self.cfg.get("lock_on_sleep") == "1":
             self.prendi_inibitore()
@@ -318,6 +322,12 @@ class Servizio:
                 "org.freedesktop.login1", "org.freedesktop.login1.Manager",
                 "PrepareForSleep", "/org/freedesktop/login1", None,
                 self.Gio.DBusSignalFlags.NONE, self._prima_del_sonno)
+        try:
+            from vesper.automount import Automount
+            self.am = Automount(self.bus, GLib, self.Gio)
+            self.am.avvia()
+        except Exception as e:           # noqa: BLE001
+            print("vesper-power: automount: %s" % e, file=sys.stderr)
         self.ricarica()
         GLib.timeout_add_seconds(30, self.controlla)
         GLib.unix_signal_add(GLib.PRIORITY_DEFAULT, signal.SIGHUP, self.ricarica)

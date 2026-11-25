@@ -2161,6 +2161,59 @@ def _ss_write(cfg):
         cfg.get("style", "nebula"), cfg.get("lock", "0")))
 
 
+def open_automount(_btn=None):
+    """Supporti rimovibili: montaggio automatico via udisks2 (vesper.automount,
+    gira dentro il servizio vesper-power)."""
+    from vesper import automount as _am
+    win, body = panel_window(_t("v.am.title"), 520, 380)
+    cfg = _am.read_conf()
+    intro = Gtk.Label(label=_t("v.am.intro"))
+    intro.set_xalign(0); intro.set_line_wrap(True)
+    intro.get_style_context().add_class("vesper-val")
+    body.pack_start(intro, False, False, 0)
+
+    def riga(testo, attivo):
+        r = Gtk.Box(orientation=Gtk.Orientation.HORIZONTAL, spacing=8)
+        lab = Gtk.Label(label=testo); lab.set_xalign(0); lab.set_line_wrap(True)
+        lab.get_style_context().add_class("vesper-key")
+        r.pack_start(lab, True, True, 0)
+        sw = Gtk.Switch(); sw.set_valign(Gtk.Align.CENTER); sw.set_active(attivo)
+        r.pack_end(sw, False, False, 0)
+        body.pack_start(r, False, False, 0)
+        return sw
+
+    sw_en = riga(_t("v.am.enabled"), cfg.get("enabled") == "1")
+    sw_open = riga(_t("v.am.open"), cfg.get("open") == "1")
+    if not have("udisksctl"):
+        nota = Gtk.Label(label=_t("v.am.no_udisks"))
+        nota.set_xalign(0); nota.set_line_wrap(True)
+        nota.get_style_context().add_class("vesper-val")
+        body.pack_start(nota, False, False, 0)
+    status = Gtk.Label(label=""); status.set_xalign(0)
+    status.get_style_context().add_class("vesper-val")
+    body.pack_start(status, False, False, 0)
+
+    def applica(_b=None):
+        try:
+            _am.write_conf({"enabled": "1" if sw_en.get_active() else "0",
+                            "open": "1" if sw_open.get_active() else "0"})
+            run_bg(["vesper-power", "--ricarica"])
+            status.set_text(_t("v.pw.saved"))
+        except OSError as e:
+            status.set_text(str(e))
+
+    btns = Gtk.Box(orientation=Gtk.Orientation.HORIZONTAL, spacing=8)
+    b_apply = icon_button(_t("v.apply"), "emblem-ok-symbolic")
+    b_apply.get_style_context().add_class("vesper-primary")
+    b_apply.connect("clicked", applica)
+    b_close = icon_button(_t("v.close"), "window-close")
+    b_close.connect("clicked", lambda _b: win.destroy())
+    btns.pack_start(b_apply, False, False, 0)
+    btns.pack_end(b_close, False, False, 0)
+    body.pack_end(btns, False, False, 0)
+    win.show_all()
+
+
 def open_power(_btn=None):
     """Energia: blocco prima della sospensione, spegnimento schermo,
     sospensione per inattivita', batteria critica (vesper.power)."""

@@ -2480,9 +2480,15 @@ def _bt_parse_devices(raw: str):
             "state": p[2] if len(p) > 2 else "",
             "trusted": (len(p) > 3 and p[3] == "1"),
             "icon": p[4] if len(p) > 4 and p[4] else "bluetooth-symbolic",
+            # colonna 6 assente (script vecchio) = consideralo con nome
+            "named": not (len(p) > 5 and p[5] == "0"),
         })
+    # Ordine: connessi, abbinati, poi gli altri; dentro ogni gruppo prima
+    # quelli CON nome (alfabetico), in coda i "senza nome". Prima l'ordinamento
+    # solo per nome mescolava i senza-nome in mezzo all'elenco.
     order = {"conn": 0, "paired": 1, "": 2}
-    devs.sort(key=lambda d: (order.get(d["state"], 2), d["name"].lower()))
+    devs.sort(key=lambda d: (order.get(d["state"], 2), not d["named"],
+                             d["name"].lower()))
     return devs
 
 
@@ -2551,6 +2557,11 @@ def open_bluetooth(_btn=None):
     scan_row.pack_end(status, True, True, 0)
     body.pack_start(scan_row, False, False, 0)
 
+    # Dispositivi senza nome (BLE anonimi): nascosti di default, come su
+    # Android/iOS. Abbinati/connessi restano SEMPRE visibili.
+    unnamed_chk = Gtk.CheckButton(label=_t("v.bt_show_unnamed"))
+    body.pack_start(unnamed_chk, False, False, 0)
+
     # --- lista dispositivi (scrollabile) ---
     scroller = Gtk.ScrolledWindow()
     scroller.set_policy(Gtk.PolicyType.NEVER, Gtk.PolicyType.AUTOMATIC)
@@ -2600,9 +2611,25 @@ def open_bluetooth(_btn=None):
         _block(disc_sw, disc == "1")
         return False
 
-    def render(devs):
+    def render(devs=None):
+        if devs is None:
+            devs = st.get("devs", [])
+        st["devs"] = devs
         for c in devbox.get_children():
             devbox.remove(c)
+        hidden = 0
+        if not unnamed_chk.get_active():
+            vis = [d for d in devs if d["named"] or d["state"]]
+            hidden = len(devs) - len(vis)
+            devs = vis
+        if hidden:
+            hl = Gtk.Label(label=_t("v.bt_hidden_unnamed") % hidden)
+            hl.set_xalign(0); hl.set_line_wrap(True)
+            hl.get_style_context().add_class("vesper-val")
+        if not devs and hidden:
+            devbox.pack_start(hl, False, False, 0)
+            devbox.show_all()
+            return
         if not devs:
             empty = Gtk.Label(label=_t("v.bt_none_scan"))
             empty.set_xalign(0); empty.get_style_context().add_class("vesper-val")
@@ -2612,6 +2639,8 @@ def open_bluetooth(_btn=None):
             return
         for d in devs:
             devbox.pack_start(_dev_row(d), False, False, 0)
+        if hidden:
+            devbox.pack_start(hl, False, False, 0)
         devbox.show_all()
 
     def _dev_row(d):
@@ -2627,17 +2656,18 @@ def open_bluetooth(_btn=None):
         sub.get_style_context().add_class("vesper-val")
         tags = []
         if d["state"] == "conn":
-            tags.append("connesso")
+            tags.append(_t("v.bt.connected").lower())
         elif d["state"] == "paired":
-            tags.append("abbinato")
+            tags.append(_t("v.bt.paired").lower())
         if d["trusted"]:
-            tags.append(_t("v.bt.trusted"))
+            tags.append(_t("v.bt.trusted").lower())
         # Mostra SEMPRE il MAC (hex) come sottotitolo, insieme al nome in chiaro
         # (label 'name' sopra) e agli eventuali stati: cosi' ogni dispositivo ha
         # sia il nome leggibile sia l'indirizzo esadecimale, sempre visibili.
         sub.set_text("  •  ".join([d["mac"]] + tags))
         txt.pack_start(name, False, False, 0)
         txt.pack_start(sub, False, False, 0)
+        txt.set_valign(Gtk.Align.CENTER)
         row.pack_start(txt, True, True, 0)
 
         act = Gtk.Box(orientation=Gtk.Orientation.HORIZONTAL, spacing=4)
@@ -2678,6 +2708,8 @@ def open_bluetooth(_btn=None):
         brm.connect("clicked", lambda _w, m=d["mac"], n=d["name"]:
                     do_action("remove", m, _t("v.bt_removing") % n))
         act.pack_start(brm, False, False, 0)
+        # centrati nella riga: prima si allungavano per tutta l'altezza della scheda
+        act.set_valign(Gtk.Align.CENTER)
         row.pack_end(act, False, False, 0)
         return row
 
@@ -2780,6 +2812,7 @@ def open_bluetooth(_btn=None):
             GLib.idle_add(done)
         threading.Thread(target=worker, daemon=True).start()
     scan_btn.connect("clicked", do_scan)
+    unnamed_chk.connect("toggled", lambda _w: render())
 
     def do_rename(_w=None):
         dlg = Gtk.Dialog(title=_t("v.bt_rename_adapter"), transient_for=win,
